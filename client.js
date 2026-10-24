@@ -49,6 +49,7 @@ window.__ModuleLoader__.load({
         badgeLocal: '本地',
         stateOn: '运行中',
         stateOff: '未运行',
+        stateDisabled: '已停用',
         officialReadonly: '官方插件：只读，不参与批量操作',
         noPlugins: '没有已安装的插件',
         checkBtn: '检查更新',
@@ -115,6 +116,7 @@ window.__ModuleLoader__.load({
         badgeLocal: 'Local',
         stateOn: 'Running',
         stateOff: 'Not running',
+        stateDisabled: 'Disabled',
         officialReadonly: 'Official plugin: read-only, excluded from batch ops',
         noPlugins: 'No plugins installed',
         checkBtn: 'Check updates',
@@ -408,14 +410,14 @@ window.__ModuleLoader__.load({
           onChange: () => onToggle(entry.name),
           onClick: (e) => e.stopPropagation(),
         }),
-        h('span', { className: `dpk-dot${entry.started ? ' on' : ''}` }),
+        h('span', { className: `dpk-dot${entry.started && entry.enabled !== false ? ' on' : ''}` }),
         h('span', { className: 'dpk-name' }, entry.name),
         entry.version ? h('span', { className: 'dpk-ver' }, `v${entry.version}`) : null,
         badgeText ? h('span', { className: `dpk-badge${gk === 'github' ? ' is-gh' : ''}` }, badgeText) : null,
         entry.description ? h('span', { className: 'dpk-desc', title: entry.description }, entry.description) : h('span', { className: 'dpk-desc' }),
         checkBadgeOf(entry),
         chip,
-        h('span', { className: 'dpk-state' }, entry.started ? t('stateOn') : t('stateOff')),
+        h('span', { className: 'dpk-state' }, entry.enabled === false ? t('stateDisabled') : entry.started ? t('stateOn') : t('stateOff')),
       );
     }
 
@@ -459,6 +461,14 @@ window.__ModuleLoader__.load({
         } finally {
           setLoading(false);
         }
+        // 官方 bundle 启用态并入（listBundles 失败不影响主数据）
+        try {
+          const bundles = await pmFace?.listBundles?.();
+          if (Array.isArray(bundles)) {
+            const enMap = new Map(bundles.map((b) => [b.name, b.enabled !== false]));
+            setSnap((s) => (s ? { ...s, plugins: (s.plugins ?? []).map((p) => ({ ...p, enabled: enMap.get(p.name) !== false })) } : s));
+          }
+        } catch { /* 忽略：启用态仅影响展示 */ }
       }, []);
 
       React.useEffect(() => { void load(); }, [load, langTick]);
@@ -528,7 +538,7 @@ window.__ModuleLoader__.load({
         let n = 0;
         for (const name of selected) {
           const p = byName.get(name);
-          if (p && !p.official && !p.started) n += 1;
+          if (p && !p.official && (p.enabled === false || !p.started)) n += 1;
         }
         return n;
       }, [selected, byName]);
