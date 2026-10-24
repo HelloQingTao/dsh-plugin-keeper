@@ -1,5 +1,5 @@
 {
-  "name": "dsh-plugin-ops",
+  "name": "dsh-plugin-keeper",
   "version": "0.1.0",
   "description": "插件运维台：按来源分组盘点插件、检查更新、多选批量更新/停用/卸载 | Plugin ops console for DeepSeek Harness: source-grouped plugin inventory, update checks, batch update/disable/uninstall",
   "type": "module",
@@ -20,20 +20,20 @@
   ],
   "license": "MIT",
   "author": "HelloQingTao",
-  "homepage": "https://github.com/HelloQingTao/dsh-plugin-ops#readme",
+  "homepage": "https://github.com/HelloQingTao/dsh-plugin-keeper#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/HelloQingTao/dsh-plugin-ops.git"
+    "url": "git+https://github.com/HelloQingTao/dsh-plugin-keeper.git"
   },
   "bugs": {
-    "url": "https://github.com/HelloQingTao/dsh-plugin-ops/issues"
+    "url": "https://github.com/HelloQingTao/dsh-plugin-keeper/issues"
   },
   "keywords": [
     "dsh",
     "dsh-plugin",
     "deepseek-harness",
     "plugin-manager",
-    "plugin-ops",
+    "plugin-keeper",
     "batch-update",
     "batch-uninstall",
     "batch-disable",

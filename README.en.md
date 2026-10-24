@@ -1,4 +1,4 @@
-# dsh-plugin-ops
+# dsh-plugin-keeper
 
 Plugin ops console for DeepSeek Harness (DSH 0.2.x): collects plugin information scattered across the profile into one settings tab, grouped by install source, with update checks and batch operations coming in later releases.
 
@@ -20,7 +20,7 @@ Adds a "插件运维 / Plugin Ops" tab to Settings:
 
 ## Install & verify
 
-1. Install: `dsh plugin add dsh-plugin-ops` (or a local path), then restart dsh web / desktop (package changes require a process restart)
+1. Install: `dsh plugin add dsh-plugin-keeper` (or a local path), then restart dsh web / desktop (package changes require a process restart)
 2. Verify: open Settings → "插件运维" tab; plugins should be grouped by source, theme and locale follow the host
 
 ## Roadmap

@@ -1,4 +1,4 @@
-# dsh-plugin-ops 插件运维台
+# dsh-plugin-keeper 插件运维台
 
 DeepSeek Harness（DSH 0.2.x）的插件运维插件：把散落在 profile 里的插件信息收进一个设置页签，按安装来源分组盘点，并在后续版本提供检查更新与批量操作。
 
@@ -20,7 +20,7 @@ DeepSeek Harness（DSH 0.2.x）的插件运维插件：把散落在 profile 里�
 
 ## 生效与验证
 
-1. 安装：在 dsh CLI 里执行 `dsh plugin add dsh-plugin-ops`（或本地路径），随后重启 dsh web / 桌面端（包内容变更需要进程重启才会生效）
+1. 安装：在 dsh CLI 里执行 `dsh plugin add dsh-plugin-keeper`（或本地路径），随后重启 dsh web / 桌面端（包内容变更需要进程重启才会生效）
 2. 验证：打开 设置 → 「插件运维」页签，确认插件按来源分组展示、主题与语言跟随宿主
 
 ## Roadmap

@@ -99,9 +99,9 @@
 **开发视角**：
 
 - **架构**（三层）：
-  - 宿主半 `index.js`：`PluginOpsService extends TypertRemoteService`（fallback-queue 同款模板），`static inject = ['pluginManager','profileContext']`——同进程直调官方服务做启停/卸载，自己 spawn pnpm 做更新/安装；外网请求（npm registry、api.github.com）全部在宿主半发（无 CSP 问题，也绕开 CORS 与未来收紧）。
+  - 宿主半 `index.js`：`PluginKeeperService extends TypertRemoteService`（fallback-queue 同款模板），`static inject = ['pluginManager','profileContext']`——同进程直调官方服务做启停/卸载，自己 spawn pnpm 做更新/安装；外网请求（npm registry、api.github.com）全部在宿主半发（无 CSP 问题，也绕开 CORS 与未来收紧）。
   - client 半 `client.js`：`settings.section` 注册主界面 + `settings.plugins.tab` 注册官方页签；UI 全走 `--dsw-alias-*` 变量；文案走 `ctx.locale.register(ns,{zh,en})`；网络一律经自家 RPC 调宿主半。
-  - 数据：`$DSH_HOME/plugin-ops.json`（来源标注缓存、检查结果、代理设置、开关）+ `$DSH_HOME/plugin-ops/backups/<ts>/`（操作前 package.json + pnpm-lock.yaml 快照）。**状态型数据不进 settings**（避免每次交互推 revision 触发主题全量重算，性能体检第 1 条）。
+  - 数据：`$DSH_HOME/plugin-keeper.json`（来源标注缓存、检查结果、代理设置、开关）+ `$DSH_HOME/plugin-keeper/backups/<ts>/`（操作前 package.json + pnpm-lock.yaml 快照）。**状态型数据不进 settings**（避免每次交互推 revision 触发主题全量重算，性能体检第 1 条）。
 - **更新管线**（每包串行）：
   1. 读候选版本 manifest（registry /latest 或 GitHub release tag）；
   2. 兼容预判：复刻 evaluatePluginCompatibility（engines.dsh 优先、includePrerelease:true），不满足 → 跳过并标「需豁免」；
@@ -117,11 +117,11 @@
 - **系统怎么兜底**：所有 profile 目录变更走串行队列 + 操作前快照，失败自动 restore + frozen-lockfile 恢复（对应官方 operations.js:543 同款行为）；DOM 注入类实验项失败自动降级并停用（railist selfCheck 同款 degraded 模式）；检测到 package.json 被外部改动（用户手动 pnpm）自动重新盘点。
 - **能不能重试补偿**：逐包独立重试；被 24h 门槛拒的版本次日可重试或显式豁免；GitHub 限流时 ETag 条件请求 + 退避。
 - **怎么回滚**：单包降级 = `pnpm add pkg@旧版本`；批量回滚 = 用 backups/ 快照还原两个清单文件 + frozen-lockfile 安装；卸载前确认框 = 第一道闸。
-- **怎么告警排查**：`[plugin-ops]` 前缀日志进宿主 logger；台账写 `$DSH_HOME/plugin-ops-state.json`（重启不丢）。
+- **怎么告警排查**：`[plugin-keeper]` 前缀日志进宿主 logger；台账写 `$DSH_HOME/plugin-keeper-state.json`（重启不丢）。
 
 ### 2.5 对现有功能影响、兼容
 
-- **相邻插件盘点**：① dsh-plugin（hub）的更新提示与本插件并存不冲突（它只提示市场目录内）；② dsh-settings-arranger 管 settings nav 排序——新 section 会被它纳入管理，属正常协作；③ dsh-config-manager 的备份/恢复是文件级，与我们的快照互不干扰；④ 自家数据只写 `$DSH_HOME/plugin-ops*`，不碰别人命名空间；⑤ 批量停用范围**默认排除官方包与官方 on-demand**（用户需求就是「非官方」），UI 里官方包灰显只读。
+- **相邻插件盘点**：① dsh-plugin（hub）的更新提示与本插件并存不冲突（它只提示市场目录内）；② dsh-settings-arranger 管 settings nav 排序——新 section 会被它纳入管理，属正常协作；③ dsh-config-manager 的备份/恢复是文件级，与我们的快照互不干扰；④ 自家数据只写 `$DSH_HOME/plugin-keeper*`，不碰别人命名空间；⑤ 批量停用范围**默认排除官方包与官方 on-demand**（用户需求就是「非官方」），UI 里官方包灰显只读。
 - **老数据老接口兼容**：首次运行只读不写（除自己的 state 文件）；不改 cordis.patch.yml 结构（启停复用官方 writePluginEnabled 的 yaml 语义）。
 - **双 profile**：web 走完整管线；desktop 同管线（宿主半直接操作 profile 目录），但重启提示不同。风险点：desktop 是被 CLI 有意保护的 profile，绕过 CLI 直改目录属社区既有做法（Desktop App 内置管理器同机制），文档里向用户明示。
 - **主要风险**：官方 slot/DOM 结构随 DSH 升级变化（→ selfCheck + degraded）；pnpm 24h 门槛（→ 状态区分 + 显式豁免）；github 无 release 仓库（→ 明示检测锚点）。
@@ -145,7 +145,7 @@
 
 ## 3. 命名与待拍板
 
-1. **插件名**：`dsh-plugin-updater` 已被生态里 3 个同名插件占用，不可用。候选：**`dsh-plugin-ops`（推荐，批量运维语义，npm/目录均未见占用）** / `dsh-plugin-keeper`（keeper 后缀生态有同类） / `dsh-plugin-batch`（直白）。
+1. **插件名**：`dsh-plugin-updater` 已被生态里 3 个同名插件占用，不可用。候选：**`dsh-plugin-keeper`（推荐，批量运维语义，npm/目录均未见占用）** / `dsh-plugin-keeper`（keeper 后缀生态有同类） / `dsh-plugin-batch`（直白）。
 2. **官方包处理**：默认只读展示、不可操作（符合「非官方插件」范围）——确认即可。
 3. **desktop profile**：默认 v1 就支持（用户双 profile 日常在用），代价是多一条「重启 App」提示——确认即可。
 4. **两个实验项**（自定义 nav 图标注入、深度嵌入官方管理页 DOM）：默认关闭、selfCheck 降级保护；若嫌维护成本高，v1 可直接砍掉。
@@ -159,3 +159,5 @@
 5. **体积与冷启动**：零依赖目标（undici ProxyAgent 为 Node 内置）；激活期不做网络请求（首屏只读本地缓存，检查需用户点击或显式开启自动检查）。
 
 > 附：GitHub 代理双通道速记——api.github.com（检查元数据）：直连 / HTTP(S)_PROXY / 自定义 HTTP 代理，**不可**加 gh-proxy 前缀；github.com 的 archive/releases/raw（安装下载）与 git clone：**可**加 gh-proxy 系镜像前缀（ghfast.top / gh-proxy.com / mirror.ghproxy.com 实测有效），token 不发往镜像。npm 检查：registry.npmjs.org/{name}/latest + /-/package/{name}/dist-tags，npmmirror 可作降级源（自定义/内网源不自动切换，防私有包名外泄）。
+
+> 更名记录：2026-10-24 `dsh-plugin-ops` 在 npm 被他人注册，最终定名 `dsh-plugin-keeper`（keeper/batch/steward 等候选实测后选定）。

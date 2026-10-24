@@ -1,5 +1,5 @@
 /**
- * dsh-plugin-ops — Host half（Node 侧）。
+ * dsh-plugin-keeper — Host half（Node 侧）。
  *
  * 职责（M0）：
  * - 盘点当前 profile 的插件：读 profile package.json 的 dependencies（spec 天然记录来源）
@@ -71,14 +71,14 @@ async function readJsonSafe(path, errors) {
 }
 
 /**
- * 运行态 RPC 服务：浏览器半区经 ctx.remote['dsh-plugin-ops'].snapshot() 调用。
+ * 运行态 RPC 服务：浏览器半区经 ctx.remote['dsh-plugin-keeper'].snapshot() 调用。
  */
-class PluginOpsService extends TypertRemoteService {
+class PluginKeeperService extends TypertRemoteService {
   static inject = [];
 
   constructor(ctx) {
-    super(ctx, 'PluginOpsService', { namespace: 'dsh-plugin-ops' });
-    if (!serviceBridge) throw new Error('dsh-plugin-ops: service bridge missing');
+    super(ctx, 'PluginKeeperService', { namespace: 'dsh-plugin-keeper' });
+    if (!serviceBridge) throw new Error('dsh-plugin-keeper: service bridge missing');
     this.profile = serviceBridge.profile;
   }
 
@@ -127,15 +127,15 @@ class PluginOpsService extends TypertRemoteService {
   }
 }
 
-markRemoteMethods(PluginOpsService.prototype, ['snapshot']);
+markRemoteMethods(PluginKeeperService.prototype, ['snapshot']);
 
 export const inject = ['profileContext'];
 
 export function apply(ctx) {
   const profile = ctx.profileContext ?? null;
   serviceBridge = { profile };
-  ctx.effect(() => ctx.plugin(PluginOpsService), 'dsh-plugin-ops rpc service');
+  ctx.effect(() => ctx.plugin(PluginKeeperService), 'dsh-plugin-keeper rpc service');
   ctx.effect(() => () => {
     serviceBridge = null;
-  }, 'dsh-plugin-ops bridge cleanup');
+  }, 'dsh-plugin-keeper bridge cleanup');
 }
