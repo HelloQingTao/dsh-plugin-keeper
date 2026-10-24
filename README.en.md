@@ -1,33 +1,35 @@
 # dsh-plugin-keeper
 
-Plugin ops console for DeepSeek Harness (DSH 0.2.x): collects plugin information scattered across the profile into one settings tab, grouped by install source, with update checks and batch operations coming in later releases.
+Plugin ops console for DeepSeek Harness (DSH 0.2.x): source-grouped inventory, one-click update checks, multi-select batch operations, and GitHub installs — inside a Settings tab and the official plugin manager page.
 
-## Current version (0.1.0, M0)
+## Features (0.2.0)
 
-Adds a "插件运维 / Plugin Ops" tab to Settings:
-
-- Inventory of every plugin in the current profile, **grouped by source**: official, npm, GitHub, local
-- Each row shows: package name, version, source badge (GitHub shows `user/repo`), description, running state (green dot = started)
-- Official plugins are dimmed and marked read-only; they are excluded from future batch operations
+- **Source-grouped inventory**: every plugin in the current profile grouped as official / npm / GitHub / local; each row shows package name, version, source badge (GitHub shows `user/repo`), description and running state; official plugins are dimmed and read-only
+- **One-click update check**: npm plugins via the registry (with `engines.dsh` compatibility pre-check), GitHub plugins via releases (tag fallback); npm goes direct, GitHub API through a proxy (configurable in-page); results are badged updatable / latest / incompatible / failed
+- **Batch operations**: multi-select then batch update / enable / disable / uninstall; enable and disable apply hot with instant row feedback, updates and uninstalls honestly report "restart required"; every operation auto-snapshots the profile config first (last 10 kept), restorable in-page with one click
+- **Result ledger**: each batch run reports success / restart-required / failed / skipped counts with per-item reasons — no silent failures
+- **GitHub install**: type `owner/repo`, `github:owner/repo#tag` or a GitHub URL to install; failure reasons are echoed in full
+- **Official plugin manager integration**: a "插件运维 / Plugin Ops" tab in the sidebar Plugins panel, sharing the same data as the settings tab
 - Theme follows the host (semantic `--dsw-alias-*` tokens only); UI text is bilingual (zh/en) and follows the host locale
-- Strictly read-only: writes nothing in the profile
 
-## Data sources
+## Install
 
-- `dependencies` of `~/.dsh/profiles/<profile>/package.json` (the dependency spec records the install source: npm range / `github:` / `file:`)
-- Each package's own `package.json` (version and `dsh` metadata)
-- Host `profileContext.startedBundles` (the set of plugins actually started)
+```bash
+dsh plugin add dsh-plugin-keeper
+```
 
-## Install & verify
+Restart dsh after installing (package changes require a process restart). Two entries: Settings → "插件运维" tab; sidebar Plugins → "插件运维" tab.
 
-1. Install: `dsh plugin add dsh-plugin-keeper` (or a local path), then restart dsh web / desktop (package changes require a process restart)
-2. Verify: open Settings → "插件运维" tab; plugins should be grouped by source, theme and locale follow the host
+## Verify
+
+1. Open either entry; plugins should be grouped by source and the totals match `dsh plugin ls`
+2. Click "Check updates"; badges should match npm / GitHub web results
+3. Select any non-official plugin; the batch bar appears and disable/enable reflects on the row immediately
+4. If a batch operation reports restart required, restart once and confirm the new state
 
 ## Roadmap
 
-- M1: one-click update check (npm registry + GitHub releases, with proxy support for both check and download channels)
-- M2: multi-select batch update / disable / uninstall (pre-install snapshot, rollback on failure, honest result ledger; disable is hot-applied, updates ask for a restart)
-- M3: install GitHub plugins (direct or via proxy); optional integration into the official plugin management tab
+- Later: desktop profile adaptation, experimental items (nav icon injection, deep embedding in the official page)
 
 ## License
 
