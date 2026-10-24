@@ -15,9 +15,9 @@
  * undici / semver 是本插件自己的 dependencies，装在插件目录 node_modules。
  */
 
-import { readFile, writeFile } from 'node:fs/promises';
+import { readFile, writeFile, copyFile, mkdir, readdir, rm } from 'node:fs/promises';
 import { readFileSync } from 'node:fs';
-import { join, dirname } from 'node:path';
+import { join, dirname, basename } from 'node:path';
 import { homedir } from 'node:os';
 import { request, ProxyAgent, Agent, interceptors } from 'undici';
 import { gt, satisfies, valid } from 'semver';
@@ -85,13 +85,14 @@ function statePathOf() {
   return join(home, 'plugin-keeper.json');
 }
 
-const STATE_DEFAULT = Object.freeze({ proxyUrl: '', lastCheck: null });
+const STATE_DEFAULT = Object.freeze({ proxyUrl: '', lastCheck: null, lastBatch: null });
 
 async function readState() {
   const raw = await readJsonSafe(statePathOf());
   return {
     proxyUrl: typeof raw?.proxyUrl === 'string' ? raw.proxyUrl : '',
     lastCheck: raw?.lastCheck && typeof raw.lastCheck === 'object' ? raw.lastCheck : null,
+    lastBatch: raw?.lastBatch && typeof raw.lastBatch === 'object' ? raw.lastBatch : null,
   };
 }
 
@@ -213,7 +214,7 @@ async function checkOne(plugin, { proxyUrl }, dshVersion) {
     if (!latest || !installed) return { status: 'unknown-version', latest: tag ?? null };
     // release/tag 侧拿不到 engines.dsh（除非二次取包内容），GitHub 来源不做兼容预判
     if (!gt(latest, installed)) return { status: 'latest', latest };
-    return { status: 'update', latest };
+    return { status: 'update', latest, tag };
   }
   return { status: 'unknown-version', note: `来源 ${kind} 不支持检查` };
 }
@@ -253,6 +254,64 @@ async function collectInventory() {
   return { errors, profileName, plugins, started };
 }
 
+// ---------- 批量操作快照（M2）----------
+
+const BATCH_OPS = new Set(['update', 'enable', 'disable', 'uninstall']);
+
+/** 快照根目录：$DSH_HOME/plugin-keeper-backups/ */
+function backupsRootOf() {
+  const home = serviceBridge?.profile?.home
+    || process.env.DSH_HOME
+    || join(homedir(), '.dsh');
+  return join(home, 'plugin-keeper-backups');
+}
+
+/**
+ * 批量操作前备份 profile 配置（package.json + cordis.patch.yml）。
+ * 每次一个目录，manifest.json 记录原路径→快照文件映射；保留最近 10 份。
+ */
+async function prepareBatchSnapshot(op) {
+  const profile = serviceBridge?.profile ?? {};
+  const id = `${new Date().toISOString().replace(/[:.]/g, '-')}-${op}`;
+  const dir = join(backupsRootOf(), id);
+  await mkdir(dir, { recursive: true });
+  const sources = [];
+  if (profile.dir) sources.push(join(profile.dir, 'package.json'));
+  if (profile.patchPath) sources.push(profile.patchPath);
+  const files = [];
+  for (const src of sources) {
+    const dest = join(dir, basename(src));
+    await copyFile(src, dest);
+    files.push({ from: src, to: dest });
+  }
+  const manifest = { id, at: new Date().toISOString(), op, profile: profile.name ?? null, files };
+  await writeFile(join(dir, 'manifest.json'), `${JSON.stringify(manifest, null, 2)}\n`, 'utf8');
+  try {
+    const entries = (await readdir(backupsRootOf())).sort();
+    while (entries.length > 10) {
+      const victim = entries.shift();
+      if (victim && victim !== id) await rm(join(backupsRootOf(), victim), { recursive: true, force: true });
+    }
+  } catch { /* 清理失败不影响主流程 */ }
+  return manifest;
+}
+
+/** 按快照 id 把备份文件复制回原位（id 白名单字符，杜绝路径穿越）。 */
+async function restoreBatchSnapshot(id) {
+  if (typeof id !== 'string' || !/^[\w.-]+$/.test(id)) throw new Error('非法快照 id');
+  const dir = join(backupsRootOf(), id);
+  const manifest = await readJsonSafe(join(dir, 'manifest.json'));
+  if (!manifest || !Array.isArray(manifest.files) || manifest.files.length === 0) {
+    throw new Error(`快照不存在或已损坏：${id}`);
+  }
+  const restored = [];
+  for (const f of manifest.files) {
+    await copyFile(f.to, f.from);
+    restored.push(f.from);
+  }
+  return { id, op: manifest.op ?? null, at: manifest.at ?? null, restored };
+}
+
 /**
  * 运行态 RPC 服务：浏览器半区经 ctx.remote['dsh-plugin-keeper'] 调用。
  */
@@ -282,6 +341,7 @@ class PluginKeeperService extends TypertRemoteService {
       plugins,
       errors,
       lastCheckAt: state.lastCheck?.at ?? null,
+      lastBatch: state.lastBatch,
       settings: { proxyUrl: state.proxyUrl },
       generatedAt: new Date().toISOString(),
     };
@@ -303,7 +363,7 @@ class PluginKeeperService extends TypertRemoteService {
       }
     });
     const at = new Date().toISOString();
-    await writeState({ proxyUrl: state.proxyUrl, lastCheck: { at, results } });
+    await writeState({ ...state, lastCheck: { at, results } });
     const counts = { update: 0, latest: 0, error: 0, other: 0 };
     for (const r of Object.values(results)) {
       if (r.status === 'update') counts.update += 1;
@@ -326,8 +386,28 @@ class PluginKeeperService extends TypertRemoteService {
       throw new Error('代理 URL 需为 http(s):// 开头，或留空表示直连');
     }
     const state = await readState();
-    await writeState({ proxyUrl, lastCheck: state.lastCheck });
+    await writeState({ ...state, proxyUrl });
     return { ok: true, proxyUrl };
+  }
+
+  /**
+   * 批量操作前备份 profile 配置。op ∈ update|enable|disable|uninstall；
+   * 只落备份目录与自己的状态文件，真正的安装/启停由浏览器半区调官方
+   * pluginManager 服务执行（本插件不碰 pnpm）。
+   */
+  async prepareBatch(input) {
+    const op = typeof input?.op === 'string' ? input.op : '';
+    if (!BATCH_OPS.has(op)) throw new Error(`不支持的操作：${op || '(空)'}`);
+    const manifest = await prepareBatchSnapshot(op);
+    const state = await readState();
+    await writeState({ ...state, lastBatch: { id: manifest.id, at: manifest.at, op: manifest.op } });
+    return { ok: true, id: manifest.id, op: manifest.op, at: manifest.at, files: manifest.files };
+  }
+
+  /** 把某次批量前的配置快照复制回原位（恢复后需重启生效）。 */
+  async restoreBatch(input) {
+    const r = await restoreBatchSnapshot(typeof input?.id === 'string' ? input.id : '');
+    return { ok: true, ...r };
   }
 }
 
@@ -336,6 +416,8 @@ markRemoteMethods(PluginKeeperService.prototype, [
   'checkUpdates',
   'getSettings',
   'saveSettings',
+  'prepareBatch',
+  'restoreBatch',
 ]);
 
 export const inject = ['profileContext'];

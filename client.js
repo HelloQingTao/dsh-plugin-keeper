@@ -2,8 +2,11 @@
  * dsh-plugin-keeper — Client half (Web UI)。
  *
  * slot：settings.section —— 设置页新增「插件运维」页签。
- * M0 范围：按来源分组盘点（官方 / npm / GitHub / 本地），只读展示；
- * 后续版本在此页签内追加检查更新与批量操作。
+ * M0：按来源分组盘点（官方 / npm / GitHub / 本地），只读展示。
+ * M1：一键检查更新（npm + GitHub 双通道、GitHub API 代理设置）。
+ * M2：多选批量 更新/停用/卸载 —— 批前配置快照（宿主半），逐行调官方
+ *     pluginManager 服务（setBundleEnabled / removeBundle / installBundle），
+ *     结果台账 + 重启横幅 + 快照恢复。本插件自己不碰 pnpm。
  *
  * 规范：
  * - 只用 --dsw-alias-* 主题 token（清单取自 dsh-client-ui-theme 实际定义），
@@ -17,6 +20,8 @@ window.__ModuleLoader__.load({
   factory(require) {
     const React = require('react');
     const h = React.createElement;
+
+    const SELF = 'dsh-plugin-keeper';
 
     // ---------- 双语文案表（跟随宿主语言，实时读取不缓存） ----------
 
@@ -66,6 +71,32 @@ window.__ModuleLoader__.load({
         saving: '保存中…',
         saved: '已保存',
         saveFailed: '保存失败',
+        // ---- M2 批量 ----
+        batchUpdate: '更新所选',
+        batchEnable: '启用所选',
+        batchDisable: '停用所选',
+        batchUninstall: '卸载所选',
+        confirmTag: '确认',
+        batchRunning: '{op}中… {done}/{total}',
+        opUpdate: '更新',
+        opEnable: '启用',
+        opDisable: '停用',
+        opUninstall: '卸载',
+        opApplied: '已应用',
+        opRestart: '需重启',
+        opFailed: '失败',
+        opSkipped: '跳过',
+        opNoTarget: '无可更新目标',
+        opNoFace: 'pluginManager 服务不可用',
+        opDone: '批量{op}完成：成功 {ok} · 需重启 {restart} · 失败 {fail} · 跳过 {skip}',
+        snapshotDone: '已备份配置快照 {id}',
+        restartBanner: '{n} 项变更需重启后生效',
+        restoreBtn: '恢复快照',
+        restoring: '恢复中…',
+        restoreDone: '快照已恢复，重启后生效',
+        restoreFail: '恢复失败',
+        lastBatchLine: '上次批量快照：{op} · {time}',
+        updateNone: '所选中没有可更新的插件（先检查更新）',
       },
       en: {
         sectionTitle: 'Plugin Ops',
@@ -106,6 +137,32 @@ window.__ModuleLoader__.load({
         saving: 'Saving…',
         saved: 'Saved',
         saveFailed: 'Save failed',
+        // ---- M2 batch ----
+        batchUpdate: 'Update selected',
+        batchEnable: 'Enable selected',
+        batchDisable: 'Disable selected',
+        batchUninstall: 'Uninstall selected',
+        confirmTag: 'Confirm',
+        batchRunning: '{op}… {done}/{total}',
+        opUpdate: 'update',
+        opEnable: 'enable',
+        opDisable: 'disable',
+        opUninstall: 'uninstall',
+        opApplied: 'Applied',
+        opRestart: 'Restart needed',
+        opFailed: 'Failed',
+        opSkipped: 'Skipped',
+        opNoTarget: 'No update target',
+        opNoFace: 'pluginManager service unavailable',
+        opDone: 'Batch {op} done: ok {ok} · restart {restart} · failed {fail} · skipped {skip}',
+        snapshotDone: 'Config snapshot saved: {id}',
+        restartBanner: '{n} change(s) take effect after restart',
+        restoreBtn: 'Restore snapshot',
+        restoring: 'Restoring…',
+        restoreDone: 'Snapshot restored, takes effect after restart',
+        restoreFail: 'Restore failed',
+        lastBatchLine: 'Last batch snapshot: {op} · {time}',
+        updateNone: 'No updatable plugin in selection (check updates first)',
       },
     };
 
@@ -132,6 +189,10 @@ window.__ModuleLoader__.load({
 .dpk-btn:disabled{opacity:.5;cursor:default;}
 .dpk-btn.is-primary{border-color:var(--dsw-alias-brand-primary);color:var(--dsw-alias-brand-primary);}
 .dpk-btn.is-primary:hover{background:var(--dsw-alias-interactive-bg-hover);}
+.dpk-btn.is-danger{border-color:var(--dsw-alias-state-error-primary);color:var(--dsw-alias-state-error-primary);}
+.dpk-btn.is-danger:hover{background:var(--dsw-alias-interactive-bg-hover);}
+.dpk-btn.is-armed{background:var(--dsw-alias-state-error-primary);border-color:var(--dsw-alias-state-error-primary);color:var(--dsw-alias-bg-base);}
+.dpk-btn.is-armed:hover{background:var(--dsw-alias-state-error-primary);}
 .dpk-lastcheck{font-size:12px;color:var(--dsw-alias-label-tertiary);white-space:nowrap;}
 .dpk-check{font-size:11px;line-height:18px;padding:0 8px;border-radius:999px;background:var(--dsw-alias-bg-layer-2);white-space:nowrap;flex:none;}
 .dpk-check.is-latest{color:var(--dsw-alias-label-tertiary);}
@@ -151,8 +212,10 @@ window.__ModuleLoader__.load({
 .dpk-savedok{font-size:12px;color:var(--dsw-alias-state-success-primary);}
 .dpk-savederr{font-size:12px;color:var(--dsw-alias-state-error-primary);}
 .dpk-err{color:var(--dsw-alias-state-error-primary);font-size:13px;}
+.dpk-banner{font-size:12px;color:var(--dsw-alias-state-warn-primary);line-height:18px;}
+.dpk-banner.is-ok{color:var(--dsw-alias-state-success-primary);}
 .dpk-group{display:flex;flex-direction:column;gap:6px;min-width:0;}
-.dpk-ghead{display:flex;align-items:baseline;gap:8px;}
+.dpk-ghead{display:flex;align-items:center;gap:8px;}
 .dpk-gtitle{font-size:13px;font-weight:600;color:var(--dsw-alias-label-primary);}
 .dpk-gcount{font-size:12px;color:var(--dsw-alias-label-tertiary);}
 .dpk-rows{border:1px solid var(--dsw-alias-border-l1);border-radius:var(--dsw-radius-lg,10px);overflow:hidden;}
@@ -160,6 +223,9 @@ window.__ModuleLoader__.load({
 .dpk-row + .dpk-row{border-top:1px solid var(--dsw-alias-border-l1);}
 .dpk-row:hover{background:var(--dsw-alias-interactive-bg-hover);}
 .dpk-row.is-official{opacity:.72;}
+.dpk-row.is-selected{background:var(--dsw-alias-bg-layer-1);}
+.dpk-cb{accent-color:var(--dsw-alias-brand-primary);margin:0;flex:none;width:14px;height:14px;cursor:pointer;}
+.dpk-cb:disabled{cursor:default;opacity:.4;}
 .dpk-dot{width:6px;height:6px;border-radius:50%;background:var(--dsw-alias-label-caption);flex:none;}
 .dpk-dot.on{background:var(--dsw-alias-state-success-primary);}
 .dpk-name{font-family:${MONO};font-size:13px;white-space:nowrap;}
@@ -168,6 +234,15 @@ window.__ModuleLoader__.load({
 .dpk-badge.is-gh{color:var(--dsw-alias-brand-primary);}
 .dpk-desc{color:var(--dsw-alias-label-tertiary);font-size:12px;line-height:18px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:20px;}
 .dpk-state{font-size:12px;color:var(--dsw-alias-label-tertiary);white-space:nowrap;flex:none;}
+.dpk-op{font-size:11px;line-height:18px;padding:0 8px;border-radius:999px;white-space:nowrap;flex:none;max-width:260px;overflow:hidden;text-overflow:ellipsis;}
+.dpk-op.is-ok{color:var(--dsw-alias-state-success-primary);background:var(--dsw-alias-bg-layer-2);}
+.dpk-op.is-restart{color:var(--dsw-alias-state-warn-primary);background:var(--dsw-alias-bg-layer-2);}
+.dpk-op.is-fail{color:var(--dsw-alias-state-error-primary);background:var(--dsw-alias-bg-layer-2);}
+.dpk-op.is-skip{color:var(--dsw-alias-label-tertiary);background:var(--dsw-alias-bg-layer-2);}
+.dpk-batchbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;border:1px solid var(--dsw-alias-border-l2);border-radius:var(--dsw-radius-lg,10px);padding:8px 12px;background:var(--dsw-alias-bg-layer-1);}
+.dpk-ledger{display:flex;flex-direction:column;gap:4px;border:1px solid var(--dsw-alias-border-l1);border-radius:var(--dsw-radius-lg,10px);padding:10px 14px;}
+.dpk-ledrow{display:flex;align-items:center;gap:8px;min-width:0;font-size:12px;color:var(--dsw-alias-label-secondary);}
+.dpk-ledrow .dpk-name{font-size:12px;}
 .dpk-empty{color:var(--dsw-alias-label-tertiary);font-size:13px;}
 `;
     let cssTag = null;
@@ -182,6 +257,7 @@ window.__ModuleLoader__.load({
     // ---------- RPC ----------
 
     let rpcFace = null; // remote.dsh-plugin-keeper face，由装配段注入
+    let pmFace = null; // remote.pluginManager（官方）face，批量操作直接调用
 
     // typert face 的返回值可能是 {ok,value} 信封，也可能是裸值（取决于 result codec）。
     // 统一拆一次：成功取 value，失败/异常取 null。
@@ -206,6 +282,46 @@ window.__ModuleLoader__.load({
         return v ?? { ok: false, error: 'no response' };
       } catch (e) {
         return { ok: false, error: String(e?.message ?? e) };
+      }
+    }
+
+    // 批量前快照 / 恢复（宿主半文件操作）
+    async function callPrepareBatch(op) {
+      try {
+        const v = unwrapEnvelope(await rpcFace?.prepareBatch?.({ op }));
+        return v ?? { ok: false, error: 'no response' };
+      } catch (e) {
+        return { ok: false, error: String(e?.message ?? e) };
+      }
+    }
+    async function callRestoreBatch(id) {
+      try {
+        const v = unwrapEnvelope(await rpcFace?.restoreBatch?.({ id }));
+        return v ?? { ok: false, error: 'no response' };
+      } catch (e) {
+        return { ok: false, error: String(e?.message ?? e) };
+      }
+    }
+
+    // 官方 pluginManager face 调用：返回 ChangeResult；不可用/异常抛错。
+    async function callPm(method, ...args) {
+      const fn = pmFace?.[method];
+      if (typeof fn !== 'function') throw new Error(t('opNoFace'));
+      const r = await fn.apply(pmFace, args);
+      return unwrapEnvelope(r) ?? r;
+    }
+
+    // ChangeResult → 台账条目 {status: ok|restart|failed|skipped, note?}
+    function mapChange(r) {
+      if (!r || typeof r !== 'object') return { status: 'failed', note: 'no result' };
+      switch (r.application) {
+        case 'applied': return { status: 'ok' };
+        case 'restart-required': return { status: 'restart', note: r.restartReason ?? '' };
+        case 'overridden': return { status: 'ok', note: 'overridden' };
+        case 'cancelled': return { status: 'skipped' };
+        case 'failed':
+          return { status: 'failed', note: r.error?.code ?? r.error?.diagnostic ?? r.error?.message ?? '' };
+        default: return { status: 'failed', note: r.error?.message ?? 'unknown application' };
       }
     }
 
@@ -252,21 +368,53 @@ window.__ModuleLoader__.load({
       unknown: 'groupUnknown',
     };
 
-    function Row({ entry }) {
+    // 批量更新目标 spec：npm → name@latest；github → github:repo#tag
+    function updateSpecOf(entry) {
+      const c = entry?.check;
+      if (!c || c.status !== 'update') return null;
+      const kind = entry.source?.kind;
+      if (kind === 'npm') return `${entry.name}@${c.latest}`;
+      if (kind === 'github') {
+        const repo = entry.source?.repo ?? '';
+        return c.tag && /^[^/]+\/[^/]+$/.test(repo) ? `github:${repo}#${c.tag}` : null;
+      }
+      return null;
+    }
+
+    const OP_LABEL_KEY = { update: 'opUpdate', enable: 'opEnable', disable: 'opDisable', uninstall: 'opUninstall' };
+
+    function Row({ entry, checked, disabled, onToggle, opStatus }) {
       const gk = groupKeyOf(entry);
       const badgeText = gk === 'official' ? t('badgeOfficial')
         : gk === 'github' ? (entry.source?.repo || t('badgeGithub'))
           : gk === 'local' ? t('badgeLocal') : null;
-      const rowProps = entry.official
-        ? { className: 'dpk-row is-official', title: t('officialReadonly') }
-        : { className: 'dpk-row' };
+      const rowProps = {
+        className: `dpk-row${entry.official ? ' is-official' : ''}${checked ? ' is-selected' : ''}`,
+      };
+      if (entry.official) rowProps.title = t('officialReadonly');
+      const chip = opStatus
+        ? h('span', {
+          className: `dpk-op is-${opStatus.status}`,
+          title: opStatus.note || undefined,
+        }, t(`op${opStatus.status === 'ok' ? 'Applied' : opStatus.status === 'restart' ? 'Restart' : opStatus.status === 'failed' ? 'Failed' : 'Skipped'}`)
+          + (opStatus.note && opStatus.status !== 'ok' ? ` · ${opStatus.note}` : ''))
+        : null;
       return h('div', rowProps,
+        h('input', {
+          type: 'checkbox',
+          className: 'dpk-cb',
+          checked,
+          disabled,
+          onChange: () => onToggle(entry.name),
+          onClick: (e) => e.stopPropagation(),
+        }),
         h('span', { className: `dpk-dot${entry.started ? ' on' : ''}` }),
         h('span', { className: 'dpk-name' }, entry.name),
         entry.version ? h('span', { className: 'dpk-ver' }, `v${entry.version}`) : null,
         badgeText ? h('span', { className: `dpk-badge${gk === 'github' ? ' is-gh' : ''}` }, badgeText) : null,
         entry.description ? h('span', { className: 'dpk-desc', title: entry.description }, entry.description) : h('span', { className: 'dpk-desc' }),
         checkBadgeOf(entry),
+        chip,
         h('span', { className: 'dpk-state' }, entry.started ? t('stateOn') : t('stateOff')),
       );
     }
@@ -282,6 +430,14 @@ window.__ModuleLoader__.load({
       const [saving, setSaving] = React.useState(false);
       const [saveFlash, setSaveFlash] = React.useState(null); // 'ok' | {err}
       const proxyRef = React.useRef(null);
+      // M2 批量状态
+      const [selected, setSelected] = React.useState(() => new Set());
+      const [armedOp, setArmedOp] = React.useState(null); // 二次确认中的操作
+      const [batch, setBatch] = React.useState(null); // {op, running, done, total, results:[{name,status,note}], snapshotId}
+      const [banner, setBanner] = React.useState(null); // {text, ok}
+      const [restoring, setRestoring] = React.useState(false);
+      const armedTimer = React.useRef(null);
+      const batchResultsRef = React.useRef([]); // 循环内累积，避免闭包陈旧
       // 语言切换 = <html lang> 属性变化 → 强制重渲染（文案实时跟随）
       const [langTick, setLangTick] = React.useState(0);
       React.useEffect(() => {
@@ -289,6 +445,7 @@ window.__ModuleLoader__.load({
         obs.observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
         return () => obs.disconnect();
       }, []);
+      React.useEffect(() => () => { clearTimeout(armedTimer.current); }, []);
 
       const load = React.useCallback(async () => {
         setLoading(true);
@@ -339,7 +496,156 @@ window.__ModuleLoader__.load({
         setSaving(false);
       }, []);
 
+      // ---------- M2 选择与批量 ----------
+
       const plugins = Array.isArray(snap?.plugins) ? snap.plugins : [];
+      const byName = React.useMemo(() => new Map(plugins.map((p) => [p.name, p])), [plugins]);
+
+      const toggleOne = React.useCallback((name) => {
+        setSelected((prev) => {
+          const next = new Set(prev);
+          if (next.has(name)) next.delete(name); else next.add(name);
+          return next;
+        });
+        setArmedOp(null);
+      }, []);
+
+      const toggleGroup = React.useCallback((list) => {
+        const eligible = list.filter((p) => !p.official).map((p) => p.name);
+        setSelected((prev) => {
+          const allIn = eligible.every((n) => prev.has(n));
+          const next = new Set(prev);
+          for (const n of eligible) {
+            if (allIn) next.delete(n); else next.add(n);
+          }
+          return next;
+        });
+        setArmedOp(null);
+      }, []);
+
+      const selCount = selected.size;
+      const enableCount = React.useMemo(() => {
+        let n = 0;
+        for (const name of selected) {
+          const p = byName.get(name);
+          if (p && !p.official && !p.started) n += 1;
+        }
+        return n;
+      }, [selected, byName]);
+      const updatableCount = React.useMemo(() => {
+        let n = 0;
+        for (const name of selected) {
+          const p = byName.get(name);
+          if (p && !p.official && updateSpecOf(p)) n += 1;
+        }
+        return n;
+      }, [selected, byName]);
+
+      const armTimerClear = () => {
+        clearTimeout(armedTimer.current);
+        armedTimer.current = null;
+      };
+      const onBatchBtn = (op) => {
+        // 更新/启用非破坏性：直接执行；停用/卸载需二次确认
+        if (op !== 'update' && op !== 'enable' && armedOp !== op) {
+          setArmedOp(op);
+          armTimerClear();
+          armedTimer.current = setTimeout(() => setArmedOp(null), 3000);
+          return;
+        }
+        armTimerClear();
+        setArmedOp(null);
+        void runBatch(op);
+      };
+
+      // 批量执行：快照 → 官方 pluginManager 逐行调用 → 刷新盘点 → 台账。
+      // 顺序执行（pnpm 侧本就串行）；含本插件的操作放最后（中途把自己停了，后面的行没人执行）。
+      const runBatch = React.useCallback(async (op) => {
+        const names = [...selected].filter((n) => {
+          const p = byName.get(n);
+          return p && !p.official;
+        });
+        if (!names.length) return;
+        names.sort((a, b) => (a === SELF) - (b === SELF)); // self last
+
+        const results = [];
+        batchResultsRef.current = results;
+
+        // 更新目标解析：先算 spec，无目标的行记 skipped；快照只为有目标的批量服务
+        let targets = [];
+        if (op === 'update') {
+          for (const name of names) {
+            const p = byName.get(name);
+            const spec = updateSpecOf(p);
+            if (spec) targets.push({ name, spec });
+            else results.push({ name, status: 'skipped', note: t('opNoTarget') });
+          }
+          if (!targets.length) {
+            setBanner({ text: t('updateNone'), ok: false });
+            return;
+          }
+        } else {
+          targets = names.map((name) => ({ name }));
+        }
+
+        setBanner(null);
+        setBatch({ op, running: true, done: results.length, total: results.length + targets.length, results: [...results], snapshotId: null });
+        const push = (item) => {
+          results.push(item);
+          setBatch((b) => (b ? { ...b, results: [...results], done: results.length } : b));
+        };
+        const prep = await callPrepareBatch(op);
+        if (!prep?.ok) {
+          setErr(prep?.error ?? 'snapshot failed');
+          setBatch(null);
+          return;
+        }
+
+        for (const { name, spec } of targets) {
+          try {
+            if (op === 'update') push({ name, ...mapChange(await callPm('installBundle', spec)) });
+            else if (op === 'enable') push({ name, ...mapChange(await callPm('setBundleEnabled', name, true)) });
+            else if (op === 'disable') push({ name, ...mapChange(await callPm('setBundleEnabled', name, false)) });
+            else push({ name, ...mapChange(await callPm('removeBundle', name)) });
+          } catch (e) {
+            push({ name, status: 'failed', note: String(e?.message ?? e) });
+          }
+        }
+
+        const finalResults = [...results];
+        const counts = { ok: 0, restart: 0, fail: 0, skip: 0 };
+        for (const r of finalResults) {
+          if (r.status === 'ok') counts.ok += 1;
+          else if (r.status === 'restart') counts.restart += 1;
+          else if (r.status === 'failed') counts.fail += 1;
+          else counts.skip += 1;
+        }
+        setBatch({
+          op,
+          running: false,
+          done: finalResults.length,
+          total: targets.length,
+          results: finalResults,
+          snapshotId: prep.id,
+          counts,
+        });
+        if (counts.restart > 0) {
+          setBanner({ text: t('restartBanner', { n: counts.restart }), ok: false });
+        }
+        setSelected(new Set());
+        await load();
+      }, [selected, byName, load]);
+
+      // 恢复最近一次批量快照（把批量前的 package.json / cordis.patch.yml 复制回原位）
+      const doRestore = React.useCallback(async (id) => {
+        setRestoring(true);
+        const r = await callRestoreBatch(id);
+        setRestoring(false);
+        if (r?.ok) setBanner({ text: t('restoreDone'), ok: true });
+        else setBanner({ text: `${t('restoreFail')}：${r?.error ?? '?'}`, ok: false });
+        await load();
+      }, [load]);
+
       const groups = React.useMemo(() => {
         const map = new Map();
         for (const p of plugins) {
@@ -359,6 +665,100 @@ window.__ModuleLoader__.load({
       const lastCheckText = snap?.lastCheckAt
         ? t('lastCheck', { time: new Date(snap.lastCheckAt).toLocaleTimeString() })
         : t('neverChecked');
+
+      const batchRunning = Boolean(batch?.running);
+      const busy = loading || checking || batchRunning;
+
+      // 批量工具条：有勾选时出现；破坏性操作二次确认（按钮 3 秒内再点一次）
+      const batchBar = selCount > 0 && !batchRunning
+        ? h('div', { className: 'dpk-batchbar' },
+          updatableCount > 0
+            ? h('button', {
+              className: `dpk-btn${armedOp === 'update' ? ' is-armed' : ''}`,
+              type: 'button',
+              disabled: busy,
+              onClick: () => onBatchBtn('update'),
+            }, `${armedOp === 'update' ? `${t('batchUpdate')} · ${t('confirmTag')}` : t('batchUpdate')} (${updatableCount})`)
+            : null,
+          enableCount > 0
+            ? h('button', {
+              className: 'dpk-btn',
+              type: 'button',
+              disabled: busy,
+              onClick: () => onBatchBtn('enable'),
+            }, `${t('batchEnable')} (${enableCount})`)
+            : null,
+          h('button', {
+            className: `dpk-btn${armedOp === 'disable' ? ' is-armed' : ''}`,
+            type: 'button',
+            disabled: busy,
+            onClick: () => onBatchBtn('disable'),
+          }, `${armedOp === 'disable' ? `${t('batchDisable')} · ${t('confirmTag')}` : t('batchDisable')} (${selCount})`),
+          h('button', {
+            className: `dpk-btn is-danger${armedOp === 'uninstall' ? ' is-armed' : ''}`,
+            type: 'button',
+            disabled: busy,
+            onClick: () => onBatchBtn('uninstall'),
+          }, `${armedOp === 'uninstall' ? `${t('batchUninstall')} · ${t('confirmTag')}` : t('batchUninstall')} (${selCount})`),
+        )
+        : null;
+
+      const batchProgress = batchRunning
+        ? h('div', { className: 'dpk-batchbar' },
+          h('span', { className: 'dpk-hint' }, t('batchRunning', {
+            op: t(OP_LABEL_KEY[batch.op] ?? 'opUpdate'),
+            done: batch.done,
+            total: batch.total,
+          })))
+        : null;
+
+      // 结果台账（本次会话批量后）
+      const ledger = batch && !batch.running && Array.isArray(batch.results) && batch.results.length > 0
+        ? h('div', { className: 'dpk-ledger' },
+          h('div', { className: 'dpk-ledrow' },
+            h('span', null, t('opDone', {
+              op: t(OP_LABEL_KEY[batch.op] ?? 'opUpdate'),
+              ok: batch.counts?.ok ?? 0,
+              restart: batch.counts?.restart ?? 0,
+              fail: batch.counts?.fail ?? 0,
+              skip: batch.counts?.skip ?? 0,
+            })),
+          ),
+          batch.snapshotId
+            ? h('div', { className: 'dpk-ledrow' },
+              h('span', { className: 'dpk-hint' }, t('snapshotDone', { id: batch.snapshotId })),
+              h('button', {
+                className: 'dpk-btn',
+                type: 'button',
+                disabled: restoring || batchRunning,
+                onClick: () => { void doRestore(batch.snapshotId); },
+              }, restoring ? t('restoring') : t('restoreBtn')),
+            )
+            : null,
+          batch.results.map((r) => h('div', { className: 'dpk-ledrow', key: r.name },
+            h('span', { className: 'dpk-name' }, r.name),
+            h('span', { className: `dpk-op is-${r.status}`, title: r.note || undefined },
+              t(`op${r.status === 'ok' ? 'Applied' : r.status === 'restart' ? 'Restart' : r.status === 'failed' ? 'Failed' : 'Skipped'}`)
+              + (r.note && r.status !== 'ok' ? ` · ${r.note}` : '')),
+          )),
+        )
+        : null;
+
+      // 跨会话残留的批量快照（状态文件 lastBatch）——只提示存在与恢复入口
+      const lastBatchLine = !batch && snap?.lastBatch?.id
+        ? h('div', { className: 'dpk-ledrow' },
+          h('span', { className: 'dpk-hint' }, t('lastBatchLine', {
+            op: t(OP_LABEL_KEY[snap.lastBatch.op] ?? snap.lastBatch.op ?? ''),
+            time: snap.lastBatch.at ? new Date(snap.lastBatch.at).toLocaleString() : '',
+          })),
+          h('button', {
+            className: 'dpk-btn',
+            type: 'button',
+            disabled: restoring || batchRunning,
+            onClick: () => { void doRestore(snap.lastBatch.id); },
+          }, restoring ? t('restoring') : t('restoreBtn')),
+        )
+        : null;
 
       const settingsEl = h('details', { className: 'dpk-settings' },
         h('summary', null, t('settingsTitle')),
@@ -414,24 +814,58 @@ window.__ModuleLoader__.load({
             onClick: () => { void load(); },
           }, loading ? t('refreshing') : t('refresh')),
         ),
+        banner ? h('div', { className: `dpk-banner${banner.ok ? ' is-ok' : ''}` }, banner.text) : null,
         checkInfo ? h('div', { className: 'dpk-hint' }, t('checkDone', checkInfo)) : null,
         err ? h('div', { className: 'dpk-err' }, err) : null,
+        batchBar,
+        batchProgress,
         loading && !snap
           ? h('div', { className: 'dpk-empty' }, t('loading'))
-          : groups.map(([key, list]) => h('div', { className: 'dpk-group', key },
-            h('div', { className: 'dpk-ghead' },
-              h('span', { className: 'dpk-gtitle' }, t(GROUP_TITLE_KEY[key])),
-              h('span', { className: 'dpk-gcount' }, String(list.length)),
-            ),
-            h('div', { className: 'dpk-rows' },
-              list.map((entry) => h(Row, { key: entry.name, entry })),
-            ),
-          )),
+          : groups.map(([key, list]) => {
+            const eligible = list.filter((p) => !p.official);
+            const allIn = eligible.length > 0 && eligible.every((p) => selected.has(p.name));
+            return h('div', { className: 'dpk-group', key },
+              h('div', { className: 'dpk-ghead' },
+                eligible.length > 0
+                  ? h('input', {
+                    type: 'checkbox',
+                    className: 'dpk-cb',
+                    checked: allIn,
+                    disabled: batchRunning,
+                    onChange: () => toggleGroup(list),
+                  })
+                  : null,
+                h('span', { className: 'dpk-gtitle' }, t(GROUP_TITLE_KEY[key])),
+                h('span', { className: 'dpk-gcount' }, String(list.length)),
+              ),
+              h('div', { className: 'dpk-rows' },
+                list.map((entry) => h(Row, {
+                  key: entry.name,
+                  entry,
+                  checked: selected.has(entry.name),
+                  disabled: entry.official || batchRunning,
+                  onToggle: toggleOne,
+                  opStatus: batch && !batch.running
+                    ? batch.results?.find((r) => r.name === entry.name) ?? null
+                    : null,
+                })),
+              ),
+            );
+          }),
+        ledger,
+        lastBatchLine,
         settingsEl,
       );
     }
 
     // ---------- Typert Remote 契约（client 描述符走最小 strict codec，同 fallback-queue 形态） ----------
+
+    const INPUT_PARAM = {
+      name: 'input',
+      wire: 'input',
+      source: 'json',
+      codec: { mode: 'strict', typeSymbol: 'dsh-plugin-keeper#ServiceInput', create: () => ({}) },
+    };
 
     const TYPERT_REMOTE = {
       package: 'dsh-plugin-keeper',
@@ -460,12 +894,25 @@ window.__ModuleLoader__.load({
           namespace: 'dsh-plugin-keeper',
           method: 'saveSettings',
           invocation: { kind: 'direct' },
-          parameters: [{
-            name: 'input',
-            wire: 'input',
-            source: 'json',
-            codec: { mode: 'strict', typeSymbol: 'dsh-plugin-keeper#SaveSettingsInput', create: () => ({}) },
-          }],
+          parameters: [INPUT_PARAM],
+          result: { mode: 'src-json' },
+        },
+        {
+          id: 'dsh-plugin-keeper#dsh-plugin-keeper/prepareBatch',
+          service: 'PluginKeeperService',
+          namespace: 'dsh-plugin-keeper',
+          method: 'prepareBatch',
+          invocation: { kind: 'direct' },
+          parameters: [INPUT_PARAM],
+          result: { mode: 'src-json' },
+        },
+        {
+          id: 'dsh-plugin-keeper#dsh-plugin-keeper/restoreBatch',
+          service: 'PluginKeeperService',
+          namespace: 'dsh-plugin-keeper',
+          method: 'restoreBatch',
+          invocation: { kind: 'direct' },
+          parameters: [INPUT_PARAM],
           result: { mode: 'src-json' },
         },
       ],
@@ -527,12 +974,14 @@ window.__ModuleLoader__.load({
       inject: ['slots', 'remote'],
       async apply(ctx) {
         // 挂自己的 Remote namespace，再在内层 ctx.inject 里拿 face
+        // remote.pluginManager = 官方 pluginManager 服务（M2 批量操作的数据面）
         const disposeRemote = await ctx.remote.$mount(TYPERT_REMOTE);
         ctx.effect(() => () => { void disposeRemote(); }, 'dsh-plugin-keeper remote mount');
         await ctx.inject(
-          ['slots', 'remote', 'remote.dsh-plugin-keeper'],
+          ['slots', 'remote', 'remote.dsh-plugin-keeper', 'remote.pluginManager'],
           (rctx) => {
             rpcFace = rctx.remote?.['dsh-plugin-keeper'] ?? null;
+            pmFace = rctx.remote?.pluginManager ?? null;
             rctx.effect(() => mountSection(rctx), 'dsh-plugin-keeper settings section');
           },
         );
