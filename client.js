@@ -466,7 +466,7 @@ window.__ModuleLoader__.load({
           const bundles = await pmFace?.listBundles?.();
           if (Array.isArray(bundles)) {
             const enMap = new Map(bundles.map((b) => [b.name, b.enabled !== false]));
-            setSnap((s) => (s ? { ...s, plugins: (s.plugins ?? []).map((p) => ({ ...p, enabled: enMap.get(p.name) !== false })) } : s));
+            setSnap((s) => (s ? { ...s, plugins: (s.plugins ?? []).map((p) => ({ ...p, enabled: enMap.has(p.name) ? enMap.get(p.name) : true })) } : s));
           }
         } catch { /* 忽略：启用态仅影响展示 */ }
       }, []);
@@ -644,6 +644,8 @@ window.__ModuleLoader__.load({
         }
         setSelected(new Set());
         await load();
+        // 宿主 startedBundles 的热更新是异步落账的，延迟补一刷，行状态才不滞留
+        setTimeout(() => { void load(); }, 1500);
       }, [selected, byName, load]);
 
       // 恢复最近一次批量快照（把批量前的 package.json / cordis.patch.yml 复制回原位）
