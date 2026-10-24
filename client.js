@@ -306,18 +306,20 @@ window.__ModuleLoader__.load({
 
       React.useEffect(() => { void load(); }, [load, langTick]);
 
-      // 一键检查更新：跑完拉一次最新快照（服务端已把检查结果并入 snapshot）
+      // 一键检查更新：跑完拉一次最新快照（服务端已把检查结果并入 snapshot）。
+      // 注意先 load 再落错误态——load() 会清 err，顺序反了报错会被瞬间擦掉。
       const doCheck = React.useCallback(async () => {
         setChecking(true);
         setCheckInfo(null);
+        setErr(null);
         try {
           const r = await callCheckUpdates();
+          await load();
           if (r && r.ok) {
             setCheckInfo({ update: r.counts?.update ?? 0, latest: r.counts?.latest ?? 0, error: r.counts?.error ?? 0 });
           } else {
             setErr(r?.error ?? t('chkError'));
           }
-          await load();
         } finally {
           setChecking(false);
         }
@@ -441,6 +443,29 @@ window.__ModuleLoader__.load({
           method: 'snapshot',
           invocation: { kind: 'direct' },
           parameters: [],
+          result: { mode: 'src-json' },
+        },
+        {
+          id: 'dsh-plugin-keeper#dsh-plugin-keeper/checkUpdates',
+          service: 'PluginKeeperService',
+          namespace: 'dsh-plugin-keeper',
+          method: 'checkUpdates',
+          invocation: { kind: 'direct' },
+          parameters: [],
+          result: { mode: 'src-json' },
+        },
+        {
+          id: 'dsh-plugin-keeper#dsh-plugin-keeper/saveSettings',
+          service: 'PluginKeeperService',
+          namespace: 'dsh-plugin-keeper',
+          method: 'saveSettings',
+          invocation: { kind: 'direct' },
+          parameters: [{
+            name: 'input',
+            wire: 'input',
+            source: 'json',
+            codec: { mode: 'strict', typeSymbol: 'dsh-plugin-keeper#SaveSettingsInput', create: () => ({}) },
+          }],
           result: { mode: 'src-json' },
         },
       ],

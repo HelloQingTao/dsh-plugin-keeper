@@ -19,7 +19,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { readFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { homedir } from 'node:os';
-import { request, ProxyAgent } from 'undici';
+import { request, ProxyAgent, Agent, interceptors } from 'undici';
 import { gt, satisfies, valid } from 'semver';
 import { TypertRemoteService } from '@deepseek-ai/dsh-typert-protocol';
 
@@ -116,15 +116,22 @@ function probeDshVersion() {
 
 // ---------- HTTP（undici；GitHub 走可选代理）----------
 
+let directAgent = null;
 let proxyAgent = null;
 let proxyAgentUrl = '';
+// undici v7 起 request 不再收 maxRedirections，重定向要靠 dispatcher 上的 redirect 拦截器
+const redirectInterceptor = () => interceptors.redirect({ maxRedirections: 3 });
+
 function dispatcherFor(url, proxyUrl) {
-  if (!proxyUrl || !url.startsWith('https://api.github.com/')) return undefined;
-  if (proxyUrl !== proxyAgentUrl) {
-    proxyAgent = new ProxyAgent(proxyUrl);
-    proxyAgentUrl = proxyUrl;
+  if (proxyUrl && url.startsWith('https://api.github.com/')) {
+    if (proxyUrl !== proxyAgentUrl) {
+      proxyAgent = new ProxyAgent(proxyUrl).compose(redirectInterceptor());
+      proxyAgentUrl = proxyUrl;
+    }
+    return proxyAgent;
   }
-  return proxyAgent;
+  if (!directAgent) directAgent = new Agent().compose(redirectInterceptor());
+  return directAgent;
 }
 
 /**
@@ -136,7 +143,6 @@ async function fetchJson(url, { proxyUrl, headers = {}, timeoutMs = 8000 } = {})
     dispatcher: dispatcherFor(url, proxyUrl),
     headers: { 'user-agent': 'dsh-plugin-keeper', accept: 'application/json', ...headers },
     signal: AbortSignal.timeout(timeoutMs),
-    maxRedirections: 3,
   });
   const code = res.statusCode;
   if (code === 404) {
