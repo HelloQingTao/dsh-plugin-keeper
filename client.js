@@ -46,6 +46,26 @@ window.__ModuleLoader__.load({
         stateOff: '未运行',
         officialReadonly: '官方插件：只读，不参与批量操作',
         noPlugins: '没有已安装的插件',
+        checkBtn: '检查更新',
+        checking: '检查中…',
+        lastCheck: '上次检查 {time}',
+        neverChecked: '未检查过',
+        chkLatest: '最新',
+        chkUpdate: '可更新 {ver}',
+        chkIncompatible: '不兼容',
+        chkNeedDsh: '需 dsh {range}',
+        chkError: '检查失败',
+        chkNoRelease: '无版本锚点',
+        chkUnknownVer: '版本未知',
+        checkDone: '检查完成：可更新 {update} · 最新 {latest} · 失败 {error}',
+        settingsTitle: '检查设置',
+        proxyLabel: 'GitHub API 代理',
+        proxyPlaceholder: 'http://127.0.0.1:33210（留空 = 直连）',
+        proxyHint: '仅作用于 GitHub 检查（api.github.com）；npm registry 始终直连。支持 http(s) 代理。',
+        save: '保存',
+        saving: '保存中…',
+        saved: '已保存',
+        saveFailed: '保存失败',
       },
       en: {
         sectionTitle: 'Plugin Ops',
@@ -66,6 +86,26 @@ window.__ModuleLoader__.load({
         stateOff: 'Not running',
         officialReadonly: 'Official plugin: read-only, excluded from batch ops',
         noPlugins: 'No plugins installed',
+        checkBtn: 'Check updates',
+        checking: 'Checking…',
+        lastCheck: 'Last checked {time}',
+        neverChecked: 'Never checked',
+        chkLatest: 'Latest',
+        chkUpdate: 'Update {ver}',
+        chkIncompatible: 'Incompatible',
+        chkNeedDsh: 'needs dsh {range}',
+        chkError: 'Check failed',
+        chkNoRelease: 'No release anchor',
+        chkUnknownVer: 'Unknown version',
+        checkDone: 'Checked: {update} updatable · {latest} latest · {error} failed',
+        settingsTitle: 'Check settings',
+        proxyLabel: 'GitHub API proxy',
+        proxyPlaceholder: 'http://127.0.0.1:33210 (empty = direct)',
+        proxyHint: 'Applies to GitHub checks (api.github.com) only; npm registry is always direct. http(s) proxy supported.',
+        save: 'Save',
+        saving: 'Saving…',
+        saved: 'Saved',
+        saveFailed: 'Save failed',
       },
     };
 
@@ -90,6 +130,26 @@ window.__ModuleLoader__.load({
 .dpk-btn{border:1px solid var(--dsw-alias-border-l2);background:0 0;color:var(--dsw-alias-label-primary);border-radius:var(--dsw-radius-md,8px);padding:3px 12px;font:inherit;font-size:13px;line-height:20px;cursor:pointer;}
 .dpk-btn:hover{background:var(--dsw-alias-interactive-bg-hover);}
 .dpk-btn:disabled{opacity:.5;cursor:default;}
+.dpk-btn.is-primary{border-color:var(--dsw-alias-brand-primary);color:var(--dsw-alias-brand-primary);}
+.dpk-btn.is-primary:hover{background:var(--dsw-alias-interactive-bg-hover);}
+.dpk-lastcheck{font-size:12px;color:var(--dsw-alias-label-tertiary);white-space:nowrap;}
+.dpk-check{font-size:11px;line-height:18px;padding:0 8px;border-radius:999px;background:var(--dsw-alias-bg-layer-2);white-space:nowrap;flex:none;}
+.dpk-check.is-latest{color:var(--dsw-alias-label-tertiary);}
+.dpk-check.is-update{color:var(--dsw-alias-brand-primary);}
+.dpk-check.is-warn{color:var(--dsw-alias-state-warn-primary);}
+.dpk-check.is-err{color:var(--dsw-alias-state-error-primary);}
+.dpk-settings{border:1px solid var(--dsw-alias-border-l1);border-radius:var(--dsw-radius-lg,10px);padding:10px 14px;}
+.dpk-settings>summary{cursor:pointer;font-size:13px;font-weight:600;color:var(--dsw-alias-label-primary);user-select:none;}
+.dpk-settings>summary:hover{color:var(--dsw-alias-brand-primary);}
+.dpk-setbody{display:flex;flex-direction:column;gap:8px;padding-top:10px;}
+.dpk-setrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.dpk-setlabel{font-size:13px;color:var(--dsw-alias-label-secondary);white-space:nowrap;}
+.dpk-input{background:var(--dsw-alias-bg-layer-1);border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-primary);border-radius:var(--dsw-radius-md,8px);padding:4px 10px;font:inherit;font-size:13px;line-height:20px;min-width:280px;}
+.dpk-input:focus{outline:1px solid var(--dsw-alias-brand-primary);outline-offset:0;}
+.dpk-input::placeholder{color:var(--dsw-alias-label-caption);}
+.dpk-hint{font-size:12px;color:var(--dsw-alias-label-tertiary);line-height:18px;}
+.dpk-savedok{font-size:12px;color:var(--dsw-alias-state-success-primary);}
+.dpk-savederr{font-size:12px;color:var(--dsw-alias-state-error-primary);}
 .dpk-err{color:var(--dsw-alias-state-error-primary);font-size:13px;}
 .dpk-group{display:flex;flex-direction:column;gap:6px;min-width:0;}
 .dpk-ghead{display:flex;align-items:baseline;gap:8px;}
@@ -130,6 +190,48 @@ window.__ModuleLoader__.load({
       return r ?? null;
     }
 
+    // 一键检查更新：返回 {at, checked, counts, results} 或 null
+    async function callCheckUpdates() {
+      try {
+        return unwrapEnvelope(await rpcFace?.checkUpdates());
+      } catch (e) {
+        return { ok: false, error: String(e?.message ?? e) };
+      }
+    }
+
+    // 保存设置（当前仅 GitHub API 代理）。返回 {ok, proxyUrl} 或 {ok:false, error}
+    async function callSaveSettings(payload) {
+      try {
+        const v = unwrapEnvelope(await rpcFace?.saveSettings?.(payload));
+        return v ?? { ok: false, error: 'no response' };
+      } catch (e) {
+        return { ok: false, error: String(e?.message ?? e) };
+      }
+    }
+
+    // 行内检查徽标：entry.check = {status, latest, note}
+    function checkBadgeOf(entry) {
+      const c = entry.check;
+      if (!c) return null;
+      const note = c.note ? { title: c.note } : {};
+      switch (c.status) {
+        case 'latest':
+          return h('span', { className: 'dpk-check is-latest', ...note }, t('chkLatest'));
+        case 'update':
+          return h('span', { className: 'dpk-check is-update', ...note },
+            t('chkUpdate', { ver: c.latest ?? '?' }));
+        case 'incompatible':
+          return h('span', { className: 'dpk-check is-warn', ...note },
+            c.note ? t('chkIncompatible') : t('chkNeedDsh', { range: c.note }));
+        case 'error':
+          return h('span', { className: 'dpk-check is-err', ...note }, t('chkError'));
+        case 'no-release':
+          return h('span', { className: 'dpk-check', ...note }, t('chkNoRelease'));
+        default:
+          return h('span', { className: 'dpk-check', ...note }, t('chkUnknownVer'));
+      }
+    }
+
     // ---------- 渲染辅助 ----------
 
     // 分组键：官方 > GitHub（github:/http 链接）> 本地（file:/link:/workspace:）> npm > 其他
@@ -164,6 +266,7 @@ window.__ModuleLoader__.load({
         entry.version ? h('span', { className: 'dpk-ver' }, `v${entry.version}`) : null,
         badgeText ? h('span', { className: `dpk-badge${gk === 'github' ? ' is-gh' : ''}` }, badgeText) : null,
         entry.description ? h('span', { className: 'dpk-desc', title: entry.description }, entry.description) : h('span', { className: 'dpk-desc' }),
+        checkBadgeOf(entry),
         h('span', { className: 'dpk-state' }, entry.started ? t('stateOn') : t('stateOff')),
       );
     }
@@ -174,6 +277,11 @@ window.__ModuleLoader__.load({
       const [snap, setSnap] = React.useState(null);
       const [err, setErr] = React.useState(null);
       const [loading, setLoading] = React.useState(true);
+      const [checking, setChecking] = React.useState(false);
+      const [checkInfo, setCheckInfo] = React.useState(null); // {update, latest, error}
+      const [saving, setSaving] = React.useState(false);
+      const [saveFlash, setSaveFlash] = React.useState(null); // 'ok' | {err}
+      const proxyRef = React.useRef(null);
       // 语言切换 = <html lang> 属性变化 → 强制重渲染（文案实时跟随）
       const [langTick, setLangTick] = React.useState(0);
       React.useEffect(() => {
@@ -198,6 +306,37 @@ window.__ModuleLoader__.load({
 
       React.useEffect(() => { void load(); }, [load, langTick]);
 
+      // 一键检查更新：跑完拉一次最新快照（服务端已把检查结果并入 snapshot）
+      const doCheck = React.useCallback(async () => {
+        setChecking(true);
+        setCheckInfo(null);
+        try {
+          const r = await callCheckUpdates();
+          if (r && r.ok) {
+            setCheckInfo({ update: r.counts?.update ?? 0, latest: r.counts?.latest ?? 0, error: r.counts?.error ?? 0 });
+          } else {
+            setErr(r?.error ?? t('chkError'));
+          }
+          await load();
+        } finally {
+          setChecking(false);
+        }
+      }, [load]);
+
+      // 保存 GitHub API 代理设置
+      const doSave = React.useCallback(async () => {
+        setSaving(true);
+        setSaveFlash(null);
+        const r = await callSaveSettings({ proxyUrl: proxyRef.current?.value ?? '' });
+        if (r?.ok) {
+          setSaveFlash('ok');
+          setSnap((s) => (s ? { ...s, settings: { proxyUrl: r.proxyUrl ?? '' } } : s));
+        } else {
+          setSaveFlash({ err: r?.error ?? t('saveFailed') });
+        }
+        setSaving(false);
+      }, []);
+
       const plugins = Array.isArray(snap?.plugins) ? snap.plugins : [];
       const groups = React.useMemo(() => {
         const map = new Map();
@@ -215,6 +354,38 @@ window.__ModuleLoader__.load({
         return c;
       }, [plugins]);
 
+      const lastCheckText = snap?.lastCheckAt
+        ? t('lastCheck', { time: new Date(snap.lastCheckAt).toLocaleTimeString() })
+        : t('neverChecked');
+
+      const settingsEl = h('details', { className: 'dpk-settings' },
+        h('summary', null, t('settingsTitle')),
+        h('div', { className: 'dpk-setbody' },
+          h('div', { className: 'dpk-setrow' },
+            h('span', { className: 'dpk-setlabel' }, t('proxyLabel')),
+            h('input', {
+              ref: proxyRef,
+              className: 'dpk-input',
+              type: 'text',
+              spellCheck: false,
+              placeholder: t('proxyPlaceholder'),
+              defaultValue: snap?.settings?.proxyUrl ?? '',
+              key: snap?.settings?.proxyUrl ?? 'init', // 快照到达后回填默认值
+              onChange: () => setSaveFlash(null),
+            }),
+            h('button', {
+              className: 'dpk-btn',
+              type: 'button',
+              disabled: saving || loading,
+              onClick: () => { void doSave(); },
+            }, saving ? t('saving') : t('save')),
+            saveFlash === 'ok' ? h('span', { className: 'dpk-savedok' }, t('saved')) : null,
+            saveFlash && saveFlash.err ? h('span', { className: 'dpk-savederr' }, saveFlash.err) : null,
+          ),
+          h('div', { className: 'dpk-hint' }, t('proxyHint')),
+        ),
+      );
+
       return h('div', { className: 'dpk-root' },
         h('div', { className: 'dpk-toolbar' },
           plugins.length > 0
@@ -227,13 +398,21 @@ window.__ModuleLoader__.load({
             }))
             : (!loading && !err ? h('span', { className: 'dpk-summary' }, t('noPlugins')) : null),
           h('div', { className: 'dpk-spacer' }),
+          h('span', { className: 'dpk-lastcheck' }, lastCheckText),
+          h('button', {
+            className: 'dpk-btn is-primary',
+            type: 'button',
+            disabled: checking || loading || counts.npm + counts.github === 0,
+            onClick: () => { void doCheck(); },
+          }, checking ? t('checking') : t('checkBtn')),
           h('button', {
             className: 'dpk-btn',
             type: 'button',
-            disabled: loading,
+            disabled: loading || checking,
             onClick: () => { void load(); },
           }, loading ? t('refreshing') : t('refresh')),
         ),
+        checkInfo ? h('div', { className: 'dpk-hint' }, t('checkDone', checkInfo)) : null,
         err ? h('div', { className: 'dpk-err' }, err) : null,
         loading && !snap
           ? h('div', { className: 'dpk-empty' }, t('loading'))
@@ -246,6 +425,7 @@ window.__ModuleLoader__.load({
               list.map((entry) => h(Row, { key: entry.name, entry })),
             ),
           )),
+        settingsEl,
       );
     }
 
