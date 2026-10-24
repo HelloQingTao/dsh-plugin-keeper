@@ -271,25 +271,41 @@ window.__ModuleLoader__.load({
     function mountSection(rctx) {
       injectCss();
       let disposeEntry = null;
+      // settings.section 槽类型是否已声明：由 slots.inject 包裹器首次触发时置位。
+      // 语言观察器只在声明后出手，避免启动期（槽类型未就绪）的注册失败噪声。
+      let sectionDeclared = false;
       const register = () => {
         try {
           disposeEntry?.();
         } catch { /* 已被上层销毁时忽略 */ }
-        disposeEntry = rctx.slots.register(
-          {
-            name: 'settings.section',
-            id: 'dsh-plugin-ops',
-            order: 60,
-            label: () => t('sectionTitle'),
-            inject: () => ({}),
-          },
-          PluginOpsSection,
-        );
+        try {
+          disposeEntry = rctx.slots.register(
+            {
+              name: 'settings.section',
+              id: 'dsh-plugin-ops',
+              order: 60,
+              label: () => t('sectionTitle'),
+              inject: () => ({}),
+            },
+            PluginOpsSection,
+          );
+        } catch (e) {
+          // 理论上只在类型未声明时发生；留调试级日志兜底
+          console.debug('[dsh-plugin-ops] settings.section register deferred:', e?.message ?? e);
+        }
       };
-      register();
-      // slot 类型可用时（重）挂载 + 语言切换时重挂（页签文案跟随）
-      const disposeInjection = rctx.slots.inject('settings.section', register);
-      const langObs = new MutationObserver(() => register());
+      const registerIfDeclared = () => {
+        if (!sectionDeclared) return;
+        register();
+      };
+      // 槽类型由 @deepseek-ai/dsh-client-ui-settings 在设置页挂载时声明，
+      // 插件捆 apply 时尚未就绪（首验实测：eager 调用会让 entry 激活失败）。
+      // 一律走 slots.inject 包裹器，声明完成后才真正挂载。
+      const disposeInjection = rctx.slots.inject('settings.section', () => {
+        sectionDeclared = true;
+        register();
+      });
+      const langObs = new MutationObserver(registerIfDeclared);
       langObs.observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
       return () => {
         langObs.disconnect();
