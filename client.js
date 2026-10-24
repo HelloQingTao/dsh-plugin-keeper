@@ -72,6 +72,13 @@ window.__ModuleLoader__.load({
         saving: '保存中…',
         saved: '已保存',
         saveFailed: '保存失败',
+        installBtn: '安装',
+        installing: '安装中…',
+        installDone: '已安装 {name}，刷新列表可见',
+        installRestart: '已安装 {name}，重启后生效',
+        installFailed: '安装失败',
+        installBad: '无法识别的仓库地址',
+        installPlaceholder: 'owner/repo 或 GitHub 链接',
         // ---- M2 批量 ----
         batchUpdate: '更新所选',
         batchEnable: '启用所选',
@@ -139,6 +146,13 @@ window.__ModuleLoader__.load({
         saving: 'Saving…',
         saved: 'Saved',
         saveFailed: 'Save failed',
+        installBtn: 'Install',
+        installing: 'Installing…',
+        installDone: 'Installed {name}, refresh the list to see it',
+        installRestart: 'Installed {name}, takes effect after restart',
+        installFailed: 'Install failed',
+        installBad: 'Unrecognized repository address',
+        installPlaceholder: 'owner/repo or GitHub URL',
         // ---- M2 batch ----
         batchUpdate: 'Update selected',
         batchEnable: 'Enable selected',
@@ -432,6 +446,8 @@ window.__ModuleLoader__.load({
       const [saving, setSaving] = React.useState(false);
       const [saveFlash, setSaveFlash] = React.useState(null); // 'ok' | {err}
       const proxyRef = React.useRef(null);
+      const [installing, setInstalling] = React.useState(false);
+      const installRef = React.useRef(null);
       // M2 批量状态
       const [selected, setSelected] = React.useState(() => new Set());
       const [armedOp, setArmedOp] = React.useState(null); // 二次确认中的操作
@@ -505,6 +521,46 @@ window.__ModuleLoader__.load({
         }
         setSaving(false);
       }, []);
+
+      // ---------- M3 GitHub 直装 ----------
+
+      // 输入归一化：owner/repo | github:owner/repo#ref | https://github.com/owner/repo(.git)(#ref|/tree/ref)
+      const normGithubInput = (raw) => {
+        let s = String(raw ?? '').trim();
+        if (!s) return null;
+        s = s.replace(/^git\+/i, '').replace(/^github:/i, '').replace(/^https?:\/\/github\.com\//i, '').replace(/\.git$/i, '');
+        s = s.replace(/\/tree\/([^/]+)$/i, '#$1');
+        const m = s.match(/^([\w.-]+)\/([\w.-]+)(?:#([^\s#]+))?$/);
+        return m ? { owner: m[1], repo: m[2], ref: m[3] || null } : null;
+      };
+
+      const doInstall = React.useCallback(async () => {
+        const parsed = normGithubInput(installRef.current?.value);
+        if (!parsed) {
+          setBanner({ ok: false, text: t('installBad') });
+          return;
+        }
+        const spec = `github:${parsed.owner}/${parsed.repo}${parsed.ref ? `#${parsed.ref}` : ''}`;
+        setInstalling(true);
+        setBanner(null);
+        try {
+          const r = unwrapEnvelope(await pmFace?.installBundle?.(spec, { enabled: true }));
+          const errText = r?.error?.diagnostic || r?.error?.code || (r?.status === 'refused' ? r?.reason : null);
+          if (r?.application === 'restart-required') {
+            setBanner({ ok: true, text: t('installRestart', { name: r.target ?? spec }) });
+          } else if (r?.application === 'applied' || r?.application === 'overridden') {
+            setBanner({ ok: true, text: t('installDone', { name: r.target ?? spec }) });
+          } else {
+            setBanner({ ok: false, text: `${t('installFailed')}${errText ? `：${errText}` : ''}` });
+          }
+          if (installRef.current) installRef.current.value = '';
+          await load();
+        } catch (e) {
+          setBanner({ ok: false, text: `${t('installFailed')}：${e?.message ?? e}` });
+        } finally {
+          setInstalling(false);
+        }
+      }, [load]);
 
       // ---------- M2 选择与批量 ----------
 
@@ -797,6 +853,24 @@ window.__ModuleLoader__.load({
             saveFlash && saveFlash.err ? h('span', { className: 'dpk-savederr' }, saveFlash.err) : null,
           ),
           h('div', { className: 'dpk-hint' }, t('proxyHint')),
+          h('div', { className: 'dpk-setrow' },
+            h('span', { className: 'dpk-setlabel' }, 'GitHub'),
+            h('input', {
+              ref: installRef,
+              className: 'dpk-input',
+              type: 'text',
+              spellCheck: false,
+              placeholder: t('installPlaceholder'),
+              disabled: installing,
+              onKeyDown: (e) => { if (e.key === 'Enter' && !installing) { void doInstall(); } },
+            }),
+            h('button', {
+              className: 'dpk-btn',
+              type: 'button',
+              disabled: installing || loading,
+              onClick: () => { void doInstall(); },
+            }, installing ? t('installing') : t('installBtn')),
+          ),
         ),
       );
 
@@ -982,6 +1056,40 @@ window.__ModuleLoader__.load({
       };
     }
 
+    // M3：官方「插件管理」页的 plugins.tab 页签（槽类型由官方页挂载时声明，同样走包裹器）。
+    // label 走 resolveSlotLabel 且官方 tabLedgerSource 订阅 locale revision，语言切换自动刷新，无需观察器。
+    function mountPluginsTab(rctx) {
+      injectCss();
+      let disposeEntry = null;
+      const register = () => {
+        try {
+          disposeEntry?.();
+        } catch { /* 已被上层销毁时忽略 */ }
+        try {
+          disposeEntry = rctx.slots.register(
+            {
+              name: 'plugins.tab',
+              id: 'dsh-plugin-keeper',
+              label: () => t('sectionTitle'),
+              inject: () => ({}),
+            },
+            PluginKeeperSection,
+          );
+        } catch (e) {
+          console.debug('[dsh-plugin-keeper] plugins.tab register deferred:', e?.message ?? e);
+        }
+      };
+      const disposeInjection = rctx.slots.inject('plugins.tab', register);
+      return () => {
+        try {
+          disposeInjection?.();
+        } catch { /* 忽略 */ }
+        try {
+          disposeEntry?.();
+        } catch { /* 忽略 */ }
+      };
+    }
+
     return {
       inject: ['slots', 'remote'],
       async apply(ctx) {
@@ -995,6 +1103,7 @@ window.__ModuleLoader__.load({
             rpcFace = rctx.remote?.['dsh-plugin-keeper'] ?? null;
             pmFace = rctx.remote?.pluginManager ?? null;
             rctx.effect(() => mountSection(rctx), 'dsh-plugin-keeper settings section');
+            rctx.effect(() => mountPluginsTab(rctx), 'dsh-plugin-keeper plugins tab');
           },
         );
       },
