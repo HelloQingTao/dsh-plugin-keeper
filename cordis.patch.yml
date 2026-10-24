@@ -1,0 +1,3 @@
+- insert:
+    - id: dsh-plugin-ops
+      name: 'dsh-plugin-ops'
