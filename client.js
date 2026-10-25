@@ -105,6 +105,8 @@ window.__ModuleLoader__.load({
         restoreFail: '恢复失败',
         lastBatchLine: '上次批量快照：{op} · {time}',
         updateNone: '所选中没有可更新的插件（先检查更新）',
+        rowUpdate: '更新',
+        onlyUpdatable: '只看可更新',
       },
       en: {
         sectionTitle: 'Plugin Ops',
@@ -179,6 +181,8 @@ window.__ModuleLoader__.load({
         restoreFail: 'Restore failed',
         lastBatchLine: 'Last batch snapshot: {op} · {time}',
         updateNone: 'No updatable plugin in selection (check updates first)',
+        rowUpdate: 'Update',
+        onlyUpdatable: 'Updatable only',
       },
     };
 
@@ -209,6 +213,7 @@ window.__ModuleLoader__.load({
 .dpk-btn.is-danger:hover{background:var(--dsw-alias-interactive-bg-hover);}
 .dpk-btn.is-armed{background:var(--dsw-alias-state-error-primary);border-color:var(--dsw-alias-state-error-primary);color:var(--dsw-alias-bg-base);}
 .dpk-btn.is-armed:hover{background:var(--dsw-alias-state-error-primary);}
+.dpk-btn.is-mini{padding:1px 10px;font-size:12px;line-height:18px;}
 .dpk-lastcheck{font-size:12px;color:var(--dsw-alias-label-tertiary);white-space:nowrap;}
 .dpk-check{font-size:11px;line-height:18px;padding:0 8px;border-radius:999px;background:var(--dsw-alias-bg-layer-2);white-space:nowrap;flex:none;}
 .dpk-check.is-latest{color:var(--dsw-alias-label-tertiary);}
@@ -231,11 +236,16 @@ window.__ModuleLoader__.load({
 .dpk-banner{font-size:12px;color:var(--dsw-alias-state-warn-primary);line-height:18px;}
 .dpk-banner.is-ok{color:var(--dsw-alias-state-success-primary);}
 .dpk-group{display:flex;flex-direction:column;gap:6px;min-width:0;}
-.dpk-ghead{display:flex;align-items:center;gap:8px;}
+.dpk-ghead{display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;}
+.dpk-garrow{font-size:11px;color:var(--dsw-alias-label-tertiary);width:12px;flex:none;text-align:center;}
 .dpk-gtitle{font-size:13px;font-weight:600;color:var(--dsw-alias-label-primary);}
 .dpk-gcount{font-size:12px;color:var(--dsw-alias-label-tertiary);}
 .dpk-rows{border:1px solid var(--dsw-alias-border-l1);border-radius:var(--dsw-radius-lg,10px);overflow:hidden;}
-.dpk-row{display:flex;align-items:center;gap:12px;padding:9px 14px;min-width:0;}
+.dpk-row{display:block;padding:7px 14px;min-width:0;}
+.dpk-rowmain{display:flex;align-items:center;gap:12px;min-width:0;}
+.dpk-rowdesc{color:var(--dsw-alias-label-tertiary);font-size:12px;line-height:18px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-left:26px;margin-top:1px;}
+.dpk-onlyup{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--dsw-alias-label-secondary);cursor:pointer;white-space:nowrap;}
+.dpk-onlyup input{accent-color:var(--dsw-alias-brand-primary);margin:0;width:13px;height:13px;}
 .dpk-row + .dpk-row{border-top:1px solid var(--dsw-alias-border-l1);}
 .dpk-row:hover{background:var(--dsw-alias-interactive-bg-hover);}
 .dpk-row.is-official{opacity:.72;}
@@ -248,7 +258,6 @@ window.__ModuleLoader__.load({
 .dpk-ver{font-family:${MONO};font-size:12px;color:var(--dsw-alias-label-secondary);white-space:nowrap;}
 .dpk-badge{font-size:11px;line-height:18px;padding:0 8px;border-radius:999px;background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-secondary);white-space:nowrap;flex:none;}
 .dpk-badge.is-gh{color:var(--dsw-alias-brand-primary);}
-.dpk-desc{color:var(--dsw-alias-label-tertiary);font-size:12px;line-height:18px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:20px;}
 .dpk-state{font-size:12px;color:var(--dsw-alias-label-tertiary);white-space:nowrap;flex:none;}
 .dpk-op{font-size:11px;line-height:18px;padding:0 8px;border-radius:999px;white-space:nowrap;flex:none;max-width:260px;overflow:hidden;text-overflow:ellipsis;}
 .dpk-op.is-ok{color:var(--dsw-alias-state-success-primary);background:var(--dsw-alias-bg-layer-2);}
@@ -341,9 +350,17 @@ window.__ModuleLoader__.load({
       }
     }
 
+    // 检查结果归一化：更新后 check 可能滞后（latest===当前版本），此时按最新渲染
+    function normCheck(entry) {
+      const c = entry?.check;
+      if (!c) return null;
+      if (c.status === 'update' && c.latest && c.latest === entry.version) return { ...c, status: 'latest' };
+      return c;
+    }
+
     // 行内检查徽标：entry.check = {status, latest, note}
     function checkBadgeOf(entry) {
-      const c = entry.check;
+      const c = normCheck(entry);
       if (!c) return null;
       const note = c.note ? { title: c.note } : {};
       switch (c.status) {
@@ -384,9 +401,9 @@ window.__ModuleLoader__.load({
       unknown: 'groupUnknown',
     };
 
-    // 批量更新目标 spec：npm → name@latest；github → github:repo#tag
+    // 批量更新目标 spec：npm → name@latest；github → github:repo#tag（已是最新则无目标）
     function updateSpecOf(entry) {
-      const c = entry?.check;
+      const c = normCheck(entry);
       if (!c || c.status !== 'update') return null;
       const kind = entry.source?.kind;
       if (kind === 'npm') return `${entry.name}@${c.latest}`;
@@ -399,7 +416,7 @@ window.__ModuleLoader__.load({
 
     const OP_LABEL_KEY = { update: 'opUpdate', enable: 'opEnable', disable: 'opDisable', uninstall: 'opUninstall' };
 
-    function Row({ entry, checked, disabled, onToggle, opStatus }) {
+    function Row({ entry, checked, disabled, onToggle, opStatus, onUpdate, busy }) {
       const gk = groupKeyOf(entry);
       const badgeText = gk === 'official' ? t('badgeOfficial')
         : gk === 'github' ? (entry.source?.repo || t('badgeGithub'))
@@ -415,23 +432,34 @@ window.__ModuleLoader__.load({
         }, t(`op${opStatus.status === 'ok' ? 'Applied' : opStatus.status === 'restart' ? 'Restart' : opStatus.status === 'failed' ? 'Failed' : 'Skipped'}`)
           + (opStatus.note && opStatus.status !== 'ok' ? ` · ${opStatus.note}` : ''))
         : null;
+      const spec = updateSpecOf(entry);
       return h('div', rowProps,
-        h('input', {
-          type: 'checkbox',
-          className: 'dpk-cb',
-          checked,
-          disabled,
-          onChange: () => onToggle(entry.name),
-          onClick: (e) => e.stopPropagation(),
-        }),
-        h('span', { className: `dpk-dot${entry.started && entry.enabled !== false ? ' on' : ''}` }),
-        h('span', { className: 'dpk-name' }, entry.name),
-        entry.version ? h('span', { className: 'dpk-ver' }, `v${entry.version}`) : null,
-        badgeText ? h('span', { className: `dpk-badge${gk === 'github' ? ' is-gh' : ''}` }, badgeText) : null,
-        entry.description ? h('span', { className: 'dpk-desc', title: entry.description }, entry.description) : h('span', { className: 'dpk-desc' }),
-        checkBadgeOf(entry),
-        chip,
-        h('span', { className: 'dpk-state' }, entry.enabled === false ? t('stateDisabled') : entry.started ? t('stateOn') : t('stateOff')),
+        h('div', { className: 'dpk-rowmain' },
+          h('input', {
+            type: 'checkbox',
+            className: 'dpk-cb',
+            checked,
+            disabled,
+            onChange: () => onToggle(entry.name),
+            onClick: (e) => e.stopPropagation(),
+          }),
+          h('span', { className: `dpk-dot${entry.started && entry.enabled !== false ? ' on' : ''}` }),
+          h('span', { className: 'dpk-name' }, entry.name),
+          entry.version ? h('span', { className: 'dpk-ver' }, `v${entry.version}`) : null,
+          badgeText ? h('span', { className: `dpk-badge${gk === 'github' ? ' is-gh' : ''}` }, badgeText) : null,
+          checkBadgeOf(entry),
+          spec && onUpdate
+            ? h('button', {
+              className: 'dpk-btn is-mini',
+              type: 'button',
+              disabled: Boolean(busy),
+              onClick: () => onUpdate(entry),
+            }, t('rowUpdate'))
+            : null,
+          chip,
+          h('span', { className: 'dpk-state' }, entry.enabled === false ? t('stateDisabled') : entry.started ? t('stateOn') : t('stateOff')),
+        ),
+        entry.description ? h('div', { className: 'dpk-rowdesc', title: entry.description }, entry.description) : null,
       );
     }
 
@@ -464,6 +492,16 @@ window.__ModuleLoader__.load({
         return () => obs.disconnect();
       }, []);
       React.useEffect(() => () => { clearTimeout(armedTimer.current); }, []);
+      // 只看可更新（默认关）；分组折叠（会话内记忆）
+      const [onlyUpdatable, setOnlyUpdatable] = React.useState(false);
+      const [collapsedGroups, setCollapsedGroups] = React.useState(() => new Set());
+      const toggleGroupCollapse = React.useCallback((key) => {
+        setCollapsedGroups((prev) => {
+          const next = new Set(prev);
+          if (next.has(key)) next.delete(key); else next.add(key);
+          return next;
+        });
+      }, []);
 
       const load = React.useCallback(async () => {
         setLoading(true);
@@ -566,6 +604,11 @@ window.__ModuleLoader__.load({
 
       const plugins = Array.isArray(snap?.plugins) ? snap.plugins : [];
       const byName = React.useMemo(() => new Map(plugins.map((p) => [p.name, p])), [plugins]);
+      // 「只看可更新」过滤：只留有更新目标（检查结果为 update）的行
+      const visiblePlugins = React.useMemo(
+        () => (onlyUpdatable ? plugins.filter((p) => !p.official && updateSpecOf(p)) : plugins),
+        [plugins, onlyUpdatable],
+      );
 
       const toggleOne = React.useCallback((name) => {
         setSelected((prev) => {
@@ -626,8 +669,10 @@ window.__ModuleLoader__.load({
 
       // 批量执行：快照 → 官方 pluginManager 逐行调用 → 刷新盘点 → 台账。
       // 顺序执行（pnpm 侧本就串行）；含本插件的操作放最后（中途把自己停了，后面的行没人执行）。
-      const runBatch = React.useCallback(async (op) => {
-        const names = [...selected].filter((n) => {
+      // namesOverride：行内「更新」按钮只对单行执行，不动勾选集。
+      const runBatch = React.useCallback(async (op, namesOverride) => {
+        const base = Array.isArray(namesOverride) && namesOverride.length ? namesOverride : [...selected];
+        const names = base.filter((n) => {
           const p = byName.get(n);
           return p && !p.official;
         });
@@ -669,7 +714,11 @@ window.__ModuleLoader__.load({
 
         for (const { name, spec } of targets) {
           try {
-            if (op === 'update') push({ name, ...mapChange(await callPm('installBundle', spec)) });
+            if (op === 'update') {
+              // installBundle 对已装包会 refused already-installed：更新 = 先卸后装两步
+              try { await callPm('removeBundle', name); } catch { /* 移除失败交给安装步报错 */ }
+              push({ name, ...mapChange(await callPm('installBundle', spec, { enabled: true })) });
+            }
             else if (op === 'enable') push({ name, ...mapChange(await callPm('setBundleEnabled', name, true)) });
             else if (op === 'disable') push({ name, ...mapChange(await callPm('setBundleEnabled', name, false)) });
             else push({ name, ...mapChange(await callPm('removeBundle', name)) });
@@ -698,11 +747,17 @@ window.__ModuleLoader__.load({
         if (counts.restart > 0) {
           setBanner({ text: t('restartBanner', { n: counts.restart }), ok: false });
         }
-        setSelected(new Set());
+        if (!namesOverride) setSelected(new Set());
         await load();
         // 宿主 startedBundles 的热更新是异步落账的，延迟补一刷，行状态才不滞留
         setTimeout(() => { void load(); }, 1500);
       }, [selected, byName, load]);
+
+      // 行内更新（单个可更新插件，不经过勾选集）
+      const onRowUpdate = React.useCallback((entry) => {
+        if (batch?.running) return;
+        void runBatch('update', [entry.name]);
+      }, [batch?.running, runBatch]);
 
       // 恢复最近一次批量快照（把批量前的 package.json / cordis.patch.yml 复制回原位）
       const doRestore = React.useCallback(async (id) => {
@@ -716,13 +771,13 @@ window.__ModuleLoader__.load({
 
       const groups = React.useMemo(() => {
         const map = new Map();
-        for (const p of plugins) {
+        for (const p of visiblePlugins) {
           const k = groupKeyOf(p);
           if (!map.has(k)) map.set(k, []);
           map.get(k).push(p);
         }
         return GROUP_ORDER.filter((k) => map.has(k)).map((k) => [k, map.get(k)]);
-      }, [plugins]);
+      }, [visiblePlugins]);
 
       const counts = React.useMemo(() => {
         const c = { official: 0, npm: 0, github: 0, local: 0, unknown: 0 };
@@ -737,35 +792,32 @@ window.__ModuleLoader__.load({
       const batchRunning = Boolean(batch?.running);
       const busy = loading || checking || batchRunning;
 
-      // 批量工具条：有勾选时出现；破坏性操作二次确认（按钮 3 秒内再点一次）
-      const batchBar = selCount > 0 && !batchRunning
+      // 批量工具条：常驻显示（选中与否都在，避免列表跳动）；无选中时按钮禁用。
+      // 破坏性操作二次确认（按钮 3 秒内再点一次）。
+      const batchBar = !batchRunning
         ? h('div', { className: 'dpk-batchbar' },
-          updatableCount > 0
-            ? h('button', {
-              className: `dpk-btn${armedOp === 'update' ? ' is-armed' : ''}`,
-              type: 'button',
-              disabled: busy,
-              onClick: () => onBatchBtn('update'),
-            }, `${armedOp === 'update' ? `${t('batchUpdate')} · ${t('confirmTag')}` : t('batchUpdate')} (${updatableCount})`)
-            : null,
-          enableCount > 0
-            ? h('button', {
-              className: 'dpk-btn',
-              type: 'button',
-              disabled: busy,
-              onClick: () => onBatchBtn('enable'),
-            }, `${t('batchEnable')} (${enableCount})`)
-            : null,
+          h('button', {
+            className: `dpk-btn${armedOp === 'update' ? ' is-armed' : ''}`,
+            type: 'button',
+            disabled: busy || updatableCount === 0,
+            onClick: () => onBatchBtn('update'),
+          }, `${armedOp === 'update' ? `${t('batchUpdate')} · ${t('confirmTag')}` : t('batchUpdate')} (${updatableCount})`),
+          h('button', {
+            className: 'dpk-btn',
+            type: 'button',
+            disabled: busy || enableCount === 0,
+            onClick: () => onBatchBtn('enable'),
+          }, `${t('batchEnable')} (${enableCount})`),
           h('button', {
             className: `dpk-btn${armedOp === 'disable' ? ' is-armed' : ''}`,
             type: 'button',
-            disabled: busy,
+            disabled: busy || selCount === 0,
             onClick: () => onBatchBtn('disable'),
           }, `${armedOp === 'disable' ? `${t('batchDisable')} · ${t('confirmTag')}` : t('batchDisable')} (${selCount})`),
           h('button', {
             className: `dpk-btn is-danger${armedOp === 'uninstall' ? ' is-armed' : ''}`,
             type: 'button',
-            disabled: busy,
+            disabled: busy || selCount === 0,
             onClick: () => onBatchBtn('uninstall'),
           }, `${armedOp === 'uninstall' ? `${t('batchUninstall')} · ${t('confirmTag')}` : t('batchUninstall')} (${selCount})`),
         )
@@ -885,6 +937,15 @@ window.__ModuleLoader__.load({
               local: counts.local,
             }))
             : (!loading && !err ? h('span', { className: 'dpk-summary' }, t('noPlugins')) : null),
+          h('label', { className: 'dpk-onlyup' },
+            h('input', {
+              type: 'checkbox',
+              checked: onlyUpdatable,
+              disabled: batchRunning,
+              onChange: () => setOnlyUpdatable((v) => !v),
+            }),
+            t('onlyUpdatable'),
+          ),
           h('div', { className: 'dpk-spacer' }),
           h('span', { className: 'dpk-lastcheck' }, lastCheckText),
           h('button', {
@@ -908,34 +969,42 @@ window.__ModuleLoader__.load({
         loading && !snap
           ? h('div', { className: 'dpk-empty' }, t('loading'))
           : groups.map(([key, list]) => {
-            const eligible = list.filter((p) => !p.official);
+            // 勾选限定：只有可更新（有更新目标）的非官方插件可被选中
+            const eligible = list.filter((p) => !p.official && updateSpecOf(p));
             const allIn = eligible.length > 0 && eligible.every((p) => selected.has(p.name));
+            const collapsed = collapsedGroups.has(key);
             return h('div', { className: 'dpk-group', key },
-              h('div', { className: 'dpk-ghead' },
+              h('div', { className: 'dpk-ghead', onClick: () => toggleGroupCollapse(key) },
+                h('span', { className: 'dpk-garrow' }, collapsed ? '▸' : '▾'),
                 eligible.length > 0
                   ? h('input', {
                     type: 'checkbox',
                     className: 'dpk-cb',
                     checked: allIn,
                     disabled: batchRunning,
-                    onChange: () => toggleGroup(list),
+                    onChange: () => toggleGroup(eligible),
+                    onClick: (e) => e.stopPropagation(),
                   })
                   : null,
                 h('span', { className: 'dpk-gtitle' }, t(GROUP_TITLE_KEY[key])),
                 h('span', { className: 'dpk-gcount' }, String(list.length)),
               ),
-              h('div', { className: 'dpk-rows' },
-                list.map((entry) => h(Row, {
-                  key: entry.name,
-                  entry,
-                  checked: selected.has(entry.name),
-                  disabled: entry.official || batchRunning,
-                  onToggle: toggleOne,
-                  opStatus: batch && !batch.running
-                    ? batch.results?.find((r) => r.name === entry.name) ?? null
-                    : null,
-                })),
-              ),
+              !collapsed
+                ? h('div', { className: 'dpk-rows' },
+                  list.map((entry) => h(Row, {
+                    key: entry.name,
+                    entry,
+                    checked: selected.has(entry.name),
+                    disabled: entry.official || batchRunning || !updateSpecOf(entry),
+                    onToggle: toggleOne,
+                    onUpdate: onRowUpdate,
+                    busy: batchRunning,
+                    opStatus: batch && !batch.running
+                      ? batch.results?.find((r) => r.name === entry.name) ?? null
+                      : null,
+                  })),
+                )
+                : null,
             );
           }),
         ledger,
