@@ -84,7 +84,8 @@ window.__ModuleLoader__.load({
         batchEnable: '启用所选',
         batchDisable: '停用所选',
         batchUninstall: '卸载所选',
-        confirmTag: '确认',
+        dialogOk: '确认执行',
+        dialogCancel: '取消',
         batchRunning: '{op}中… {done}/{total}',
         opUpdate: '更新',
         opEnable: '启用',
@@ -160,7 +161,8 @@ window.__ModuleLoader__.load({
         batchEnable: 'Enable selected',
         batchDisable: 'Disable selected',
         batchUninstall: 'Uninstall selected',
-        confirmTag: 'Confirm',
+        dialogOk: 'Confirm',
+        dialogCancel: 'Cancel',
         batchRunning: '{op}… {done}/{total}',
         opUpdate: 'update',
         opEnable: 'enable',
@@ -211,8 +213,11 @@ window.__ModuleLoader__.load({
 .dpk-btn.is-primary:hover{background:var(--dsw-alias-interactive-bg-hover);}
 .dpk-btn.is-danger{border-color:var(--dsw-alias-state-error-primary);color:var(--dsw-alias-state-error-primary);}
 .dpk-btn.is-danger:hover{background:var(--dsw-alias-interactive-bg-hover);}
-.dpk-btn.is-armed{background:var(--dsw-alias-state-error-primary);border-color:var(--dsw-alias-state-error-primary);color:var(--dsw-alias-bg-base);}
-.dpk-btn.is-armed:hover{background:var(--dsw-alias-state-error-primary);}
+.dpk-mask{position:fixed;inset:0;background:var(--dsw-alias-bg-overlay);display:flex;align-items:center;justify-content:center;z-index:9999;}
+.dpk-modal{background:var(--dsw-alias-bg-layer-1);border:1px solid var(--dsw-alias-border-l2);border-radius:var(--dsw-radius-lg,12px);padding:16px 18px;width:380px;max-width:calc(100vw - 48px);display:flex;flex-direction:column;gap:12px;box-shadow:0 8px 32px rgba(0,0,0,.25);}
+.dpk-mtitle{font-size:14px;font-weight:600;color:var(--dsw-alias-label-primary);}
+.dpk-mlist{max-height:200px;overflow:auto;font-size:12px;color:var(--dsw-alias-label-secondary);line-height:20px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;padding:8px 10px;background:var(--dsw-alias-bg-layer-2);border-radius:var(--dsw-radius-md,8px);}
+.dpk-mfoot{display:flex;justify-content:flex-end;gap:8px;}
 .dpk-btn.is-mini{padding:1px 10px;font-size:12px;line-height:18px;}
 .dpk-lastcheck{font-size:12px;color:var(--dsw-alias-label-tertiary);white-space:nowrap;}
 .dpk-check{font-size:11px;line-height:18px;padding:0 8px;border-radius:999px;background:var(--dsw-alias-bg-layer-2);white-space:nowrap;flex:none;}
@@ -478,11 +483,10 @@ window.__ModuleLoader__.load({
       const installRef = React.useRef(null);
       // M2 批量状态
       const [selected, setSelected] = React.useState(() => new Set());
-      const [armedOp, setArmedOp] = React.useState(null); // 二次确认中的操作
+      const [confirmOp, setConfirmOp] = React.useState(null); // 待二次确认的批量操作
       const [batch, setBatch] = React.useState(null); // {op, running, done, total, results:[{name,status,note}], snapshotId}
       const [banner, setBanner] = React.useState(null); // {text, ok}
       const [restoring, setRestoring] = React.useState(false);
-      const armedTimer = React.useRef(null);
       const batchResultsRef = React.useRef([]); // 循环内累积，避免闭包陈旧
       // 语言切换 = <html lang> 属性变化 → 强制重渲染（文案实时跟随）
       const [langTick, setLangTick] = React.useState(0);
@@ -491,7 +495,6 @@ window.__ModuleLoader__.load({
         obs.observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
         return () => obs.disconnect();
       }, []);
-      React.useEffect(() => () => { clearTimeout(armedTimer.current); }, []);
       // 只看可更新（默认关）；分组折叠（会话内记忆）
       const [onlyUpdatable, setOnlyUpdatable] = React.useState(false);
       const [collapsedGroups, setCollapsedGroups] = React.useState(() => new Set());
@@ -650,21 +653,9 @@ window.__ModuleLoader__.load({
         return n;
       }, [selected, byName]);
 
-      const armTimerClear = () => {
-        clearTimeout(armedTimer.current);
-        armedTimer.current = null;
-      };
       const onBatchBtn = (op) => {
-        // 更新/启用非破坏性：直接执行；停用/卸载需二次确认
-        if (op !== 'update' && op !== 'enable' && armedOp !== op) {
-          setArmedOp(op);
-          armTimerClear();
-          armedTimer.current = setTimeout(() => setArmedOp(null), 3000);
-          return;
-        }
-        armTimerClear();
-        setArmedOp(null);
-        void runBatch(op);
+        // 四个批量按钮统一走二次确认弹框
+        setConfirmOp(op);
       };
 
       // 批量执行：快照 → 官方 pluginManager 逐行调用 → 刷新盘点 → 台账。
@@ -793,15 +784,15 @@ window.__ModuleLoader__.load({
       const busy = loading || checking || batchRunning;
 
       // 批量工具条：常驻显示（选中与否都在，避免列表跳动）；无选中时按钮禁用。
-      // 破坏性操作二次确认（按钮 3 秒内再点一次）。
+      // 四个按钮点击后弹二次确认框（列出将处理的插件），确认才执行。
       const batchBar = !batchRunning
         ? h('div', { className: 'dpk-batchbar' },
           h('button', {
-            className: `dpk-btn${armedOp === 'update' ? ' is-armed' : ''}`,
+            className: 'dpk-btn',
             type: 'button',
             disabled: busy || updatableCount === 0,
             onClick: () => onBatchBtn('update'),
-          }, `${armedOp === 'update' ? `${t('batchUpdate')} · ${t('confirmTag')}` : t('batchUpdate')} (${updatableCount})`),
+          }, `${t('batchUpdate')} (${updatableCount})`),
           h('button', {
             className: 'dpk-btn',
             type: 'button',
@@ -809,17 +800,17 @@ window.__ModuleLoader__.load({
             onClick: () => onBatchBtn('enable'),
           }, `${t('batchEnable')} (${enableCount})`),
           h('button', {
-            className: `dpk-btn${armedOp === 'disable' ? ' is-armed' : ''}`,
+            className: 'dpk-btn',
             type: 'button',
             disabled: busy || selCount === 0,
             onClick: () => onBatchBtn('disable'),
-          }, `${armedOp === 'disable' ? `${t('batchDisable')} · ${t('confirmTag')}` : t('batchDisable')} (${selCount})`),
+          }, `${t('batchDisable')} (${selCount})`),
           h('button', {
-            className: `dpk-btn is-danger${armedOp === 'uninstall' ? ' is-armed' : ''}`,
+            className: 'dpk-btn is-danger',
             type: 'button',
             disabled: busy || selCount === 0,
             onClick: () => onBatchBtn('uninstall'),
-          }, `${armedOp === 'uninstall' ? `${t('batchUninstall')} · ${t('confirmTag')}` : t('batchUninstall')} (${selCount})`),
+          }, `${t('batchUninstall')} (${selCount})`),
         )
         : null;
 
@@ -926,7 +917,36 @@ window.__ModuleLoader__.load({
         ),
       );
 
+      // 二次确认弹框：列出将要处理的插件名单，确认才真正执行
+      const confirmModal = (() => {
+        if (!confirmOp) return null;
+        const base = [...selected].filter((n) => {
+          const p = byName.get(n);
+          return p && !p.official;
+        });
+        const names = (confirmOp === 'update' ? base.filter((n) => updateSpecOf(byName.get(n))) : base)
+          .sort((a, b) => (a === SELF) - (b === SELF));
+        if (!names.length) return null;
+        return h('div', {
+          className: 'dpk-mask',
+          onClick: (e) => { if (e.target === e.currentTarget) setConfirmOp(null); },
+        },
+        h('div', { className: 'dpk-modal' },
+          h('div', { className: 'dpk-mtitle' }, `${t(OP_LABEL_KEY[confirmOp] ?? 'opUpdate')} (${names.length})`),
+          h('div', { className: 'dpk-mlist' }, names.map((n) => h('div', { key: n }, n))),
+          h('div', { className: 'dpk-mfoot' },
+            h('button', { className: 'dpk-btn', type: 'button', onClick: () => setConfirmOp(null) }, t('dialogCancel')),
+            h('button', {
+              className: `dpk-btn is-primary${confirmOp === 'uninstall' ? ' is-danger' : ''}`,
+              type: 'button',
+              onClick: () => { setConfirmOp(null); void runBatch(confirmOp); },
+            }, t('dialogOk')),
+          ),
+        ));
+      })();
+
       return h('div', { className: 'dpk-root' },
+        confirmModal,
         h('div', { className: 'dpk-toolbar' },
           plugins.length > 0
             ? h('span', { className: 'dpk-summary' }, t('summary', {
