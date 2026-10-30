@@ -1,5 +1,29 @@
 # Changelog
 
+## 未发布
+
+### English
+
+- Instant first paint: the inventory is cached in the browser, so opening the tab renders the last known list immediately and the fresh snapshot replaces it in the background — no more full-page "Loading…"
+- Load and check RPCs now carry timeouts (5s / 30s) with visible degradation instead of an endless spinner
+- Update checks are now per group: the npm group and the GitHub group run independently (within-group concurrency npm 8 / GitHub 3), so a slow or failing group no longer blocks the other
+- Each group header gained its own "check this group" button and that group's result counts
+- Host-side inventory collection runs concurrently instead of serially
+- A finished check no longer triggers an extra full refresh; results are merged in place
+- Language switches no longer refetch the inventory
+- Added timing marks on both halves (`[dsh-plugin-keeper] …`) to locate slow phases
+
+### 中文
+
+- 首屏秒开：盘点结果缓存到浏览器，打开页签立即渲染上次列表，新快照后台覆盖，不再整页「加载中…」
+- 加载与检查 RPC 加超时（5s / 30s）与可见降级，不再无限转圈
+- 检查更新改为按分组独立：npm 组与 GitHub 组互不阻塞（组内并发 npm 8 / GitHub 3）
+- 分组头部新增「检查本组」入口与本组结果计数
+- 宿主半盘点由串行改为并发
+- 检查完不再额外全量刷新，结果就地合并
+- 语言切换不再重拉盘点数据
+- 两端新增耗时打点（`[dsh-plugin-keeper] …`）便于定位慢在哪一段
+
 ## 0.2.0 (2026-10-24)
 
 ### English

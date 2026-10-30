@@ -4,8 +4,10 @@ Plugin ops console for DeepSeek Harness (DSH 0.2.x): source-grouped inventory, o
 
 ## Features (0.2.0)
 
-- **Source-grouped inventory**: every plugin in the current profile grouped as official / npm / GitHub / local; each row shows package name, version, source badge (GitHub shows `user/repo`), description and running state; official plugins are dimmed and read-only
+- **Source-grouped inventory**: every plugin in the current profile grouped as official / npm / GitHub / local; each row shows package name, version, source badge (official/local; GitHub source is conveyed by the group, repo shown on name hover), description and running state; official plugins are dimmed and read-only
+- **Instant first paint**: the inventory is cached in the browser, so opening the tab renders the last known list right away and the fresh snapshot replaces it in the background; loading and checking have timeouts with honest degradation instead of an endless spinner
 - **One-click update check**: npm plugins via the registry (with `engines.dsh` compatibility pre-check), GitHub plugins via releases (tag fallback); npm goes direct, GitHub API through a proxy (configurable in-page); results are badged updatable / latest / incompatible / failed
+- **Per-group checks**: the npm group and the GitHub group run independently and never block each other (within-group concurrency: npm 8, GitHub 3); each group header can trigger its own check and shows that group's counts
 - **Batch operations**: multi-select then batch update / enable / disable / uninstall; enable and disable apply hot with instant row feedback, updates and uninstalls honestly report "restart required"; every operation auto-snapshots the profile config first (last 10 kept), restorable in-page with one click
 - **Result ledger**: each batch run reports success / restart-required / failed / skipped counts with per-item reasons — no silent failures
 - **GitHub install**: type `owner/repo`, `github:owner/repo#tag` or a GitHub URL to install; failure reasons are echoed in full

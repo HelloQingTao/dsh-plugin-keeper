@@ -15,9 +15,9 @@
  * undici / semver 是本插件自己的 dependencies，装在插件目录 node_modules。
  */
 
-import { readFile, writeFile, copyFile, mkdir, readdir, rm } from 'node:fs/promises';
+import { readFile, writeFile, copyFile, mkdir, readdir, rm, stat, realpath } from 'node:fs/promises';
 import { readFileSync } from 'node:fs';
-import { join, dirname, basename } from 'node:path';
+import { join, dirname, basename, isAbsolute, normalize } from 'node:path';
 import { homedir } from 'node:os';
 import { request, ProxyAgent, Agent, interceptors } from 'undici';
 import { gt, satisfies, valid } from 'semver';
@@ -67,6 +67,41 @@ function parseSource(spec) {
   return { kind: 'npm', spec };
 }
 
+/**
+ * 本地来源（file:/link:）spec → 插件源码目录绝对路径。
+ * `file:/abs` 按绝对路径；其余（`file:./x`、`file:../x`、`file:x`、`link:…`）
+ * 相对 profile dir 解析。scheme 大小写与 parseSource 同口径（区分，npm spec 惯例小写）。
+ * workspace: 指向 monorepo 包、无法从 spec 定位，返回 null。
+ */
+function localSpecPath(spec, dir) {
+  const m = /^(file|link):(.+)$/.exec(String(spec ?? ''));
+  if (!m || !dir) return null;
+  const rest = m[2].trim();
+  if (isAbsolute(rest)) return normalize(rest);
+  return normalize(join(dir, rest.replace(/^\.\//, '')));
+}
+
+/**
+ * 本地插件的「插件所在路径」：spec 解析出的源码目录存在则用之；
+ * 否则（workspace: 或 spec 路径已挪走）回退到 node_modules 安装位 symlink
+ * 的真实目标；两者都拿不到返回 null（前端不显示图标）。
+ */
+async function localPluginPath(name, source, dir) {
+  const fromSpec = localSpecPath(source?.spec, dir);
+  if (fromSpec) {
+    try {
+      const s = await stat(fromSpec);
+      if (s.isDirectory()) return fromSpec;
+    } catch { /* spec 路径不存在，走回退 */ }
+  }
+  if (dir) {
+    try {
+      return await realpath(join(dir, 'node_modules', ...name.split('/')));
+    } catch { /* 未安装 */ }
+  }
+  return null;
+}
+
 async function readJsonSafe(path, errors) {
   try {
     return JSON.parse(await readFile(path, 'utf8'));
@@ -98,6 +133,15 @@ async function readState() {
 
 async function writeState(state) {
   await writeFile(statePathOf(), `${JSON.stringify(state, null, 2)}\n`, 'utf8');
+}
+
+// 状态文件读改写互斥：所有 lastCheck/lastBatch/proxyUrl 的"读→合并→写"走同一条
+// promise 链。否则并发写（批量上报 vs 检查更新 vs 改代理）会整文件覆盖互相抹写。
+let stateQueue = Promise.resolve();
+function withStateLock(fn) {
+  const run = stateQueue.then(fn, fn); // 前序失败不阻断后续写入
+  stateQueue = run.catch(() => {});
+  return run;
 }
 
 // ---------- 当前 dsh 版本（兼容预判用）----------
@@ -161,13 +205,34 @@ async function fetchJson(url, { proxyUrl, headers = {}, timeoutMs = 8000 } = {})
   return { json: await res.body.json() };
 }
 
-/** 并发池：固定 worker 数消费队列，异常已在 fn 内捕获。 */
-async function runPool(items, limit, fn) {
-  const queue = [...items];
-  const n = Math.min(limit, queue.length);
-  await Promise.all(Array.from({ length: n }, () => (async () => {
-    while (queue.length) await fn(queue.shift());
-  })()));
+/**
+ * 并发映射：固定 worker 数消费下标队列，结果按输入顺序返回。
+ * 异常在 fn 内捕获（与旧 runPool 同约定：调用方负责兜底）。
+ */
+async function mapLimit(items, limit, fn) {
+  const results = new Array(items.length);
+  let cursor = 0;
+  const workers = Array.from({ length: Math.min(limit, items.length) }, async () => {
+    for (;;) {
+      const index = cursor++;
+      if (index >= items.length) return;
+      results[index] = await fn(items[index], index);
+    }
+  });
+  await Promise.all(workers);
+  return results;
+}
+
+/** 检查结果计数：update / latest / error / other。 */
+function countResults(results) {
+  const counts = { update: 0, latest: 0, error: 0, other: 0 };
+  for (const r of Object.values(results ?? {})) {
+    if (r.status === 'update') counts.update += 1;
+    else if (r.status === 'latest') counts.latest += 1;
+    else if (r.status === 'error') counts.error += 1;
+    else counts.other += 1;
+  }
+  return counts;
 }
 
 // ---------- 检查更新 ----------
@@ -219,33 +284,62 @@ async function checkOne(plugin, { proxyUrl }, dshVersion) {
   return { status: 'unknown-version', note: `来源 ${kind} 不支持检查` };
 }
 
+/**
+ * 单个来源分组的检查：组内并发（npm 8 / github 3），异常归一为 error 结果。
+ * 返回 { results, checked }；checked = 本组实际发起检查的包数。
+ */
+async function checkGroupInternal(kind, plugins, state, dshVersion) {
+  const targets = plugins.filter((p) => !p.official && p.source?.kind === kind);
+  const limit = kind === 'npm' ? 8 : 3;
+  const results = {};
+  await mapLimit(targets, limit, async (p) => {
+    try {
+      results[p.name] = await checkOne(p, state, dshVersion);
+    } catch (e) {
+      // note 附带 e.code/e.name 前缀（如 TimeoutError/UND_ERR_CONNECT_TIMEOUT），
+      // 客户端据此识别连接类失败并提示代理问题
+      const msg = e?.message ?? String(e);
+      const tag = e?.code ?? e?.name;
+      results[p.name] = { status: 'error', note: tag ? `${tag} ${msg}` : msg };
+    }
+  });
+  return { results, checked: targets.length };
+}
+
 // ---------- 盘点（snapshot 与 checkUpdates 共用）----------
 
 async function collectInventory() {
   const errors = [];
   const dir = serviceBridge?.profile?.dir ?? null;
   const profileName = serviceBridge?.profile?.name ?? null;
-  const pkg = dir ? await readJsonSafe(join(dir, 'package.json'), errors) : null;
-  const deps = pkg?.dependencies ?? {};
   const started = new Set(Array.isArray(serviceBridge?.profile?.startedBundles)
     ? serviceBridge.profile.startedBundles : []);
+  if (!dir) return { errors, profileName, plugins: [], started };
 
-  const plugins = [];
-  for (const [name, spec] of Object.entries(deps)) {
-    if (name === 'dsh') continue; // 宿主本体不是插件
+  const pkg = await readJsonSafe(join(dir, 'package.json'), errors);
+  const deps = pkg?.dependencies ?? {};
+  const entries = Object.entries(deps).filter(([name]) => name !== 'dsh'); // 宿主本体不是插件
+
+  // 组内并发读包元数据：串行时每个包一次 readFile（+本地路径 stat/realpath），
+  // 慢盘上会线性放大；并发后整轮盘点与包数基本无关。
+  const plugins = (await mapLimit(entries, 8, async ([name, spec]) => {
     const meta = await readJsonSafe(join(dir, 'node_modules', ...name.split('/'), 'package.json'), errors);
-    if (!meta || !meta.dsh) continue; // 没有 dsh 元数据的依赖不是插件（react、cordis 之类）
-    plugins.push({
+    if (!meta || !meta.dsh) return null; // 没有 dsh 元数据的依赖不是插件（react、cordis 之类）
+    const source = parseSource(spec);
+    return {
       name,
       version: typeof meta.version === 'string' ? meta.version : null,
       description: typeof meta.description === 'string' ? meta.description : null,
       official: isOfficial(name),
       started: started.has(name),
-      source: parseSource(spec),
+      source,
+      // 本地插件附「插件所在路径」（打开图标 hover/复制用），其余来源恒为 null
+      localPath: source.kind === 'local' ? await localPluginPath(name, source, dir) : null,
       hasClient: Boolean(meta.dsh?.client),
       hasPatch: Boolean(meta.dsh?.bundle?.patch),
-    });
-  }
+    };
+  })).filter(Boolean);
+
   // 官方在前，同组内按名字排序，浏览器渲染顺序稳定
   plugins.sort((a, b) => (a.official === b.official
     ? a.name.localeCompare(b.name)
@@ -328,11 +422,16 @@ class PluginKeeperService extends TypertRemoteService {
    * package.json、node_modules/<name>/package.json 与自己的状态文件。
    */
   async snapshot() {
+    const t0 = Date.now();
     const { errors, profileName, plugins, started } = await collectInventory();
+    const t1 = Date.now();
     const state = await readState();
+    const t2 = Date.now();
     for (const p of plugins) {
       p.check = state.lastCheck?.results?.[p.name] ?? null;
     }
+    // 打点：区分「读盘慢」与「状态文件慢」，用于定位开页签的等待来源
+    console.debug(`[dsh-plugin-keeper] snapshot inventory=${t1 - t0}ms state=${t2 - t1}ms plugins=${plugins.length}`);
     return {
       ok: true,
       profileName,
@@ -347,31 +446,56 @@ class PluginKeeperService extends TypertRemoteService {
     };
   }
 
-  /** 一键检查更新：npm+GitHub 组全部并发检查，结果落盘。 */
+  /**
+   * 按来源分组检查更新（npm / github 两组各自独立）。
+   * 组内并发：npm 组 8（registry 无严格限流），github 组 3（API 限流 + 代理）。
+   * 各组互不阻塞：npm 组慢/失败不影响 github 组出结果。
+   */
+  async checkGroup(input) {
+    const kind = typeof input?.kind === 'string' ? input.kind : '';
+    if (kind !== 'npm' && kind !== 'github') throw new Error(`不支持的分组：${kind || '(空)'}`);
+    const { plugins } = await collectInventory();
+    const state = await readState();
+    const dshVersion = probeDshVersion();
+    const { results, checked } = await checkGroupInternal(kind, plugins, state, dshVersion);
+    const at = new Date().toISOString();
+    await withStateLock(async () => {
+      const latest = await readState();
+      const prev = latest.lastCheck ?? {};
+      await writeState({
+        ...latest,
+        lastCheck: {
+          at,
+          byGroup: { ...(prev.byGroup ?? {}), [kind]: at },
+          // 合并而非覆盖：只查一组时保留另一组的历史结果
+          results: { ...(prev.results ?? {}), ...results },
+        },
+      });
+    });
+    return { ok: true, kind, at, checked, counts: countResults(results), results };
+  }
+
+  /** 一键检查更新：npm+GitHub 两组并行检查，结果落盘（保留兼容入口）。 */
   async checkUpdates() {
     const { plugins } = await collectInventory();
     const state = await readState();
     const dshVersion = probeDshVersion();
-    const targets = plugins.filter((p) => !p.official
-      && (p.source?.kind === 'npm' || p.source?.kind === 'github'));
-    const results = {};
-    await runPool(targets, 6, async (p) => {
-      try {
-        results[p.name] = await checkOne(p, state, dshVersion);
-      } catch (e) {
-        results[p.name] = { status: 'error', note: e?.message ?? String(e) };
-      }
-    });
+    const groups = await Promise.all(['npm', 'github']
+      .map((kind) => checkGroupInternal(kind, plugins, state, dshVersion)));
+    const results = Object.assign({}, ...groups.map((g) => g.results));
     const at = new Date().toISOString();
-    await writeState({ ...state, lastCheck: { at, results } });
-    const counts = { update: 0, latest: 0, error: 0, other: 0 };
-    for (const r of Object.values(results)) {
-      if (r.status === 'update') counts.update += 1;
-      else if (r.status === 'latest') counts.latest += 1;
-      else if (r.status === 'error') counts.error += 1;
-      else counts.other += 1;
-    }
-    return { ok: true, at, dshVersion, checked: targets.length, counts, results };
+    await withStateLock(async () => {
+      const latest = await readState();
+      await writeState({ ...latest, lastCheck: { at, results } });
+    });
+    return {
+      ok: true,
+      at,
+      dshVersion,
+      checked: groups.reduce((n, g) => n + g.checked, 0),
+      counts: countResults(results),
+      results,
+    };
   }
 
   async getSettings() {
@@ -385,8 +509,10 @@ class PluginKeeperService extends TypertRemoteService {
     if (proxyUrl !== '' && !/^https?:\/\/\S+$/i.test(proxyUrl)) {
       throw new Error('代理 URL 需为 http(s):// 开头，或留空表示直连');
     }
-    const state = await readState();
-    await writeState({ ...state, proxyUrl });
+    await withStateLock(async () => {
+      const state = await readState();
+      await writeState({ ...state, proxyUrl });
+    });
     return { ok: true, proxyUrl };
   }
 
@@ -399,25 +525,79 @@ class PluginKeeperService extends TypertRemoteService {
     const op = typeof input?.op === 'string' ? input.op : '';
     if (!BATCH_OPS.has(op)) throw new Error(`不支持的操作：${op || '(空)'}`);
     const manifest = await prepareBatchSnapshot(op);
-    const state = await readState();
-    await writeState({ ...state, lastBatch: { id: manifest.id, at: manifest.at, op: manifest.op } });
+    await withStateLock(async () => {
+      const state = await readState();
+      await writeState({ ...state, lastBatch: { id: manifest.id, at: manifest.at, op: manifest.op } });
+    });
     return { ok: true, id: manifest.id, op: manifest.op, at: manifest.at, files: manifest.files };
   }
 
-  /** 把某次批量前的配置快照复制回原位（恢复后需重启生效）。 */
+  /**
+   * 把某次批量前的配置快照复制回原位（恢复后需重启生效）。
+   * 快照被消费后清除 lastBatch：恢复入口随之消失，客户端恢复 effect 不会弹回旧台账。
+   */
   async restoreBatch(input) {
     const r = await restoreBatchSnapshot(typeof input?.id === 'string' ? input.id : '');
+    await withStateLock(async () => {
+      const state = await readState();
+      await writeState({ ...state, lastBatch: null });
+    });
     return { ok: true, ...r };
+  }
+
+  /**
+   * 批量执行结束后由浏览器半区上报结果台账，落盘到 lastBatch（含 results/counts），
+   * 供页面切换/重开后恢复展示与「需重启」提醒。id 须与 prepareBatch 写入的一致，
+   * 防止过期报告覆盖新一轮批量。
+   */
+  async reportBatch(input) {
+    const op = typeof input?.op === 'string' ? input.op : '';
+    const id = typeof input?.id === 'string' ? input.id : '';
+    if (!BATCH_OPS.has(op)) throw new Error(`不支持的操作：${op || '(空)'}`);
+    // 结果形状白名单：status 限合法值，note/name 限字符串并截断，防脏数据入库失真
+    const STATUS_OK = new Set(['ok', 'restart', 'failed', 'skipped']);
+    const results = Array.isArray(input?.results)
+      ? input.results
+        .filter((r) => r && typeof r === 'object' && typeof r.name === 'string' && STATUS_OK.has(r.status))
+        .slice(0, 500)
+        .map((r) => ({
+          name: r.name.slice(0, 200),
+          op: typeof r.op === 'string' ? r.op.slice(0, 20) : '',
+          status: r.status,
+          note: typeof r.note === 'string' ? r.note.slice(0, 500) : '',
+        }))
+      : [];
+    const raw = input?.counts && typeof input.counts === 'object' ? input.counts : {};
+    const clamp = (v) => (Number.isFinite(v) ? Math.max(0, Math.trunc(v)) : 0);
+    const counts = {
+      ok: clamp(raw.ok),
+      restart: clamp(raw.restart),
+      fail: clamp(raw.fail),
+      skip: clamp(raw.skip),
+    };
+    let mismatch = false;
+    await withStateLock(async () => {
+      const state = await readState();
+      if (state.lastBatch?.id !== id) {
+        mismatch = true; // 已有更新的批量记录，忽略过期上报
+        return;
+      }
+      await writeState({ ...state, lastBatch: { id, at: state.lastBatch?.at ?? null, op, results, counts } });
+    });
+    if (mismatch) return { ok: false, error: 'batch id mismatch（已有更新的批量记录，忽略本次上报）' };
+    return { ok: true, id, op, count: results.length };
   }
 }
 
 markRemoteMethods(PluginKeeperService.prototype, [
   'snapshot',
   'checkUpdates',
+  'checkGroup',
   'getSettings',
   'saveSettings',
   'prepareBatch',
   'restoreBatch',
+  'reportBatch',
 ]);
 
 export const inject = ['profileContext'];

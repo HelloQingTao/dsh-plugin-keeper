@@ -45,7 +45,6 @@ window.__ModuleLoader__.load({
         groupLocal: '本地插件',
         groupUnknown: '其他来源',
         badgeOfficial: '官方',
-        badgeGithub: 'GitHub',
         badgeLocal: '本地',
         stateOn: '运行中',
         stateOff: '未运行',
@@ -57,13 +56,19 @@ window.__ModuleLoader__.load({
         lastCheck: '上次检查 {time}',
         neverChecked: '未检查过',
         chkLatest: '最新',
-        chkUpdate: '可更新 {ver}',
+        chkUpdate: '{ver}',
         chkIncompatible: '不兼容',
         chkNeedDsh: '需 dsh {range}',
         chkError: '检查失败',
         chkNoRelease: '无版本锚点',
         chkUnknownVer: '版本未知',
         checkDone: '检查完成：可更新 {update} · 最新 {latest} · 失败 {error}',
+        checkDoneFail: '检查完成，但有 {fail} 项失败',
+        checkErrDetail: '失败原因：{note}',
+        checkConnHint: '连接类错误通常是 GitHub API 代理不可达或网络受限：请在下方「检查设置」确认代理已启动（npm 通道不受影响）。徽标停留在上次成功检查的结果，请修正后重新检查。',
+        checkedAt: '检查于 {time}',
+        installLabel: '从 GitHub 安装',
+        installHint: '输入 owner/repo 或 GitHub 链接，直接从 GitHub 仓库安装插件（不经 npm）；安装后如需重启会另行提示。',
         settingsTitle: '检查设置',
         proxyLabel: 'GitHub API 代理',
         proxyPlaceholder: 'http://127.0.0.1:33210（留空 = 直连）',
@@ -84,8 +89,12 @@ window.__ModuleLoader__.load({
         batchEnable: '启用所选',
         batchDisable: '停用所选',
         batchUninstall: '卸载所选',
-        dialogOk: '确认执行',
         dialogCancel: '取消',
+        dialogDescUpdate: '将先卸载所选插件的当前版本，再安装检查到的最新版本；操作前自动备份配置快照，可随时恢复。',
+        dialogDescEnable: '将启用所选插件：加入运行列表并生效（操作前自动备份配置快照）；若需重启会另行提示。',
+        dialogDescDisable: '将停用所选插件：立即停止运行，配置保留，可随时重新启用（操作前自动备份配置快照）。',
+        dialogDescUninstall: '将从本 profile 卸载所选插件；操作前自动备份配置快照，可用「恢复快照」撤销。',
+        dialogOkOp: '确认{op}',
         selHint: '已选 {sel} · 可更新 {upd}',
         batchRunning: '{op}中… {done}/{total}',
         opUpdate: '更新',
@@ -97,18 +106,37 @@ window.__ModuleLoader__.load({
         opFailed: '失败',
         opSkipped: '跳过',
         opNoTarget: '无可更新目标',
+        opAlreadyEnabled: '已是启用状态',
+        opAlreadyDisabled: '已是停用状态',
+        opNone: '所选插件均处于目标状态，无需操作',
         opNoFace: 'pluginManager 服务不可用',
         opDone: '批量{op}完成：成功 {ok} · 需重启 {restart} · 失败 {fail} · 跳过 {skip}',
+        batchBusy: '已有批量任务进行中，请等待其完成',
+        restoredLedger: '（上次会话的记录）',
         snapshotDone: '已备份配置快照 {id}',
         restartBanner: '{n} 项变更需重启后生效',
         restoreBtn: '恢复快照',
         restoring: '恢复中…',
         restoreDone: '快照已恢复，重启后生效',
         restoreFail: '恢复失败',
-        lastBatchLine: '上次批量快照：{op} · {time}',
+        lastBatchLine: '上次批量：{op} · {time}——批量前的配置备份，点「恢复快照」可撤销该次批量；若批量中途关闭页面，此记录可能未完成',
         updateNone: '所选中没有可更新的插件（先检查更新）',
         rowUpdate: '更新',
         onlyUpdatable: '只看可更新',
+        // ---- 分组独立检查 ----
+        groupCheckBtn: '检查本组',
+        groupChecking: '检查中…',
+        groupCheckDone: '可更新 {u} · 最新 {l}',
+        groupCheckFailed: '本组检查失败',
+        groupCheckSkipped: '本组无需检查',
+        cachedHint: '当前显示上次结果（{time}），正在刷新…',
+        loadTimeout: '加载超时（{sec}s），当前显示的是上次结果',
+        checkTimeout: '检查超时，请检查网络或 GitHub 代理设置',
+        // ---- 打开图标（包名后的来源入口） ----
+        openSource: '打开插件所在地址',
+        copyPath: '复制插件所在路径',
+        copied: '路径已复制',
+        copyFail: '复制失败',
       },
       en: {
         sectionTitle: 'Plugin Ops',
@@ -123,7 +151,6 @@ window.__ModuleLoader__.load({
         groupLocal: 'Local plugins',
         groupUnknown: 'Other sources',
         badgeOfficial: 'Official',
-        badgeGithub: 'GitHub',
         badgeLocal: 'Local',
         stateOn: 'Running',
         stateOff: 'Not running',
@@ -135,13 +162,19 @@ window.__ModuleLoader__.load({
         lastCheck: 'Last checked {time}',
         neverChecked: 'Never checked',
         chkLatest: 'Latest',
-        chkUpdate: 'Update {ver}',
+        chkUpdate: '{ver}',
         chkIncompatible: 'Incompatible',
         chkNeedDsh: 'needs dsh {range}',
         chkError: 'Check failed',
         chkNoRelease: 'No release anchor',
         chkUnknownVer: 'Unknown version',
         checkDone: 'Checked: {update} updatable · {latest} latest · {error} failed',
+        checkDoneFail: 'Checked, but {fail} failed',
+        checkErrDetail: 'Reason: {note}',
+        checkConnHint: 'Connection errors usually mean the GitHub API proxy is down or the network is restricted: check the proxy in Check settings below (npm checks are unaffected). Badges keep showing the last successful check until you re-check.',
+        checkedAt: 'Checked at {time}',
+        installLabel: 'Install from GitHub',
+        installHint: 'Enter owner/repo or a GitHub URL to install a plugin straight from GitHub (not via npm); a restart prompt follows if needed.',
         settingsTitle: 'Check settings',
         proxyLabel: 'GitHub API proxy',
         proxyPlaceholder: 'http://127.0.0.1:33210 (empty = direct)',
@@ -162,8 +195,12 @@ window.__ModuleLoader__.load({
         batchEnable: 'Enable selected',
         batchDisable: 'Disable selected',
         batchUninstall: 'Uninstall selected',
-        dialogOk: 'Confirm',
         dialogCancel: 'Cancel',
+        dialogDescUpdate: 'Removes the current version of the selected plugins, then installs the latest checked version; a config snapshot is saved first and can be restored.',
+        dialogDescEnable: 'Enables the selected plugins so they join the running set; a config snapshot is saved first. A restart prompt follows if needed.',
+        dialogDescDisable: 'Disables the selected plugins: they stop running immediately, the configuration is kept, and they can be re-enabled anytime; a config snapshot is saved first.',
+        dialogDescUninstall: 'Uninstalls the selected plugins from this profile; a config snapshot is saved first and can be restored to undo.',
+        dialogOkOp: 'Confirm {op}',
         selHint: 'Selected {sel} · updatable {upd}',
         batchRunning: '{op}… {done}/{total}',
         opUpdate: 'update',
@@ -175,18 +212,37 @@ window.__ModuleLoader__.load({
         opFailed: 'Failed',
         opSkipped: 'Skipped',
         opNoTarget: 'No update target',
+        opAlreadyEnabled: 'Already enabled',
+        opAlreadyDisabled: 'Already disabled',
+        opNone: 'All selected are already in the target state, nothing to do',
         opNoFace: 'pluginManager service unavailable',
         opDone: 'Batch {op} done: ok {ok} · restart {restart} · failed {fail} · skipped {skip}',
+        batchBusy: 'A batch task is already running, please wait',
+        restoredLedger: '(from a previous session)',
         snapshotDone: 'Config snapshot saved: {id}',
         restartBanner: '{n} change(s) take effect after restart',
         restoreBtn: 'Restore snapshot',
         restoring: 'Restoring…',
         restoreDone: 'Snapshot restored, takes effect after restart',
         restoreFail: 'Restore failed',
-        lastBatchLine: 'Last batch snapshot: {op} · {time}',
+        lastBatchLine: 'Last batch: {op} · {time} — config backup taken before the batch; "Restore snapshot" undoes it. If the page was closed mid-run, this record may be incomplete',
         updateNone: 'No updatable plugin in selection (check updates first)',
         rowUpdate: 'Update',
         onlyUpdatable: 'Updatable only',
+        // ---- 分组独立检查 ----
+        groupCheckBtn: 'Check group',
+        groupChecking: 'Checking…',
+        groupCheckDone: '{u} updatable · {l} latest',
+        groupCheckFailed: 'Group check failed',
+        groupCheckSkipped: 'No check needed',
+        cachedHint: 'Showing the last result ({time}), refreshing…',
+        loadTimeout: 'Load timed out ({sec}s), showing the last result',
+        checkTimeout: 'Check timed out; check the network or the GitHub proxy setting',
+        // ---- 打开图标（包名后的来源入口） ----
+        openSource: 'Open plugin home page',
+        copyPath: 'Copy plugin path',
+        copied: 'Path copied',
+        copyFail: 'Copy failed',
       },
     };
 
@@ -217,14 +273,16 @@ window.__ModuleLoader__.load({
 .dpk-btn.is-primary:hover{background:var(--dsw-alias-interactive-bg-hover);}
 .dpk-btn.is-danger{border-color:var(--dsw-alias-state-error-primary);color:var(--dsw-alias-state-error-primary);}
 .dpk-btn.is-danger:hover{background:var(--dsw-alias-interactive-bg-hover);}
-.dpk-mask{position:fixed;inset:0;background:var(--dsw-alias-bg-overlay);display:flex;align-items:center;justify-content:center;z-index:9999;}
-.dpk-modal{background:var(--dsw-alias-bg-layer-1);border:1px solid var(--dsw-alias-border-l2);border-radius:var(--dsw-radius-lg,10px);padding:14px 16px;width:360px;max-width:calc(100vw - 48px);display:flex;flex-direction:column;gap:10px;box-shadow:0 8px 32px rgba(0,0,0,.25);}
+/* 确认浮层视口居中的前提：宿主 settings.section/plugins.tab 祖先链上无 transform/filter/
+   contain 等会改写 fixed 包含块的属性（插件侧已排查干净）。若实测命中（浮层漂移/被裁），
+   回退方案：absolute 居中于 dpk-root 顶部。 */
+.dpk-modal{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:9999;background:var(--dsw-alias-bg-layer-1);border:1px solid var(--dsw-alias-border-l2);border-radius:var(--dsw-radius-lg,10px);padding:14px 16px;width:360px;max-width:calc(100vw - 48px);display:flex;flex-direction:column;gap:10px;box-shadow:0 8px 32px rgba(0,0,0,.25);}
 .dpk-mtitle{font-size:13px;font-weight:600;color:var(--dsw-alias-label-primary);}
 .dpk-mlist{max-height:200px;overflow:auto;font-size:11px;color:var(--dsw-alias-label-secondary);line-height:22px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;padding:6px 10px;background:var(--dsw-alias-bg-layer-2);border-radius:var(--dsw-radius-md,8px);}
 .dpk-mfoot{display:flex;justify-content:flex-end;gap:8px;}
-.dpk-btn.is-mini{padding:0 8px;font-size:11px;line-height:18px;}
+.dpk-btn.is-mini{padding:0 8px;font-size:11px;line-height:18px;flex:none;}
 .dpk-lastcheck{font-size:11px;color:var(--dsw-alias-label-tertiary);white-space:nowrap;}
-.dpk-check{font-size:10px;line-height:16px;padding:0 7px;border-radius:999px;border:1px solid var(--dsw-alias-border-l1);background:0 0;color:var(--dsw-alias-label-tertiary);white-space:nowrap;flex:none;}
+.dpk-check{font-size:10px;line-height:16px;padding:0 7px;border-radius:999px;border:1px solid var(--dsw-alias-border-l1);background:0 0;color:var(--dsw-alias-label-tertiary);white-space:nowrap;flex:none;max-width:200px;overflow:hidden;text-overflow:ellipsis;}
 .dpk-check.is-latest{color:var(--dsw-alias-label-tertiary);}
 .dpk-check.is-update{color:var(--dsw-alias-brand-primary);border-color:var(--dsw-alias-brand-primary);}
 .dpk-check.is-warn{color:var(--dsw-alias-state-warn-primary);border-color:var(--dsw-alias-state-warn-primary);}
@@ -242,7 +300,7 @@ window.__ModuleLoader__.load({
 .dpk-savedok{font-size:11px;color:var(--dsw-alias-state-success-primary);}
 .dpk-savederr{font-size:11px;color:var(--dsw-alias-state-error-primary);}
 .dpk-err{color:var(--dsw-alias-state-error-primary);font-size:12px;}
-.dpk-banner{font-size:11px;color:var(--dsw-alias-state-warn-primary);line-height:18px;}
+.dpk-banner{font-size:11px;color:var(--dsw-alias-state-warn-primary);line-height:18px;overflow-wrap:anywhere;}
 .dpk-banner.is-ok{color:var(--dsw-alias-state-success-primary);}
 .dpk-group{display:flex;flex-direction:column;gap:4px;min-width:0;}
 .dpk-ghead{display:flex;align-items:center;gap:7px;cursor:pointer;user-select:none;padding:2px 0;}
@@ -258,28 +316,37 @@ window.__ModuleLoader__.load({
 .dpk-onlyup input{accent-color:var(--dsw-alias-brand-primary);margin:0;width:13px;height:13px;}
 .dpk-row + .dpk-row{border-top:1px solid var(--dsw-alias-border-l1);}
 .dpk-row:hover{background:var(--dsw-alias-interactive-bg-hover);}
+.dpk-row.is-clickable{cursor:pointer;}
 .dpk-row.is-official{opacity:.72;}
 .dpk-row.is-selected{background:var(--dsw-alias-bg-layer-2);}
 .dpk-cb{accent-color:var(--dsw-alias-brand-primary);margin:0;flex:none;width:14px;height:14px;cursor:pointer;}
 .dpk-cb:disabled{cursor:default;opacity:.35;}
 .dpk-dot{width:5px;height:5px;border-radius:50%;background:var(--dsw-alias-label-caption);flex:none;}
 .dpk-dot.on{background:var(--dsw-alias-state-success-primary);}
-.dpk-name{font-family:${MONO};font-size:12.5px;white-space:nowrap;}
-.dpk-ver{font-family:${MONO};font-size:11px;color:var(--dsw-alias-label-tertiary);white-space:nowrap;}
+.dpk-name{font-family:${MONO};font-size:12.5px;white-space:nowrap;flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;}
+.dpk-ver{font-family:${MONO};font-size:11px;color:var(--dsw-alias-label-tertiary);white-space:nowrap;flex:none;max-width:16ch;overflow:hidden;text-overflow:ellipsis;}
 .dpk-badge{font-size:10px;line-height:16px;padding:0 7px;border-radius:999px;border:1px solid var(--dsw-alias-border-l1);background:0 0;color:var(--dsw-alias-label-tertiary);white-space:nowrap;flex:none;}
-.dpk-badge.is-gh{color:var(--dsw-alias-brand-primary);border-color:var(--dsw-alias-brand-primary);}
-.dpk-state{font-size:11px;color:var(--dsw-alias-label-tertiary);white-space:nowrap;flex:none;}
+.dpk-open{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;flex:none;border:none;border-radius:var(--dsw-radius-sm,4px);padding:0;background:0 0;color:var(--dsw-alias-label-caption);cursor:pointer;text-decoration:none;transition:color .12s,background .12s;}
+.dpk-open:hover{color:var(--dsw-alias-brand-primary);background:var(--dsw-alias-interactive-bg-hover);}
+.dpk-open.is-copied{color:var(--dsw-alias-state-success-primary);}
+.dpk-open.is-failed{color:var(--dsw-alias-state-error-primary);}
+.dpk-open:focus-visible{outline:1px solid var(--dsw-alias-brand-primary);outline-offset:1px;}
+.dpk-rowops{display:flex;align-items:center;gap:10px;margin-left:auto;flex:none;}
+.dpk-state{font-size:11px;color:var(--dsw-alias-label-tertiary);white-space:nowrap;flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;}
 .dpk-op{font-size:10px;line-height:16px;padding:0 7px;border-radius:999px;white-space:nowrap;flex:none;max-width:260px;overflow:hidden;text-overflow:ellipsis;}
+.dpk-rowops .dpk-op{flex:0 1 auto;min-width:2.5em;max-width:200px;}
 .dpk-op.is-ok{color:var(--dsw-alias-state-success-primary);}
 .dpk-op.is-restart{color:var(--dsw-alias-state-warn-primary);}
-.dpk-op.is-fail{color:var(--dsw-alias-state-error-primary);}
-.dpk-op.is-skip{color:var(--dsw-alias-label-tertiary);}
+.dpk-op.is-failed{color:var(--dsw-alias-state-error-primary);}
+.dpk-op.is-skipped{color:var(--dsw-alias-label-tertiary);}
 .dpk-batchbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
 .dpk-selhint{font-size:11px;color:var(--dsw-alias-label-tertiary);white-space:nowrap;margin-right:2px;}
 .dpk-ledger{display:flex;flex-direction:column;gap:4px;border:1px solid var(--dsw-alias-border-l1);border-radius:var(--dsw-radius-md,8px);padding:8px 12px;}
 .dpk-ledrow{display:flex;align-items:center;gap:8px;min-width:0;font-size:11px;color:var(--dsw-alias-label-secondary);}
 .dpk-ledrow .dpk-name{font-size:11px;}
 .dpk-empty{color:var(--dsw-alias-label-tertiary);font-size:12px;}
+/* 主题化悬浮提示浮层（body 直挂单例，替代不随主题的原生 title） */
+.dpk-tip{position:fixed;z-index:10000;max-width:400px;background:var(--dsw-alias-bg-layer-1);border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-primary);font-size:11px;line-height:18px;padding:3px 9px;border-radius:var(--dsw-radius-md,8px);box-shadow:0 4px 16px rgba(0,0,0,.2);pointer-events:none;display:none;white-space:pre-wrap;overflow-wrap:anywhere;}
 `;
     let cssTag = null;
     function injectCss() {
@@ -290,25 +357,179 @@ window.__ModuleLoader__.load({
       document.head.appendChild(cssTag);
     }
 
+    // ---------- 主题化悬浮提示（data-tip 委托，替代不随主题的原生 title） ----------
+
+    let tipEl = null;
+    let tipUsers = 0;
+    let tipAnchor = null;
+
+    function hideTip() {
+      tipAnchor = null;
+      if (tipEl) tipEl.style.display = 'none';
+    }
+
+    function showTip(text, anchor) {
+      if (!tipEl || !text) return;
+      tipAnchor = anchor;
+      tipEl.textContent = text;
+      tipEl.style.left = '0px';
+      tipEl.style.top = '0px';
+      tipEl.style.maxWidth = `${Math.min(400, window.innerWidth - 16)}px`;
+      tipEl.style.display = 'block';
+      const r = anchor.getBoundingClientRect();
+      const tw = tipEl.offsetWidth;
+      const th = tipEl.offsetHeight;
+      let x = r.left + r.width / 2 - tw / 2;
+      x = Math.max(8, Math.min(x, window.innerWidth - tw - 8));
+      let y = r.top - th - 6;
+      if (y < 8) y = Math.min(r.bottom + 6, window.innerHeight - th - 8);
+      y = Math.max(8, y);
+      tipEl.style.left = `${x}px`;
+      tipEl.style.top = `${y}px`;
+    }
+
+    // 就地刷新当前悬浮内容（元素原地更新 data-tip 后指针未离开、不会再触发 mouseover 的场景）
+    function updateTipIfActive(el, text) {
+      if (tipAnchor === el && tipEl && tipEl.style.display !== 'none') showTip(text, el);
+    }
+
+    function onTipOver(e) {
+      const t = e.target instanceof Element ? e.target.closest('[data-tip]') : null;
+      if (!t) { hideTip(); return; }
+      const v = t.getAttribute('data-tip');
+      if (v) showTip(v, t);
+      else hideTip(); // 空 data-tip 统一为隐藏，避免上一个元素的 tip 滞留
+    }
+
+    function onTipOut(e) {
+      // 移入仍带 data-tip 的元素（含嵌套切换）不隐藏，交给紧随的 mouseover 更新，避免闪烁
+      const to = e.relatedTarget instanceof Element ? e.relatedTarget.closest('[data-tip]') : null;
+      if (to) return;
+      hideTip();
+    }
+
+    function onTipFocus(e) {
+      const t = e.target instanceof Element ? e.target.closest('[data-tip]') : null;
+      if (!t) return;
+      const v = t.getAttribute('data-tip');
+      if (v) showTip(v, t);
+    }
+
+    // 引用计数：首个挂载点创建单例浮层与 document 委托，最后一个卸载点清理
+    function acquireTooltip() {
+      tipUsers += 1;
+      if (tipEl) return;
+      tipEl = document.createElement('div');
+      tipEl.className = 'dpk-tip';
+      document.body.appendChild(tipEl);
+      document.addEventListener('mouseover', onTipOver, true);
+      document.addEventListener('mouseout', onTipOut, true);
+      document.addEventListener('focusin', onTipFocus, true);
+      document.addEventListener('focusout', hideTip, true);
+      window.addEventListener('scroll', hideTip, true);
+      window.addEventListener('blur', hideTip);
+    }
+
+    function releaseTooltip() {
+      tipUsers = Math.max(0, tipUsers - 1);
+      if (tipUsers > 0 || !tipEl) return;
+      document.removeEventListener('mouseover', onTipOver, true);
+      document.removeEventListener('mouseout', onTipOut, true);
+      document.removeEventListener('focusin', onTipFocus, true);
+      document.removeEventListener('focusout', hideTip, true);
+      window.removeEventListener('scroll', hideTip, true);
+      window.removeEventListener('blur', hideTip);
+      tipEl.remove();
+      tipEl = null;
+      tipAnchor = null;
+    }
+
+    // ---------- 首屏缓存 / 超时 / 打点 ----------
+
+    // 盘点结果缓存到浏览器本地：开页签第一帧直接渲染上次结果，不等 RPC 往返
+    // （宿主盘点本身只有毫秒级，慢的是往返与排队）。
+    const CACHE_KEY = 'dsh-plugin-keeper:snapshot:v1';
+    const LOAD_TIMEOUT_MS = 5000;
+    const CHECK_TIMEOUT_MS = 30000;
+
+    function loadCachedSnapshot() {
+      try {
+        const raw = window.localStorage?.getItem(CACHE_KEY);
+        if (!raw) return null;
+        const data = JSON.parse(raw);
+        if (!data || !Array.isArray(data.plugins) || !data.plugins.length) return null;
+        return { ...data, cachedAt: data.generatedAt ?? null, fromCache: true };
+      } catch {
+        return null; // 缓存损坏/不可用：退回「无缓存」路径
+      }
+    }
+
+    function saveCachedSnapshot(data) {
+      try {
+        const payload = {
+          ok: true,
+          profileName: data.profileName ?? null,
+          pluginCount: data.pluginCount ?? data.plugins?.length ?? 0,
+          startedBundles: data.startedBundles ?? [],
+          plugins: data.plugins ?? [],
+          lastCheckAt: data.lastCheckAt ?? null,
+          lastBatch: data.lastBatch ?? null,
+          settings: data.settings ?? {},
+          generatedAt: data.generatedAt ?? new Date().toISOString(),
+        };
+        window.localStorage?.setItem(CACHE_KEY, JSON.stringify(payload));
+      } catch {
+        // 配额满 / 隐私模式：缓存失败不影响主流程
+      }
+    }
+
+    // 超时包装：RPC 迟迟不返回时不转圈，转成可见的降级提示
+    function withTimeout(promise, ms, label) {
+      let timer = null;
+      const timeout = new Promise((_, reject) => {
+        timer = setTimeout(() => reject(new Error(`${label}: timeout after ${ms}ms`)), ms);
+      });
+      return Promise.race([promise, timeout]).finally(() => { if (timer) clearTimeout(timer); });
+    }
+
+    // 打点：客户端分段耗时（与宿主半 console.debug 对照定位慢在哪一段）
+    function markPerf(stage, ms) {
+      console.debug(`[dsh-plugin-keeper] ${stage} ${Math.round(ms)}ms`);
+    }
+
     // ---------- RPC ----------
 
     let rpcFace = null; // remote.dsh-plugin-keeper face，由装配段注入
     let pmFace = null; // remote.pluginManager（官方）face，批量操作直接调用
 
+    // ---------- 批量/横幅模块级状态（切页签、组件重挂载不丢失） ----------
+    // settings.section 与 plugins.tab 两个挂载点共享同一份执行状态：批量执行循环
+    // 持有 store 引用，组件卸载后仍继续推进，重新进入时进度/台账/需重启提醒无缝恢复。
+    // 跨浏览器刷新的持久化由宿主 lastBatch（reportBatch 落盘）承担。
+    const batchStore = {
+      batch: null, // {op, running, done, total, results, snapshotId, counts, restored?}
+      banner: null, // {text, ok}
+      listeners: new Set(),
+    };
+    function notifyStore() {
+      for (const fn of [...batchStore.listeners]) {
+        try { fn(); } catch { /* 单个订阅者异常不影响其余 */ }
+      }
+    }
+    function storeBatch(next) {
+      batchStore.batch = typeof next === 'function' ? next(batchStore.batch) : next;
+      notifyStore();
+    }
+    function storeBanner(next) {
+      batchStore.banner = next;
+      notifyStore();
+    }
+
     // typert face 的返回值可能是 {ok,value} 信封，也可能是裸值（取决于 result codec）。
     // 统一拆一次：成功取 value，失败/异常取 null。
     function unwrapEnvelope(r) {
-      if (r && typeof r === 'object' && 'ok' in r && 'value' in r) return r.ok ? (r.value ?? null) : null;
+      if (r && typeof r === 'object' && 'ok' in r && 'value' in r) return r.ok ? r.value : null;
       return r ?? null;
-    }
-
-    // 一键检查更新：返回 {at, checked, counts, results} 或 null
-    async function callCheckUpdates() {
-      try {
-        return unwrapEnvelope(await rpcFace?.checkUpdates());
-      } catch (e) {
-        return { ok: false, error: String(e?.message ?? e) };
-      }
     }
 
     // 保存设置（当前仅 GitHub API 代理）。返回 {ok, proxyUrl} 或 {ok:false, error}
@@ -336,6 +557,15 @@ window.__ModuleLoader__.load({
         return v ?? { ok: false, error: 'no response' };
       } catch (e) {
         return { ok: false, error: String(e?.message ?? e) };
+      }
+    }
+
+    // 批量结束上报结果台账（宿主落盘 lastBatch，供切页/重开后恢复展示）
+    async function callReportBatch(payload) {
+      try {
+        return unwrapEnvelope(await rpcFace?.reportBatch?.(payload)) ?? { ok: false };
+      } catch {
+        return { ok: false };
       }
     }
 
@@ -369,26 +599,44 @@ window.__ModuleLoader__.load({
       return c;
     }
 
+    // 连接类检查错误识别（覆盖 ECONNREFUSED/超时/DNS/abort 等形态；服务端 note 已带 e.code 前缀）
+    const CONN_ERR_RE = /econnrefused|etimedout|enotfound|getaddrinfo|eai_again|timed?\s*out|timeout|aborted|connect /i;
+
+    // 检查徽标的悬浮内容：业务说明 + 检查时间（陈旧结果一眼可辨）。
+    // lastCheckAt 由组件渲染时写入模块级缓存（checkBadgeOf 在组件外无法拿 snap）。
+    let lastCheckAtCache = null;
+    function checkTip(first) {
+      const parts = [];
+      if (first) parts.push(first);
+      if (lastCheckAtCache) parts.push(t('checkedAt', { time: new Date(lastCheckAtCache).toLocaleString() }));
+      return parts.length ? { 'data-tip': parts.join('\n') } : {};
+    }
+
     // 行内检查徽标：entry.check = {status, latest, note}
     function checkBadgeOf(entry) {
       const c = normCheck(entry);
       if (!c) return null;
-      const note = c.note ? { title: c.note } : {};
       switch (c.status) {
         case 'latest':
-          return h('span', { className: 'dpk-check is-latest', ...note }, t('chkLatest'));
-        case 'update':
-          return h('span', { className: 'dpk-check is-update', ...note },
-            t('chkUpdate', { ver: c.latest ?? '?' }));
-        case 'incompatible':
-          return h('span', { className: 'dpk-check is-warn', ...note },
-            c.note ? t('chkIncompatible') : t('chkNeedDsh', { range: c.note }));
+          return h('span', { className: 'dpk-check is-latest', ...checkTip() }, t('chkLatest'));
+        case 'update': {
+          // 徽标只留目标版本号；版本缺失回退"版本未知"，data-tip 兜底说明语义
+          const tip = c.note || (c.latest ? `${t('rowUpdate')} → ${c.latest}` : undefined);
+          return h('span', { className: 'dpk-check is-update', ...checkTip(tip) },
+            c.latest ?? t('chkUnknownVer'));
+        }
+        case 'incompatible': {
+          // 宿主 note 已是成品文案（"需 dsh ^x"），插值前剥掉前缀避免重复
+          const range = String(c.note ?? '').replace(/^\s*(?:需\s*dsh|needs\s*dsh)\s*/i, '');
+          return h('span', { className: 'dpk-check is-warn', ...checkTip(c.note) },
+            range ? t('chkNeedDsh', { range }) : t('chkIncompatible'));
+        }
         case 'error':
-          return h('span', { className: 'dpk-check is-err', ...note }, t('chkError'));
+          return h('span', { className: 'dpk-check is-err', ...checkTip(c.note) }, t('chkError'));
         case 'no-release':
-          return h('span', { className: 'dpk-check', ...note }, t('chkNoRelease'));
+          return h('span', { className: 'dpk-check', ...checkTip(c.note) }, t('chkNoRelease'));
         default:
-          return h('span', { className: 'dpk-check', ...note }, t('chkUnknownVer'));
+          return h('span', { className: 'dpk-check', ...checkTip(c.note) }, t('chkUnknownVer'));
       }
     }
 
@@ -404,6 +652,8 @@ window.__ModuleLoader__.load({
       return 'unknown';
     }
     const GROUP_ORDER = ['official', 'npm', 'github', 'local', 'unknown'];
+    // 可检查更新的分组（官方随 dsh 分发、本地为源码目录，都无远端版本锚点）
+    const CHECKABLE_GROUPS = ['npm', 'github'];
     const GROUP_TITLE_KEY = {
       official: 'groupOfficial',
       npm: 'groupNpm',
@@ -412,6 +662,14 @@ window.__ModuleLoader__.load({
       unknown: 'groupUnknown',
     };
 
+    // 来源 repo 归一化（与宿主 index.js 的 repoOf 同口径）：http(s) URL → owner/repo，去 .git
+    function repoKeyOf(entry) {
+      let repo = entry?.source?.repo ?? '';
+      const m = /^https?:\/\/github\.com\/([^/]+)\/([^/#?]+)/i.exec(repo);
+      if (m) repo = `${m[1]}/${m[2]}`;
+      return repo.replace(/\.git$/i, '');
+    }
+
     // 批量更新目标 spec：npm → name@latest；github → github:repo#tag（已是最新则无目标）
     function updateSpecOf(entry) {
       const c = normCheck(entry);
@@ -419,7 +677,7 @@ window.__ModuleLoader__.load({
       const kind = entry.source?.kind;
       if (kind === 'npm') return `${entry.name}@${c.latest}`;
       if (kind === 'github') {
-        const repo = entry.source?.repo ?? '';
+        const repo = repoKeyOf(entry);
         return c.tag && /^[^/]+\/[^/]+$/.test(repo) ? `github:${repo}#${c.tag}` : null;
       }
       return null;
@@ -427,19 +685,142 @@ window.__ModuleLoader__.load({
 
     const OP_LABEL_KEY = { update: 'opUpdate', enable: 'opEnable', disable: 'opDisable', uninstall: 'opUninstall' };
 
+    // ---------- 打开图标（包名后的来源入口） ----------
+
+    // npm/GitHub 来源的跳转地址；官方（随 dsh 分发、不在公共 registry）与本地/未知来源返回 null。
+    function openUrlOf(entry) {
+      if (entry?.official) return null;
+      const kind = entry?.source?.kind;
+      if (kind === 'npm' && entry.name) return `https://www.npmjs.com/package/${entry.name}`;
+      if (kind === 'github') {
+        const repo = repoKeyOf(entry);
+        if (!repo) return null;
+        // 非 github.com 的 http(s) 直链（parseSource 归入 GitHub 组）原样打开；
+        // github.com 裸域名（无法归一出 owner/repo）视为不可定位
+        if (/^https?:\/\//i.test(repo)) {
+          return /^https?:\/\/github\.com\/.+/i.test(repo) ? repo : null;
+        }
+        return /^[^/]+\/[^/]+$/.test(repo) ? `https://github.com/${repo}` : null;
+      }
+      return null;
+    }
+
+    // 复制文本：clipboard API 优先（安全上下文），失败回退 execCommand。
+    async function copyText(text) {
+      try {
+        await navigator.clipboard.writeText(text);
+        return true;
+      } catch {
+        let ta = null;
+        try {
+          ta = document.createElement('textarea');
+          ta.value = text;
+          ta.setAttribute('readonly', '');
+          ta.style.position = 'fixed';
+          ta.style.opacity = '0';
+          document.body.appendChild(ta);
+          ta.focus();
+          ta.select();
+          return document.execCommand('copy');
+        } catch {
+          return false;
+        } finally {
+          ta?.remove();
+        }
+      }
+    }
+
+    const OPEN_ICON = h('svg', { viewBox: '0 0 16 16', width: 11, height: 11, 'aria-hidden': true },
+      h('path', {
+        d: 'M6.75 3.25H4A1.75 1.75 0 0 0 2.25 5v7A1.75 1.75 0 0 0 4 13.75h7A1.75 1.75 0 0 0 12.75 12V9.25',
+        fill: 'none', stroke: 'currentColor', strokeWidth: 1.4, strokeLinecap: 'round',
+      }),
+      h('path', {
+        d: 'M9.5 2.25h4.25V6.5M13.4 2.6 8.2 7.8',
+        fill: 'none', stroke: 'currentColor', strokeWidth: 1.4, strokeLinecap: 'round', strokeLinejoin: 'round',
+      }),
+    );
+
+    const COPY_ICON = h('svg', { viewBox: '0 0 16 16', width: 11, height: 11, 'aria-hidden': true },
+      h('rect', { x: 5.75, y: 5.75, width: 7.5, height: 7.5, rx: 1.5, fill: 'none', stroke: 'currentColor', strokeWidth: 1.4 }),
+      h('path', {
+        d: 'M3.25 10.25h-.5a1.5 1.5 0 0 1-1.5-1.5v-5a1.5 1.5 0 0 1 1.5-1.5h5a1.5 1.5 0 0 1 1.5 1.5v.5',
+        fill: 'none', stroke: 'currentColor', strokeWidth: 1.4, strokeLinecap: 'round',
+      }),
+    );
+
+    const CHECK_ICON = h('svg', { viewBox: '0 0 16 16', width: 11, height: 11, 'aria-hidden': true },
+      h('path', {
+        d: 'M2.75 8.5 6.25 12 13.25 4.25',
+        fill: 'none', stroke: 'currentColor', strokeWidth: 1.6, strokeLinecap: 'round', strokeLinejoin: 'round',
+      }),
+    );
+
+    // 本地来源图标：hover 显示插件所在路径，点击复制到剪贴板（成败各有短暂反馈）。
+    function LocalOpenIcon({ path }) {
+      // 'idle' | 'ok' | 'fail'：ok 短暂打勾变绿，fail 短暂变红并提示复制失败
+      const [flash, setFlash] = React.useState('idle');
+      const timerRef = React.useRef(null);
+      const aliveRef = React.useRef(true);
+      React.useEffect(() => () => {
+        aliveRef.current = false; // 卸载后 copyText 才 resolve 的竞态：不再 setState/注册定时器
+        clearTimeout(timerRef.current);
+      }, []);
+      const onCopy = async (e) => {
+        e.stopPropagation();
+        const btn = e.currentTarget; // React 事件对象异步后 currentTarget 不可靠，先捕获
+        const ok = await copyText(path);
+        if (!aliveRef.current) return;
+        setFlash(ok ? 'ok' : 'fail');
+        updateTipIfActive(btn, ok ? t('copied') : t('copyFail'));
+        clearTimeout(timerRef.current);
+        timerRef.current = setTimeout(() => {
+          if (aliveRef.current) {
+            setFlash('idle');
+            updateTipIfActive(btn, path);
+          }
+        }, 1400);
+      };
+      const cls = flash === 'ok' ? ' is-copied' : flash === 'fail' ? ' is-failed' : '';
+      return h('button', {
+        className: `dpk-open${cls}`,
+        type: 'button',
+        'data-tip': flash === 'ok' ? t('copied') : flash === 'fail' ? t('copyFail') : path,
+        'aria-label': t('copyPath'),
+        onClick: onCopy,
+      }, flash === 'ok' ? CHECK_ICON : COPY_ICON);
+    }
+
     function Row({ entry, checked, disabled, onToggle, opStatus, onUpdate, busy }) {
       const gk = groupKeyOf(entry);
+      // GitHub 行不显示 repo 徽标：与包名重复且挤占行内更新按钮位置
       const badgeText = gk === 'official' ? t('badgeOfficial')
-        : gk === 'github' ? (entry.source?.repo || t('badgeGithub'))
-          : gk === 'local' ? t('badgeLocal') : null;
+        : gk === 'local' ? t('badgeLocal') : null;
+      const repoLabel = gk === 'github' ? repoKeyOf(entry) : '';
+      const openUrl = openUrlOf(entry);
+      // 启停台账兜底：仅在 listBundles 合并失效（enabled 未知）时，以本次批量结果为准；
+      // 合并成功时 host 真值优先，外部启停/恢复快照不被旧台账压制。
+      // update 落账（installBundle enabled:true）蕴含启用。opStatus 由调用方取同名最新一条。
+      const opApplied = opStatus && (opStatus.status === 'ok' || opStatus.status === 'restart');
+      const opEnabled = !opApplied ? undefined
+        : opStatus.op === 'disable' ? false
+        : (opStatus.op === 'enable' || opStatus.op === 'update') ? true
+        : undefined;
+      const enabled = opEnabled !== undefined && entry.enabled === undefined ? opEnabled : entry.enabled;
       const rowProps = {
         className: `dpk-row${entry.official ? ' is-official' : ''}${checked ? ' is-selected' : ''}`,
       };
-      if (entry.official) rowProps.title = t('officialReadonly');
+      if (entry.official) rowProps['data-tip'] = t('officialReadonly');
+      // 点行任意空白处即切换勾选（与 checkbox 同规则：official/批量中/不可更新的行除外）；
+      // 行内按钮与图标各自 stopPropagation，不受行点击影响
+      if (!disabled) {
+        rowProps.className += ' is-clickable';
+        rowProps.onClick = () => onToggle(entry.name);
+      }
       const chip = opStatus
         ? h('span', {
           className: `dpk-op is-${opStatus.status}`,
-          title: opStatus.note || undefined,
+          'data-tip': opStatus.note || undefined,
         }, t(`op${opStatus.status === 'ok' ? 'Applied' : opStatus.status === 'restart' ? 'Restart' : opStatus.status === 'failed' ? 'Failed' : 'Skipped'}`)
           + (opStatus.note && opStatus.status !== 'ok' ? ` · ${opStatus.note}` : ''))
         : null;
@@ -454,34 +835,62 @@ window.__ModuleLoader__.load({
             onChange: () => onToggle(entry.name),
             onClick: (e) => e.stopPropagation(),
           }),
-          h('span', { className: `dpk-dot${entry.started && entry.enabled !== false ? ' on' : ''}` }),
-          h('span', { className: 'dpk-name' }, entry.name),
-          entry.version ? h('span', { className: 'dpk-ver' }, `v${entry.version}`) : null,
-          badgeText ? h('span', { className: `dpk-badge${gk === 'github' ? ' is-gh' : ''}` }, badgeText) : null,
-          checkBadgeOf(entry),
-          spec && onUpdate
-            ? h('button', {
-              className: 'dpk-btn is-mini',
-              type: 'button',
-              disabled: Boolean(busy),
-              onClick: () => onUpdate(entry),
-            }, t('rowUpdate'))
+          h('span', { className: `dpk-dot${entry.started && enabled !== false ? ' on' : ''}` }),
+          h('span', {
+            className: 'dpk-name',
+            // repo 不上行内（与包名重复且挤压按钮）；悬停同时给出全名与来源
+            'data-tip': repoLabel ? `${entry.name} · ${repoLabel}` : entry.name,
+          }, entry.name),
+          // 来源入口图标：npm/GitHub 点击开详情页；本地 hover 显示路径、点击复制
+          openUrl
+            ? h('a', {
+              className: 'dpk-open',
+              href: openUrl,
+              target: '_blank',
+              rel: 'noreferrer',
+              'data-tip': t('openSource'),
+              'aria-label': t('openSource'),
+              onClick: (e) => e.stopPropagation(),
+            }, OPEN_ICON)
             : null,
-          chip,
-          h('span', { className: 'dpk-state' }, entry.enabled === false ? t('stateDisabled') : entry.started ? t('stateOn') : t('stateOff')),
+          entry.localPath ? h(LocalOpenIcon, { path: entry.localPath }) : null,
+          entry.version ? h('span', { className: 'dpk-ver', 'data-tip': `v${entry.version}` }, `v${entry.version}`) : null,
+          badgeText ? h('span', { className: 'dpk-badge' }, badgeText) : null,
+          h('div', { className: 'dpk-rowops' },
+            checkBadgeOf(entry),
+            spec && onUpdate
+              ? h('button', {
+                className: 'dpk-btn is-mini',
+                type: 'button',
+                disabled: Boolean(busy),
+                onClick: (e) => { e.stopPropagation(); onUpdate(entry); },
+              }, t('rowUpdate'))
+              : null,
+            chip,
+            h('span', { className: 'dpk-state' }, enabled === false ? t('stateDisabled') : entry.started ? t('stateOn') : t('stateOff')),
+          ),
         ),
-        entry.description ? h('div', { className: 'dpk-rowdesc', title: entry.description }, entry.description) : null,
+        entry.description ? h('div', { className: 'dpk-rowdesc', 'data-tip': entry.description }, entry.description) : null,
       );
     }
 
     // ---------- 组件 ----------
 
     function PluginKeeperSection() {
-      const [snap, setSnap] = React.useState(null);
+      // 首屏缓存：挂载即用上次结果渲染（0 等待），随后 RPC 覆盖。
+      // cacheRef 让 loading 初值知道「有没有缓存可用」。
+      const cacheRef = React.useRef(null);
+      const [snap, setSnap] = React.useState(() => {
+        cacheRef.current = loadCachedSnapshot();
+        return cacheRef.current;
+      });
       const [err, setErr] = React.useState(null);
-      const [loading, setLoading] = React.useState(true);
-      const [checking, setChecking] = React.useState(false);
-      const [checkInfo, setCheckInfo] = React.useState(null); // {update, latest, error}
+      const [loading, setLoading] = React.useState(() => cacheRef.current === null);
+      // 当前是否有数据可展示（超时降级提示用；ref 避免闭包里拿到旧值）
+      const snapRef = React.useRef(null);
+      React.useEffect(() => { snapRef.current = snap; }, [snap]);
+      // 分组检查状态：{ npm: {status, counts, error, connErr, firstErrorNote}, github: {...} }
+      const [checkState, setCheckState] = React.useState({});
       const [saving, setSaving] = React.useState(false);
       const [saveFlash, setSaveFlash] = React.useState(null); // 'ok' | {err}
       const proxyRef = React.useRef(null);
@@ -490,12 +899,25 @@ window.__ModuleLoader__.load({
       // M2 批量状态
       const [selected, setSelected] = React.useState(() => new Set());
       const [confirmOp, setConfirmOp] = React.useState(null); // 待二次确认的批量操作
-      const [batch, setBatch] = React.useState(null); // {op, running, done, total, results:[{name,status,note}], snapshotId}
-      const [banner, setBanner] = React.useState(null); // {text, ok}
+      // 确认浮层无遮罩：Esc 关闭补偿（原先"点遮罩关闭"已随遮罩移除）
+      React.useEffect(() => {
+        if (!confirmOp) return;
+        const onKey = (e) => { if (e.key === 'Escape') setConfirmOp(null); };
+        window.addEventListener('keydown', onKey);
+        return () => window.removeEventListener('keydown', onKey);
+      }, [confirmOp]);
       const [restoring, setRestoring] = React.useState(false);
-      const batchResultsRef = React.useRef([]); // 循环内累积，避免闭包陈旧
-      // 语言切换 = <html lang> 属性变化 → 强制重渲染（文案实时跟随）
-      const [langTick, setLangTick] = React.useState(0);
+      // 批量/横幅状态在模块级 batchStore（切页签存活）；订阅变更触发重渲染
+      const [, bump] = React.useReducer((x) => x + 1, 0);
+      const batch = batchStore.batch;
+      const banner = batchStore.banner;
+      React.useEffect(() => {
+        const listener = () => bump();
+        batchStore.listeners.add(listener);
+        return () => { batchStore.listeners.delete(listener); };
+      }, []);
+      // 语言切换 = <html lang> 属性变化 → 强制重渲染（文案实时跟随，数据不重拉）
+      const [, setLangTick] = React.useState(0);
       React.useEffect(() => {
         const obs = new MutationObserver(() => setLangTick((x) => x + 1));
         obs.observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
@@ -513,47 +935,162 @@ window.__ModuleLoader__.load({
       }, []);
 
       const load = React.useCallback(async () => {
+        const t0 = performance.now();
         setLoading(true);
         setErr(null);
         try {
-          const data = unwrapEnvelope(await rpcFace?.snapshot());
-          if (data && data.ok) setSnap(data);
-          else setErr(t('loadFailed'));
+          // 超时兜底：RPC 迟迟不返回时给出可见降级（保留缓存数据继续显示）
+          const data = unwrapEnvelope(
+            await withTimeout(rpcFace?.snapshot(), LOAD_TIMEOUT_MS, 'snapshot'),
+          );
+          markPerf('snapshot', performance.now() - t0);
+          if (data && data.ok) {
+            setSnap(data);
+            saveCachedSnapshot(data);
+          } else {
+            setErr(t('loadFailed'));
+          }
         } catch (e) {
-          setErr(String(e?.message ?? e));
+          markPerf('snapshot(failed)', performance.now() - t0);
+          // 有数据时降级为「显示上次结果」的提示，不清空列表
+          setErr(snapRef.current
+            ? t('loadTimeout', { sec: Math.round(LOAD_TIMEOUT_MS / 1000) })
+            : String(e?.message ?? e));
         } finally {
           setLoading(false);
         }
-        // 官方 bundle 启用态并入（listBundles 失败不影响主数据）
+        // 官方 bundle 启用态并入（listBundles 失败不影响主数据）。
+        // face 返回值可能是 {ok,value} 信封（与 callPm 同口径），先统一拆一次再验数组；
+        // 不拆的话 Array.isArray 对信封恒 false → 合并静默失效，停用后行仍显示"运行中"。
+        const t1 = performance.now();
         try {
-          const bundles = await pmFace?.listBundles?.();
+          const bundles = unwrapEnvelope(await pmFace?.listBundles?.());
+          markPerf('listBundles', performance.now() - t1);
           if (Array.isArray(bundles)) {
             const enMap = new Map(bundles.map((b) => [b.name, b.enabled !== false]));
             setSnap((s) => (s ? { ...s, plugins: (s.plugins ?? []).map((p) => ({ ...p, enabled: enMap.has(p.name) ? enMap.get(p.name) : true })) } : s));
+          } else {
+            // {ok:false} 信封 / pmFace 缺失（undefined）等静默失效形态也留痕，便于排查
+            console.debug('[dsh-plugin-keeper] listBundles merge skipped:', bundles);
           }
-        } catch { /* 忽略：启用态仅影响展示 */ }
+        } catch (e) {
+          console.debug('[dsh-plugin-keeper] listBundles merge failed:', e?.message ?? e);
+        }
       }, []);
 
-      React.useEffect(() => { void load(); }, [load, langTick]);
+      // 语言切换只重渲染文案，不重拉数据（拉数据由刷新按钮/批量后触发）
+      React.useEffect(() => { void load(); }, [load]);
 
-      // 一键检查更新：跑完拉一次最新快照（服务端已把检查结果并入 snapshot）。
-      // 注意先 load 再落错误态——load() 会清 err，顺序反了报错会被瞬间擦掉。
-      const doCheck = React.useCallback(async () => {
-        setChecking(true);
-        setCheckInfo(null);
-        setErr(null);
-        try {
-          const r = await callCheckUpdates();
-          await load();
-          if (r && r.ok) {
-            setCheckInfo({ update: r.counts?.update ?? 0, latest: r.counts?.latest ?? 0, error: r.counts?.error ?? 0 });
-          } else {
-            setErr(r?.error ?? t('chkError'));
-          }
-        } finally {
-          setChecking(false);
+      // 会话恢复：本会话尚无批量状态、而宿主 lastBatch 带结果台账 → 恢复台账展示
+      // 与「需重启」提醒（跨页签由模块级 store 承担；跨刷新由这份落盘数据承担）。
+      // store 已有状态（进行中/本会话已收尾）时以实时数据优先，不覆盖。
+      React.useEffect(() => {
+        if (batchStore.batch) return;
+        const lb = snap?.lastBatch;
+        if (!lb || !Array.isArray(lb.results) || !lb.results.length) return;
+        const counts = { ok: 0, restart: 0, fail: 0, skip: 0 };
+        for (const r of lb.results) {
+          if (r.status === 'ok') counts.ok += 1;
+          else if (r.status === 'restart') counts.restart += 1;
+          else if (r.status === 'failed') counts.fail += 1;
+          else counts.skip += 1;
         }
-      }, [load]);
+        storeBatch({
+          op: lb.op ?? 'update',
+          running: false,
+          restored: true, // 标记为历史恢复，与本次会话实时执行的批量区分
+          done: lb.results.length,
+          total: lb.results.length,
+          results: lb.results,
+          snapshotId: lb.id ?? null,
+          counts,
+        });
+        if (counts.restart > 0 && !(batchStore.banner && batchStore.banner.ok)) {
+          // 不覆盖正在展示的"恢复成功"类正向横幅
+          storeBanner({ text: t('restartBanner', { n: counts.restart }), ok: false });
+        }
+      }, [snap]);
+
+      // 分组独立检查：npm / github 两组各自发起、互不阻塞（一组慢不影响另一组）。
+      // 结果就地并入 entries —— 不再像旧实现那样检查完再跑一次全量盘点。
+      const doCheckGroup = React.useCallback(async (kind) => {
+        const t0 = performance.now();
+        setCheckState((s) => ({ ...s, [kind]: { status: 'checking', counts: null, error: null } }));
+        try {
+          const r = unwrapEnvelope(
+            await withTimeout(rpcFace?.checkGroup?.({ kind }), CHECK_TIMEOUT_MS, `checkGroup:${kind}`),
+          );
+          markPerf(`checkGroup:${kind}`, performance.now() - t0);
+          if (!r || !r.ok) {
+            setCheckState((s) => ({
+              ...s,
+              [kind]: { status: 'error', counts: null, error: r?.error ?? t('chkError') },
+            }));
+            return;
+          }
+          const results = r.results ?? {};
+          // 首条失败原因与连接类判定，供顶部横幅明示（error 徽标悬浮也有详情）
+          const errItems = Object.values(results).filter((v) => v?.status === 'error');
+          const firstErrorNote = typeof errItems[0]?.note === 'string' ? errItems[0].note : '';
+          const connErr = errItems.some((v) => CONN_ERR_RE.test(typeof v?.note === 'string' ? v.note : ''));
+          setSnap((s) => {
+            if (!s) return s;
+            const next = {
+              ...s,
+              plugins: (s.plugins ?? []).map((p) => (results[p.name] ? { ...p, check: results[p.name] } : p)),
+              lastCheckAt: r.at ?? s.lastCheckAt,
+            };
+            // 同步刷新本地缓存：下次开页签直接看到本组徽标
+            saveCachedSnapshot(next);
+            return next;
+          });
+          setCheckState((s) => ({
+            ...s,
+            [kind]: { status: 'done', counts: r.counts ?? null, error: null, connErr, firstErrorNote },
+          }));
+        } catch (e) {
+          markPerf(`checkGroup:${kind}(failed)`, performance.now() - t0);
+          setCheckState((s) => ({
+            ...s,
+            [kind]: { status: 'error', counts: null, error: t('checkTimeout') },
+          }));
+        }
+      }, []);
+
+      // 一键检查更新：可检查的两组并行发起，各自独立计时与出结果
+      const doCheck = React.useCallback(async () => {
+        setErr(null);
+        await Promise.all(CHECKABLE_GROUPS.map((kind) => doCheckGroup(kind)));
+      }, [doCheckGroup]);
+
+      // 检查汇总：由各组 checkState 聚合（不再单独维护一份全局状态）
+      const checkInfo = React.useMemo(() => {
+        const kinds = Object.keys(checkState);
+        if (!kinds.length) return null;
+        let update = 0;
+        let latest = 0;
+        let error = 0;
+        let checking = false;
+        let firstErrorNote = '';
+        let connErr = false;
+        for (const kind of kinds) {
+          const st = checkState[kind];
+          if (!st) continue;
+          if (st.status === 'checking') checking = true;
+          if (st.status === 'error') {
+            error += 1;
+            if (!firstErrorNote) firstErrorNote = st.error || '';
+          }
+          if (st.counts) {
+            update += st.counts.update ?? 0;
+            latest += st.counts.latest ?? 0;
+            error += st.counts.error ?? 0;
+          }
+          if (st.connErr) connErr = true;
+          if (!firstErrorNote && st.firstErrorNote) firstErrorNote = st.firstErrorNote;
+        }
+        return { update, latest, error, checking, firstErrorNote, connErr };
+      }, [checkState]);
 
       // 保存 GitHub API 代理设置
       const doSave = React.useCallback(async () => {
@@ -584,26 +1121,26 @@ window.__ModuleLoader__.load({
       const doInstall = React.useCallback(async () => {
         const parsed = normGithubInput(installRef.current?.value);
         if (!parsed) {
-          setBanner({ ok: false, text: t('installBad') });
+          storeBanner({ ok: false, text: t('installBad') });
           return;
         }
         const spec = `github:${parsed.owner}/${parsed.repo}${parsed.ref ? `#${parsed.ref}` : ''}`;
         setInstalling(true);
-        setBanner(null);
+        storeBanner(null);
         try {
           const r = unwrapEnvelope(await pmFace?.installBundle?.(spec, { enabled: true }));
           const errText = r?.error?.diagnostic || r?.error?.code || (r?.status === 'refused' ? r?.reason : null);
           if (r?.application === 'restart-required') {
-            setBanner({ ok: true, text: t('installRestart', { name: r.target ?? spec }) });
+            storeBanner({ ok: true, text: t('installRestart', { name: r.target ?? spec }) });
           } else if (r?.application === 'applied' || r?.application === 'overridden') {
-            setBanner({ ok: true, text: t('installDone', { name: r.target ?? spec }) });
+            storeBanner({ ok: true, text: t('installDone', { name: r.target ?? spec }) });
           } else {
-            setBanner({ ok: false, text: `${t('installFailed')}${errText ? `：${errText}` : ''}` });
+            storeBanner({ ok: false, text: `${t('installFailed')}${errText ? `：${errText}` : ''}` });
           }
           if (installRef.current) installRef.current.value = '';
           await load();
         } catch (e) {
-          setBanner({ ok: false, text: `${t('installFailed')}：${e?.message ?? e}` });
+          storeBanner({ ok: false, text: `${t('installFailed')}：${e?.message ?? e}` });
         } finally {
           setInstalling(false);
         }
@@ -625,7 +1162,6 @@ window.__ModuleLoader__.load({
           if (next.has(name)) next.delete(name); else next.add(name);
           return next;
         });
-        setArmedOp(null);
       }, []);
 
       const toggleGroup = React.useCallback((list) => {
@@ -638,15 +1174,24 @@ window.__ModuleLoader__.load({
           }
           return next;
         });
-        setArmedOp(null);
       }, []);
 
       const selCount = selected.size;
+      // 可启用 = 未启用（已停用或未运行）；可停用 = 非停用状态。计数以 host 原始
+      // enabled 为准（不含行级台账兜底）；合并失效时 undefined 一律视为可停用。
       const enableCount = React.useMemo(() => {
         let n = 0;
         for (const name of selected) {
           const p = byName.get(name);
           if (p && !p.official && (p.enabled === false || !p.started)) n += 1;
+        }
+        return n;
+      }, [selected, byName]);
+      const disableCount = React.useMemo(() => {
+        let n = 0;
+        for (const name of selected) {
+          const p = byName.get(name);
+          if (p && !p.official && p.enabled !== false) n += 1;
         }
         return n;
       }, [selected, byName]);
@@ -668,6 +1213,11 @@ window.__ModuleLoader__.load({
       // 顺序执行（pnpm 侧本就串行）；含本插件的操作放最后（中途把自己停了，后面的行没人执行）。
       // namesOverride：行内「更新」按钮只对单行执行，不动勾选集。
       const runBatch = React.useCallback(async (op, namesOverride) => {
+        // 跨挂载点并发守卫：settings.section 与 plugins.tab 共享 store，同刻只允许一个批量
+        if (batchStore.batch?.running) {
+          storeBanner({ ok: false, text: t('batchBusy') });
+          return;
+        }
         const base = Array.isArray(namesOverride) && namesOverride.length ? namesOverride : [...selected];
         const names = base.filter((n) => {
           const p = byName.get(n);
@@ -676,8 +1226,7 @@ window.__ModuleLoader__.load({
         if (!names.length) return;
         names.sort((a, b) => (a === SELF) - (b === SELF)); // self last
 
-        const results = [];
-        batchResultsRef.current = results;
+        const results = []; // 执行循环持有：组件卸载后循环仍推进并写 store
 
         // 更新目标解析：先算 spec，无目标的行记 skipped；快照只为有目标的批量服务
         let targets = [];
@@ -686,26 +1235,42 @@ window.__ModuleLoader__.load({
             const p = byName.get(name);
             const spec = updateSpecOf(p);
             if (spec) targets.push({ name, spec });
-            else results.push({ name, status: 'skipped', note: t('opNoTarget') });
+            else results.push({ name, op, status: 'skipped', note: t('opNoTarget') });
           }
           if (!targets.length) {
-            setBanner({ text: t('updateNone'), ok: false });
+            storeBanner({ text: t('updateNone'), ok: false });
+            return;
+          }
+        } else if (op === 'enable' || op === 'disable') {
+          // 与按钮计数同口径：混选时只处理可操作子集，已是目标状态的记 skipped
+          for (const name of names) {
+            const p = byName.get(name);
+            const eligible = Boolean(p) && (op === 'enable'
+              ? (p.enabled === false || !p.started)
+              : p.enabled !== false);
+            if (eligible) targets.push({ name });
+            else results.push({ name, op, status: 'skipped', note: t(op === 'enable' ? 'opAlreadyEnabled' : 'opAlreadyDisabled') });
+          }
+          if (!targets.length) {
+            storeBanner({ text: t('opNone'), ok: false });
             return;
           }
         } else {
           targets = names.map((name) => ({ name }));
         }
 
-        setBanner(null);
-        setBatch({ op, running: true, done: results.length, total: results.length + targets.length, results: [...results], snapshotId: null });
+        storeBanner(null);
+        hideTip(); // 批量重渲染会移动行位置，收起悬浮避免错位残留
+        storeBatch({ op, running: true, done: results.length, total: results.length + targets.length, results: [...results], snapshotId: null });
         const push = (item) => {
           results.push(item);
-          setBatch((b) => (b ? { ...b, results: [...results], done: results.length } : b));
+          storeBatch((b) => (b ? { ...b, results: [...results], done: results.length } : b));
         };
         const prep = await callPrepareBatch(op);
         if (!prep?.ok) {
-          setErr(prep?.error ?? 'snapshot failed');
-          setBatch(null);
+          // 发起组件可能已卸载：错误走模块级横幅而非组件内 err，保证可见
+          storeBanner({ ok: false, text: prep?.error ?? t('loadFailed') });
+          storeBatch(null);
           return;
         }
 
@@ -714,13 +1279,13 @@ window.__ModuleLoader__.load({
             if (op === 'update') {
               // installBundle 对已装包会 refused already-installed：更新 = 先卸后装两步
               try { await callPm('removeBundle', name); } catch { /* 移除失败交给安装步报错 */ }
-              push({ name, ...mapChange(await callPm('installBundle', spec, { enabled: true })) });
+              push({ name, op, ...mapChange(await callPm('installBundle', spec, { enabled: true })) });
             }
-            else if (op === 'enable') push({ name, ...mapChange(await callPm('setBundleEnabled', name, true)) });
-            else if (op === 'disable') push({ name, ...mapChange(await callPm('setBundleEnabled', name, false)) });
-            else push({ name, ...mapChange(await callPm('removeBundle', name)) });
+            else if (op === 'enable') push({ name, op, ...mapChange(await callPm('setBundleEnabled', name, true)) });
+            else if (op === 'disable') push({ name, op, ...mapChange(await callPm('setBundleEnabled', name, false)) });
+            else push({ name, op, ...mapChange(await callPm('removeBundle', name)) });
           } catch (e) {
-            push({ name, status: 'failed', note: String(e?.message ?? e) });
+            push({ name, op, status: 'failed', note: String(e?.message ?? e) });
           }
         }
 
@@ -732,18 +1297,21 @@ window.__ModuleLoader__.load({
           else if (r.status === 'failed') counts.fail += 1;
           else counts.skip += 1;
         }
-        setBatch({
+        storeBatch({
           op,
           running: false,
           done: finalResults.length,
-          total: targets.length,
+          total: finalResults.length, // 含 skipped，与 done 同口径避免 done>total 的潜伏坑
           results: finalResults,
           snapshotId: prep.id,
           counts,
         });
         if (counts.restart > 0) {
-          setBanner({ text: t('restartBanner', { n: counts.restart }), ok: false });
+          storeBanner({ text: t('restartBanner', { n: counts.restart }), ok: false });
         }
+        // 结果上报宿主落盘（切页签/重开后可恢复台账与「需重启」提醒）；
+        // 组件已卸载时本循环仍会跑到这里（模块级调用不受影响）
+        void callReportBatch({ id: prep.id, op, results: finalResults, counts });
         if (!namesOverride) setSelected(new Set());
         await load();
         // 宿主 startedBundles 的热更新是异步落账的，延迟补一刷，行状态才不滞留
@@ -753,6 +1321,7 @@ window.__ModuleLoader__.load({
       // 行内更新（单个可更新插件，不经过勾选集）
       const onRowUpdate = React.useCallback((entry) => {
         if (batch?.running) return;
+        setConfirmOp(null); // 确认框开着时点行内更新：作废浮层，避免名单与现实脱节
         void runBatch('update', [entry.name]);
       }, [batch?.running, runBatch]);
 
@@ -761,8 +1330,13 @@ window.__ModuleLoader__.load({
         setRestoring(true);
         const r = await callRestoreBatch(id);
         setRestoring(false);
-        if (r?.ok) setBanner({ text: t('restoreDone'), ok: true });
-        else setBanner({ text: `${t('restoreFail')}：${r?.error ?? '?'}`, ok: false });
+        if (r?.ok) {
+          // 快照已回滚，先前批量的台账不再代表当前启停态，作废以免压制 host 真值
+          storeBatch(null);
+          storeBanner({ text: t('restoreDone'), ok: true });
+        } else {
+          storeBanner({ text: `${t('restoreFail')}：${r?.error ?? '?'}`, ok: false });
+        }
         await load();
       }, [load]);
 
@@ -785,8 +1359,12 @@ window.__ModuleLoader__.load({
       const lastCheckText = snap?.lastCheckAt
         ? t('lastCheck', { time: new Date(snap.lastCheckAt).toLocaleTimeString() })
         : t('neverChecked');
+      // 徽标悬浮的"检查于"用：checkBadgeOf 在组件外，借模块级缓存传递
+      if (snap?.lastCheckAt) lastCheckAtCache = snap.lastCheckAt;
 
       const batchRunning = Boolean(batch?.running);
+      // 任一可检查分组正在检查 → 全局「检查中」
+      const checking = Boolean(checkInfo?.checking);
       const busy = loading || checking || batchRunning;
 
       // 批量工具条：常驻显示（选中与否都在，避免列表跳动）；无选中时按钮禁用。
@@ -809,9 +1387,9 @@ window.__ModuleLoader__.load({
           h('button', {
             className: 'dpk-btn',
             type: 'button',
-            disabled: busy || selCount === 0,
+            disabled: busy || disableCount === 0,
             onClick: () => onBatchBtn('disable'),
-          }, `${t('batchDisable')} (${selCount})`),
+          }, `${t('batchDisable')} (${disableCount})`),
           h('button', {
             className: 'dpk-btn is-danger',
             type: 'button',
@@ -840,7 +1418,7 @@ window.__ModuleLoader__.load({
               restart: batch.counts?.restart ?? 0,
               fail: batch.counts?.fail ?? 0,
               skip: batch.counts?.skip ?? 0,
-            })),
+            }) + (batch.restored ? ` ${t('restoredLedger')}` : '')),
           ),
           batch.snapshotId
             ? h('div', { className: 'dpk-ledrow' },
@@ -854,8 +1432,8 @@ window.__ModuleLoader__.load({
             )
             : null,
           batch.results.map((r) => h('div', { className: 'dpk-ledrow', key: r.name },
-            h('span', { className: 'dpk-name' }, r.name),
-            h('span', { className: `dpk-op is-${r.status}`, title: r.note || undefined },
+            h('span', { className: 'dpk-name', 'data-tip': r.name }, r.name),
+            h('span', { className: `dpk-op is-${r.status}`, 'data-tip': r.note || undefined },
               t(`op${r.status === 'ok' ? 'Applied' : r.status === 'restart' ? 'Restart' : r.status === 'failed' ? 'Failed' : 'Skipped'}`)
               + (r.note && r.status !== 'ok' ? ` · ${r.note}` : '')),
           )),
@@ -904,7 +1482,7 @@ window.__ModuleLoader__.load({
           ),
           h('div', { className: 'dpk-hint' }, t('proxyHint')),
           h('div', { className: 'dpk-setrow' },
-            h('span', { className: 'dpk-setlabel' }, 'GitHub'),
+            h('span', { className: 'dpk-setlabel' }, t('installLabel')),
             h('input', {
               ref: installRef,
               className: 'dpk-input',
@@ -921,6 +1499,7 @@ window.__ModuleLoader__.load({
               onClick: () => { void doInstall(); },
             }, installing ? t('installing') : t('installBtn')),
           ),
+          h('div', { className: 'dpk-hint' }, t('installHint')),
         ),
       );
 
@@ -931,25 +1510,36 @@ window.__ModuleLoader__.load({
           const p = byName.get(n);
           return p && !p.official;
         });
-        const names = (confirmOp === 'update' ? base.filter((n) => updateSpecOf(byName.get(n))) : base)
-          .sort((a, b) => (a === SELF) - (b === SELF));
+        // 名单与按钮计数/执行目标同口径：混选时只列可操作子集
+        const eligible = base.filter((n) => {
+          const p = byName.get(n);
+          if (!p) return false;
+          if (confirmOp === 'update') return Boolean(updateSpecOf(p));
+          if (confirmOp === 'enable') return p.enabled === false || !p.started;
+          if (confirmOp === 'disable') return p.enabled !== false;
+          return true; // uninstall
+        });
+        const names = eligible.sort((a, b) => (a === SELF) - (b === SELF));
         if (!names.length) return null;
-        return h('div', {
-          className: 'dpk-mask',
-          onClick: (e) => { if (e.target === e.currentTarget) setConfirmOp(null); },
-        },
-        h('div', { className: 'dpk-modal' },
-          h('div', { className: 'dpk-mtitle' }, `${t(OP_LABEL_KEY[confirmOp] ?? 'opUpdate')} (${names.length})`),
+        // 无遮罩浮层：不挡底下列表，观感不随列表内容变化；关闭走"取消"按钮
+        const opLabel = t(OP_LABEL_KEY[confirmOp] ?? 'opUpdate');
+        const DESC_KEY = {
+          update: 'dialogDescUpdate', enable: 'dialogDescEnable',
+          disable: 'dialogDescDisable', uninstall: 'dialogDescUninstall',
+        };
+        return h('div', { className: 'dpk-modal' },
+          h('div', { className: 'dpk-mtitle' }, `${opLabel} (${names.length})`),
+          DESC_KEY[confirmOp] ? h('div', { className: 'dpk-hint' }, t(DESC_KEY[confirmOp])) : null,
           h('div', { className: 'dpk-mlist' }, names.map((n) => h('div', { key: n }, n))),
           h('div', { className: 'dpk-mfoot' },
-            h('button', { className: 'dpk-btn', type: 'button', onClick: () => setConfirmOp(null) }, t('dialogCancel')),
+            h('button', { className: 'dpk-btn', type: 'button', autoFocus: true, onClick: () => setConfirmOp(null) }, t('dialogCancel')),
             h('button', {
               className: `dpk-btn is-primary${confirmOp === 'uninstall' ? ' is-danger' : ''}`,
               type: 'button',
               onClick: () => { setConfirmOp(null); void runBatch(confirmOp); },
-            }, t('dialogOk')),
+            }, t('dialogOkOp', { op: opLabel })),
           ),
-        ));
+        );
       })();
 
       return h('div', { className: 'dpk-root' },
@@ -991,17 +1581,38 @@ window.__ModuleLoader__.load({
           ),
         ),
         banner ? h('div', { className: `dpk-banner${banner.ok ? ' is-ok' : ''}` }, banner.text) : null,
-        checkInfo ? h('div', { className: 'dpk-hint' }, t('checkDone', checkInfo)) : null,
+        // 检查结果行：有失败时升级为警示横幅（含首条原因与连接类提示），全成才显示普通统计
+        // 检查进行中不显示统计（此时分组各自在跑，数字还是上一轮的）
+        checkInfo && !checkInfo.checking
+          ? (checkInfo.error > 0
+            ? h('div', { className: 'dpk-banner' },
+              t('checkDoneFail', { fail: checkInfo.error }),
+              checkInfo.firstErrorNote ? h('div', null, t('checkErrDetail', { note: checkInfo.firstErrorNote })) : null,
+              checkInfo.connErr ? h('div', null, t('checkConnHint')) : null,
+            )
+            : h('div', { className: 'dpk-hint' }, t('checkDone', checkInfo)))
+          : null,
         err ? h('div', { className: 'dpk-err' }, err) : null,
+        // 有缓存但正在刷新：说明当前显示的是上次结果（避免把旧数据误当最新）
+        loading && snap?.fromCache
+          ? h('div', { className: 'dpk-hint' }, t('cachedHint', {
+            time: snap.cachedAt ? new Date(snap.cachedAt).toLocaleString() : '',
+          }))
+          : null,
         batchBar,
         batchProgress,
         loading && !snap
           ? h('div', { className: 'dpk-empty' }, t('loading'))
           : groups.map(([key, list]) => {
-            // 勾选限定：只有可更新（有更新目标）的非官方插件可被选中
-            const eligible = list.filter((p) => !p.official && updateSpecOf(p));
+            // 勾选限定：任意非官方插件可选中（启停/卸载批量不限可更新行；
+            // 行内"更新"按钮按 updateSpecOf 独立显隐，批量更新对无目标行记 skipped）
+            const eligible = list.filter((p) => !p.official);
             const allIn = eligible.length > 0 && eligible.every((p) => selected.has(p.name));
             const collapsed = collapsedGroups.has(key);
+            // 分组级检查状态：npm / github 两组各自独立，互不阻塞
+            const gState = checkState[key] ?? null;
+            const gChecking = gState?.status === 'checking';
+            const checkable = CHECKABLE_GROUPS.includes(key);
             return h('div', { className: 'dpk-group', key },
               h('div', { className: 'dpk-ghead', onClick: () => toggleGroupCollapse(key) },
                 h('span', { className: 'dpk-garrow' }, collapsed ? '▸' : '▾'),
@@ -1017,6 +1628,24 @@ window.__ModuleLoader__.load({
                   : null,
                 h('span', { className: 'dpk-gtitle' }, t(GROUP_TITLE_KEY[key])),
                 h('span', { className: 'dpk-gcount' }, String(list.length)),
+                // 分组独立检查入口：只给有远端版本锚点的两组
+                checkable
+                  ? h('button', {
+                    className: 'dpk-btn is-mini',
+                    type: 'button',
+                    disabled: gChecking || batchRunning || loading,
+                    onClick: (e) => { e.stopPropagation(); void doCheckGroup(key); },
+                  }, gChecking ? t('groupChecking') : t('groupCheckBtn'))
+                  : null,
+                gState?.status === 'done' && gState.counts
+                  ? h('span', { className: 'dpk-gcount' }, t('groupCheckDone', {
+                    u: gState.counts.update ?? 0,
+                    l: gState.counts.latest ?? 0,
+                  }))
+                  : null,
+                gState?.status === 'error'
+                  ? h('span', { className: 'dpk-gcount', 'data-tip': gState.error || undefined }, t('groupCheckFailed'))
+                  : null,
               ),
               !collapsed
                 ? h('div', { className: 'dpk-rows' },
@@ -1024,12 +1653,12 @@ window.__ModuleLoader__.load({
                     key: entry.name,
                     entry,
                     checked: selected.has(entry.name),
-                    disabled: entry.official || batchRunning || !updateSpecOf(entry),
+                    disabled: entry.official || batchRunning,
                     onToggle: toggleOne,
                     onUpdate: onRowUpdate,
                     busy: batchRunning,
                     opStatus: batch && !batch.running
-                      ? batch.results?.find((r) => r.name === entry.name) ?? null
+                      ? batch.results?.findLast((r) => r.name === entry.name) ?? null
                       : null,
                   })),
                 )
@@ -1073,6 +1702,15 @@ window.__ModuleLoader__.load({
           result: { mode: 'src-json' },
         },
         {
+          id: 'dsh-plugin-keeper#dsh-plugin-keeper/checkGroup',
+          service: 'PluginKeeperService',
+          namespace: 'dsh-plugin-keeper',
+          method: 'checkGroup',
+          invocation: { kind: 'direct' },
+          parameters: [INPUT_PARAM],
+          result: { mode: 'src-json' },
+        },
+        {
           id: 'dsh-plugin-keeper#dsh-plugin-keeper/saveSettings',
           service: 'PluginKeeperService',
           namespace: 'dsh-plugin-keeper',
@@ -1095,6 +1733,15 @@ window.__ModuleLoader__.load({
           service: 'PluginKeeperService',
           namespace: 'dsh-plugin-keeper',
           method: 'restoreBatch',
+          invocation: { kind: 'direct' },
+          parameters: [INPUT_PARAM],
+          result: { mode: 'src-json' },
+        },
+        {
+          id: 'dsh-plugin-keeper#dsh-plugin-keeper/reportBatch',
+          service: 'PluginKeeperService',
+          namespace: 'dsh-plugin-keeper',
+          method: 'reportBatch',
           invocation: { kind: 'direct' },
           parameters: [INPUT_PARAM],
           result: { mode: 'src-json' },
@@ -1141,6 +1788,7 @@ window.__ModuleLoader__.load({
         sectionDeclared = true;
         register();
       });
+      acquireTooltip(); // 注入成功后再接 tooltip，注入抛错时不泄漏引用计数
       const langObs = new MutationObserver(registerIfDeclared);
       langObs.observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
       return () => {
@@ -1151,6 +1799,7 @@ window.__ModuleLoader__.load({
         try {
           disposeEntry?.();
         } catch { /* 忽略 */ }
+        releaseTooltip();
       };
     }
 
@@ -1178,6 +1827,7 @@ window.__ModuleLoader__.load({
         }
       };
       const disposeInjection = rctx.slots.inject('plugins.tab', register);
+      acquireTooltip(); // 注入成功后再接 tooltip，注入抛错时不泄漏引用计数
       return () => {
         try {
           disposeInjection?.();
@@ -1185,6 +1835,7 @@ window.__ModuleLoader__.load({
         try {
           disposeEntry?.();
         } catch { /* 忽略 */ }
+        releaseTooltip();
       };
     }
 
