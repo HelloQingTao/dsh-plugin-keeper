@@ -18,7 +18,7 @@
 - **Display location setting**: the panel now lives only in the sidebar Plugins tab by default; a new switch in "Check settings" can also show it as a Settings section (applies after re-entering the page)
 - The group collapse arrow is now an inline SVG triangle at a readable size and contrast, with a hover hint
 - Packaged plugins that carry lifecycle scripts (`prepare` / `prepack`) are staged in a temp directory with `scripts` stripped before packing — without this, `npm pack` fails on packages such as `dsh-config-manager` and `billion-context`
-- **Plugin search**: a search box in the toolbar (next to the "Updatable only" filter) narrows the inventory by package name, description, version or source repository; typing filters automatically after a short pause, matched parts are highlighted in yellow, and a "n / total matched" counter tells you how much is left
+- **Plugin search**: a search box in the toolbar (next to the "Updatable only" filter) narrows the inventory by package name, description, version or source repository; typing filters automatically after a short pause, matched parts are highlighted in yellow, and the counter shows how many matched
 
 ### 中文
 
@@ -36,7 +36,7 @@
 - **显示位置设置**：面板默认只在侧栏「插件」页签显示；「检查设置」里新增开关可同时显示在设置页（重新进入页面后生效）
 - 分组收纳图标改为内联 SVG 三角（尺寸与对比度可读），并带悬停提示
 - 带生命周期脚本（`prepare` / `prepack`）的插件改为「临时目录 + 剥离 scripts」后再打包 —— 否则 `npm pack` 会在 `dsh-config-manager`、`billion-context` 这类包上失败
-- **插件搜索**：工具栏新增搜索框（与「只看可更新」并列），按 包名 / 简述 / 版本 / 来源仓库 检索；输入停顿约 0.2 秒自动筛选，命中文本黄色高亮，并显示「匹配 n / 总数」计数
+- **插件搜索**：工具栏新增搜索框（与「只看可更新」并列），按 包名 / 简述 / 版本 / 来源仓库 检索；输入停顿约 0.2 秒自动筛选，命中文本黄色高亮，并显示命中数 / 总数
 
 ## 0.2.0 (2026-10-24)
 
@@ -44,7 +44,7 @@
 
 - Added one-click update check: npm plugins via the registry with `engines.dsh` compatibility pre-check; GitHub plugins via releases with tag fallback; GitHub API goes through a configurable in-page proxy
 - Added multi-select batch operations: batch update / enable / disable / uninstall, with disable and enable applied hot; batch runs are preceded by an automatic profile config snapshot (last 10 kept) restorable in-page
-- Added an honest result ledger per batch run: success / restart-required / failed / skipped counts with per-item reasons
+- Added a result ledger per batch run: success / restart-required / failed / skipped counts with per-item reasons
 - Added GitHub installs: `owner/repo`, `github:owner/repo#tag` or a GitHub URL; failure reasons are echoed in full
 - Added a "Plugin Ops" tab in the official sidebar Plugins panel, sharing the same data as the settings tab
 - Update states persist across restarts and show the time of the last check
@@ -53,7 +53,7 @@
 
 - 新增一键检查更新：npm 插件查 registry 并做 `engines.dsh` 兼容预判；GitHub 插件查 releases（tag 兜底）；GitHub API 走页内可配置代理
 - 新增多选批量操作：批量更新 / 启用 / 停用 / 卸载，停用与启用热生效；每次批量前自动快照 profile 配置（保留最近 10 份），页内一键恢复
-- 新增诚实结果台账：每轮批量输出 成功 / 需重启 / 失败 / 跳过 计数与逐项原因
+- 新增结果台账：每轮批量输出 成功 / 需重启 / 失败 / 跳过 计数与逐项原因
 - 新增 GitHub 直装：`owner/repo`、`github:owner/repo#tag` 或 GitHub 链接；失败原因完整回显
 - 官方侧栏「插件」面板新增「插件运维」页签，与设置页共享数据
 - 检查结果跨重启持久化并显示上次检查时间
