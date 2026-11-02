@@ -123,6 +123,12 @@ window.__ModuleLoader__.load({
         updateNone: '所选中没有可更新的插件（先检查更新）',
         rowUpdate: '更新',
         onlyUpdatable: '只看可更新',
+        // ---- 搜索 ----
+        searchPlaceholder: '搜索插件名 / 描述 / 版本',
+        searchLabel: '搜索插件',
+        searchClear: '清除搜索',
+        searchCount: '匹配 {n} / {total}',
+        searchNoMatch: '没有匹配「{q}」的插件',
         // ---- 分组独立检查 ----
         groupCheckBtn: '检查本组',
         groupChecking: '检查中…',
@@ -137,6 +143,68 @@ window.__ModuleLoader__.load({
         copyPath: '复制插件所在路径',
         copied: '路径已复制',
         copyFail: '复制失败',
+        // ---- 显示位置 ----
+        showInSettings: '在设置页也显示「插件运维」',
+        showInSettingsHint: '关闭时仅在「插件」面板的页签中显示；改动在重新进入页面后生效。',
+        showInSettingsSaved: '显示位置已更新，重新进入页面后生效',
+        // ---- 分组折叠 ----
+        groupCollapse: '折叠分组',
+        groupExpand: '展开分组',
+        // ---- 导出 ----
+        batchExport: '导出所选',
+        exportDialogTitle: '导出所选插件',
+        exportWithConfig: '同时导出插件对应配置',
+        exportWithConfigHint: '配置包含插件在 cordis.patch.yml 里的参数与独立配置文件；不含凭据文件。',
+        exportConfigHeader: '将随包带走的配置',
+        exportConfigEmpty: '未找到可导出的配置',
+        exportConfigPatch: 'profile 配置片段',
+        exportConfigHome: '独立配置文件',
+        exportConfigDeclared: '插件声明的数据目录',
+        exportConfigSuspicious: '疑似凭据文件，不会随包带走',
+        exportConfigMaybe: '可能相关（请确认归属）',
+        exportOk: '确认导出',
+        exportRunning: '导出中…',
+        exportDone: '已导出 {name}（{size}）',
+        exportFailed: '导出失败',
+        exportDownloadFailed: '导出包下载失败',
+        exportNoPlugin: '未选择插件',
+        exportPlanFailed: '导出预演失败',
+        exportWarnings: '导出告警：{note}',
+        exportInstallCmd: '安装命令',
+        exportInstallCmdCopied: '安装命令已复制',
+        // ---- 导入 ----
+        batchImport: '导入所选',
+        importPick: '选择导出包',
+        importPickFailed: '读取文件失败',
+        importUploading: '上传中…',
+        importUploadFailed: '上传导入包失败',
+        importPlanFailed: '导入包解析失败',
+        importAnalyzeTitle: '导入预检',
+        importSourceDsh: '导出源 DSH {src} · 本机 DSH {local}',
+        importCompatOk: '兼容',
+        importCompatBad: '不兼容',
+        importCompatExempt: '已豁免',
+        importCompatUnknown: '无法判定',
+        importIntegrityBad: '完整性校验失败',
+        importVersionDiff: '导出包记录版本 {pkg}，tarball 内为 {tar}',
+        importConflictPlugin: '同名已装',
+        importConflictPatch: '本机已有配置片段',
+        importConflictFile: '本机已有同名文件',
+        importStrategyKeep: '保留本机',
+        importStrategyReplace: '以导出包为准',
+        importStrategySkip: '跳过',
+        importPluginStrategy: '插件处理',
+        importConfigStrategy: '配置处理',
+        importExecTitle: '执行导入',
+        importRunning: '导入中… {done}/{total}',
+        importOk: '确认导入',
+        importDone: '导入完成：成功 {ok} · 跳过 {skip} · 失败 {fail}',
+        importFailed: '导入失败',
+        importNeedRestart: '{n} 项变更需重启后生效',
+        importLocalPreview: '本机当前值',
+        importPackageValue: '导出包中的值',
+        importOnlyConfig: '仅导入配置（不装插件）',
+        importNoConfig: '导出包内没有配置',
       },
       en: {
         sectionTitle: 'Plugin Ops',
@@ -229,6 +297,12 @@ window.__ModuleLoader__.load({
         updateNone: 'No updatable plugin in selection (check updates first)',
         rowUpdate: 'Update',
         onlyUpdatable: 'Updatable only',
+        // ---- Search ----
+        searchPlaceholder: 'Search by name / description / version',
+        searchLabel: 'Search plugins',
+        searchClear: 'Clear search',
+        searchCount: '{n} / {total} matched',
+        searchNoMatch: 'No plugin matches "{q}"',
         // ---- 分组独立检查 ----
         groupCheckBtn: 'Check group',
         groupChecking: 'Checking…',
@@ -243,6 +317,68 @@ window.__ModuleLoader__.load({
         copyPath: 'Copy plugin path',
         copied: 'Path copied',
         copyFail: 'Copy failed',
+        // ---- 显示位置 ----
+        showInSettings: 'Also show "Plugin Ops" in Settings',
+        showInSettingsHint: 'When off, the panel only appears as a tab under Plugins; the change applies after re-entering the page.',
+        showInSettingsSaved: 'Display location updated; applies after re-entering the page',
+        // ---- 分组折叠 ----
+        groupCollapse: 'Collapse group',
+        groupExpand: 'Expand group',
+        // ---- 导出 ----
+        batchExport: 'Export selected',
+        exportDialogTitle: 'Export selected plugins',
+        exportWithConfig: 'Also export the matching plugin configuration',
+        exportWithConfigHint: 'Configuration covers each plugin\'s parameters in cordis.patch.yml plus its standalone config files; credential files are never included.',
+        exportConfigHeader: 'Configuration included in the package',
+        exportConfigEmpty: 'No exportable configuration found',
+        exportConfigPatch: 'Profile config fragment',
+        exportConfigHome: 'Standalone config file',
+        exportConfigDeclared: 'Plugin-declared data directory',
+        exportConfigSuspicious: 'Looks like a credential file; it will not be included',
+        exportConfigMaybe: 'Possibly related (please confirm ownership)',
+        exportOk: 'Export',
+        exportRunning: 'Exporting…',
+        exportDone: 'Exported {name} ({size})',
+        exportFailed: 'Export failed',
+        exportDownloadFailed: 'Failed to download the export package',
+        exportNoPlugin: 'No plugin selected',
+        exportPlanFailed: 'Failed to prepare the export',
+        exportWarnings: 'Export warning: {note}',
+        exportInstallCmd: 'Install command',
+        exportInstallCmdCopied: 'Install command copied',
+        // ---- 导入 ----
+        batchImport: 'Import package',
+        importPick: 'Choose an export package',
+        importPickFailed: 'Failed to read the file',
+        importUploading: 'Uploading…',
+        importUploadFailed: 'Failed to upload the package',
+        importPlanFailed: 'Failed to parse the package',
+        importAnalyzeTitle: 'Import pre-check',
+        importSourceDsh: 'Source DSH {src} · local DSH {local}',
+        importCompatOk: 'Compatible',
+        importCompatBad: 'Incompatible',
+        importCompatExempt: 'Exempted',
+        importCompatUnknown: 'Cannot determine',
+        importIntegrityBad: 'Integrity check failed',
+        importVersionDiff: 'Package records {pkg}, tarball carries {tar}',
+        importConflictPlugin: 'Already installed locally',
+        importConflictPatch: 'Local config fragment exists',
+        importConflictFile: 'Local file of the same name exists',
+        importStrategyKeep: 'Keep local',
+        importStrategyReplace: 'Use the package',
+        importStrategySkip: 'Skip',
+        importPluginStrategy: 'Plugin handling',
+        importConfigStrategy: 'Configuration handling',
+        importExecTitle: 'Apply import',
+        importRunning: 'Importing… {done}/{total}',
+        importOk: 'Import',
+        importDone: 'Import done: ok {ok} · skipped {skip} · failed {fail}',
+        importFailed: 'Import failed',
+        importNeedRestart: '{n} change(s) take effect after restart',
+        importLocalPreview: 'Current local value',
+        importPackageValue: 'Value in the package',
+        importOnlyConfig: 'Import configuration only (do not install plugins)',
+        importNoConfig: 'The package carries no configuration',
       },
     };
 
@@ -304,8 +440,14 @@ window.__ModuleLoader__.load({
 .dpk-banner.is-ok{color:var(--dsw-alias-state-success-primary);}
 .dpk-group{display:flex;flex-direction:column;gap:4px;min-width:0;}
 .dpk-ghead{display:flex;align-items:center;gap:7px;cursor:pointer;user-select:none;padding:2px 0;}
-.dpk-ghead:hover .dpk-gtitle{color:var(--dsw-alias-brand-primary);}
-.dpk-garrow{font-size:9px;color:var(--dsw-alias-label-caption);width:10px;flex:none;text-align:center;}
+.dk-ghead:hover .dpk-gtitle{color:var(--dsw-alias-brand-primary);}
+/* 收纳三角：内联 SVG（字符 ▸/▾ 在 9px 下几乎不可见）。
+   12×12 视窗 + 16×16 命中区，颜色提到 label-secondary（caption 太弱）。 */
+.dpk-garrow{width:16px;height:16px;flex:none;display:inline-flex;align-items:center;justify-content:center;border-radius:var(--dsw-radius-sm,4px);color:var(--dsw-alias-label-secondary);transition:color .12s,background .12s;}
+.dpk-ghead:hover .dpk-garrow{color:var(--dsw-alias-brand-primary);}
+.dpk-garrow:hover{background:var(--dsw-alias-interactive-bg-hover);}
+.dpk-garrow svg{display:block;width:12px;height:12px;fill:currentColor;}
+.dpk-garrow:focus-visible{outline:1px solid var(--dsw-alias-brand-primary);outline-offset:1px;}
 .dpk-gtitle{font-size:12px;font-weight:500;color:var(--dsw-alias-label-primary);transition:color .12s;}
 .dpk-gcount{font-size:11px;color:var(--dsw-alias-label-caption);}
 .dpk-rows{border:1px solid var(--dsw-alias-border-l1);border-radius:var(--dsw-radius-md,8px);overflow:hidden;}
@@ -314,6 +456,21 @@ window.__ModuleLoader__.load({
 .dpk-rowdesc{color:var(--dsw-alias-label-tertiary);font-size:11px;line-height:16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-left:24px;margin-top:2px;}
 .dpk-onlyup{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--dsw-alias-label-secondary);cursor:pointer;white-space:nowrap;}
 .dpk-onlyup input{accent-color:var(--dsw-alias-brand-primary);margin:0;width:13px;height:13px;}
+/* 搜索框 + 只看可更新：同一组筛选控件 */
+.dpk-filters{display:flex;align-items:center;gap:10px;flex-wrap:wrap;row-gap:6px;min-width:0;}
+.dpk-search{position:relative;display:inline-flex;align-items:center;min-width:0;}
+.dpk-searchicon{position:absolute;left:7px;display:inline-flex;align-items:center;justify-content:center;color:var(--dsw-alias-label-caption);pointer-events:none;}
+.dpk-searchicon svg{display:block;width:12px;height:12px;}
+.dpk-searchinput{background:var(--dsw-alias-bg-layer-1);border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-primary);border-radius:var(--dsw-radius-md,8px);padding:2px 24px 2px 23px;font:inherit;font-size:12px;line-height:20px;width:190px;max-width:100%;}
+.dpk-searchinput:focus{outline:1px solid var(--dsw-alias-brand-primary);outline-offset:0;}
+.dpk-searchinput::placeholder{color:var(--dsw-alias-label-caption);}
+.dpk-searchclear{position:absolute;right:3px;width:17px;height:17px;border:none;border-radius:var(--dsw-radius-sm,4px);padding:0;background:0 0;color:var(--dsw-alias-label-tertiary);cursor:pointer;font:inherit;font-size:13px;line-height:17px;display:inline-flex;align-items:center;justify-content:center;}
+.dpk-searchclear:hover{color:var(--dsw-alias-label-primary);background:var(--dsw-alias-interactive-bg-hover);}
+.dpk-searchclear:focus-visible{outline:1px solid var(--dsw-alias-brand-primary);outline-offset:1px;}
+.dpk-searchcount{font-size:11px;color:var(--dsw-alias-label-tertiary);white-space:nowrap;}
+/* 命中文本高亮：黄色底（不用主题色 —— 搜索命中一律黄底），文字颜色保持原样，
+   这样明暗主题下都读得清（黄字在白底上会糊）。 */
+.dpk-hit{background:rgba(255,213,79,.42);color:inherit;border-radius:3px;padding:0 1px;font-weight:600;}
 .dpk-row + .dpk-row{border-top:1px solid var(--dsw-alias-border-l1);}
 .dpk-row:hover{background:var(--dsw-alias-interactive-bg-hover);}
 .dpk-row.is-clickable{cursor:pointer;}
@@ -347,6 +504,27 @@ window.__ModuleLoader__.load({
 .dpk-empty{color:var(--dsw-alias-label-tertiary);font-size:12px;}
 /* 主题化悬浮提示浮层（body 直挂单例，替代不随主题的原生 title） */
 .dpk-tip{position:fixed;z-index:10000;max-width:400px;background:var(--dsw-alias-bg-layer-1);border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-primary);font-size:11px;line-height:18px;padding:3px 9px;border-radius:var(--dsw-radius-md,8px);box-shadow:0 4px 16px rgba(0,0,0,.2);pointer-events:none;display:none;white-space:pre-wrap;overflow-wrap:anywhere;}
+/* 显示位置开关（与「只看可更新」同一形态） */
+.dpk-switch{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--dsw-alias-label-secondary);cursor:pointer;white-space:nowrap;}
+.dpk-switch input{accent-color:var(--dsw-alias-brand-primary);margin:0;width:13px;height:13px;}
+/* 导出弹框：比确认框宽（要列清单） */
+.dpk-modal.is-wide{width:520px;}
+.dpk-cfglist{display:flex;flex-direction:column;gap:6px;max-height:260px;overflow:auto;}
+.dpk-cfgrow{display:flex;align-items:flex-start;gap:8px;padding:6px 10px;border:1px solid var(--dsw-alias-border-l1);border-radius:var(--dsw-radius-md,8px);background:var(--dsw-alias-bg-layer-2);}
+.dpk-cfgrow.is-suspicious{border-color:var(--dsw-alias-state-warn-primary);}
+.dpk-cfgnames{min-width:0;flex:1;}
+.dpk-cfgrel{font-family:${MONO};font-size:11px;line-height:16px;color:var(--dsw-alias-label-primary);overflow-wrap:anywhere;}
+.dpk-cfgtag{font-size:10px;line-height:16px;color:var(--dsw-alias-label-tertiary);}
+.dpk-cfgtag.is-warn{color:var(--dsw-alias-state-warn-primary);}
+.dpk-cfgtag.is-maybe{color:var(--dsw-alias-state-warn-primary);}
+.dpk-cb.is-warn{accent-color:var(--dsw-alias-state-warn-primary);}
+.dpk-cmdrow{display:flex;align-items:center;gap:8px;font-family:${MONO};font-size:11px;line-height:16px;color:var(--dsw-alias-label-secondary);background:var(--dsw-alias-bg-layer-2);border-radius:var(--dsw-radius-md,8px);padding:4px 8px;overflow-wrap:anywhere;}
+/* 冲突策略下拉（导入弹框） */
+.dpk-select{background:var(--dsw-alias-bg-layer-1);border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-primary);border-radius:var(--dsw-radius-md,8px);padding:2px 6px;font:inherit;font-size:11px;line-height:18px;flex:none;max-width:150px;}
+.dpk-select:focus{outline:1px solid var(--dsw-alias-brand-primary);outline-offset:0;}
+.dpk-select:disabled{opacity:.4;}
+/* 导入弹框里的兼容性徽标要能跟文字并排 */
+.dpk-cfgtag .dpk-op{display:inline-block;margin:0 4px 0 0;vertical-align:middle;}
 `;
     let cssTag = null;
     function injectCss() {
@@ -451,6 +629,8 @@ window.__ModuleLoader__.load({
     const CACHE_KEY = 'dsh-plugin-keeper:snapshot:v1';
     const LOAD_TIMEOUT_MS = 5000;
     const CHECK_TIMEOUT_MS = 30000;
+    // 搜索防抖：输入停顿 200ms 后自动筛选（本地过滤是纯内存，延迟只是手感）
+    const SEARCH_DEBOUNCE_MS = 200;
 
     function loadCachedSnapshot() {
       try {
@@ -569,6 +749,96 @@ window.__ModuleLoader__.load({
       }
     }
 
+    // 导出预演：列出将带走的插件与配置（宿主半读盘 + 打包可行性预判）
+    async function callPlanExport(names) {
+      try {
+        const v = unwrapEnvelope(await rpcFace?.planExport?.({ names }));
+        return v ?? { ok: false, error: 'no response' };
+      } catch (e) {
+        return { ok: false, error: String(e?.message ?? e) };
+      }
+    }
+
+    // 执行导出（宿主半打包 + 写盘）
+    async function callExportPlugins(payload) {
+      try {
+        const v = unwrapEnvelope(await rpcFace?.exportPlugins?.(payload));
+        return v ?? { ok: false, error: 'no response' };
+      } catch (e) {
+        return { ok: false, error: String(e?.message ?? e) };
+      }
+    }
+
+    /** 导出包下载路由前缀（与宿主半 EXPORT_ROUTE_PREFIX 对齐）。 */
+    const EXPORT_ROUTE_PREFIX = '/plugin-keeper/api/exports';
+
+    /** 导入上传路由（与宿主半 IMPORT_UPLOAD_PATH 对齐）。 */
+    const IMPORT_UPLOAD_PATH = '/plugin-keeper/api/imports/upload';
+
+    /**
+     * 下载导出包并触发浏览器保存。
+     *
+     * 为什么走 HTTP 而不是 RPC：导出包可达几十 MB，base64 塞进 JSON 信封不现实；
+     * 宿主 webserver 没有静态目录挂载，所以宿主半注册了一条 loopback 路由。
+     */
+    async function downloadExport(filename) {
+      const res = await fetch(`${EXPORT_ROUTE_PREFIX}/${encodeURIComponent(filename)}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      try {
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.rel = 'noopener';
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      } finally {
+        // 立刻 revoke 会让部分浏览器的下载中断，延后释放
+        setTimeout(() => URL.revokeObjectURL(url), 30000);
+      }
+    }
+
+    /**
+     * 上传导入包（原始 zip 字节）到宿主半暂存，返回批次 id。
+     * 与下载路由对称：走 loopback HTTP（体积大，不能走 RPC 信封）。
+     */
+    async function uploadImportPackage(file) {
+      const res = await fetch(IMPORT_UPLOAD_PATH, {
+        method: 'POST',
+        headers: { 'content-type': 'application/zip' },
+        body: file,
+      });
+      const text = await res.text();
+      let body = null;
+      try { body = JSON.parse(text); } catch { /* 非 JSON 响应 */ }
+      if (!res.ok || body?.ok !== true) {
+        throw new Error(body?.error ?? `HTTP ${res.status}`);
+      }
+      return body;
+    }
+
+    // 导入预演（宿主半解包 + 兼容性预检 + 冲突检测）
+    async function callPlanImport(id) {
+      try {
+        const v = unwrapEnvelope(await rpcFace?.planImport?.({ id }));
+        return v ?? { ok: false, error: 'no response' };
+      } catch (e) {
+        return { ok: false, error: String(e?.message ?? e) };
+      }
+    }
+
+    // 执行导入（按策略装插件 + 写配置）
+    async function callExecuteImport(payload) {
+      try {
+        const v = unwrapEnvelope(await rpcFace?.executeImport?.(payload));
+        return v ?? { ok: false, error: 'no response' };
+      } catch (e) {
+        return { ok: false, error: String(e?.message ?? e) };
+      }
+    }
+
     // 官方 pluginManager face 调用：返回 ChangeResult；不可用/异常抛错。
     async function callPm(method, ...args) {
       const fn = pmFace?.[method];
@@ -662,6 +932,82 @@ window.__ModuleLoader__.load({
       unknown: 'groupUnknown',
     };
 
+    // ---------- 搜索 ----------
+    // 检索范围 = 行内可见信息（包名 / 简述 / 版本）+ 来源锚点（仓库 / spec），
+    // 让「按仓库名搜」也能命中（包名与仓库名常不一致）。
+    function searchHaystack(entry) {
+      return [
+        entry?.name ?? '',
+        entry?.description ?? '',
+        entry?.version ?? '',
+        entry?.source?.repo ?? '',
+        entry?.source?.spec ?? '',
+      ].join(' ').toLowerCase();
+    }
+
+    /**
+     * 把查询串切成检索词（空白分隔，大小写不敏感）。
+     * 多词之间是「与」关系：每个词都要出现在候选文本里。
+     */
+    function searchTerms(query) {
+      return String(query ?? '')
+        .toLowerCase()
+        .split(/\s+/)
+        .filter(Boolean);
+    }
+
+    /** 候选是否命中全部检索词。 */
+    function matchesSearch(entry, terms) {
+      if (!terms.length) return true;
+      const hay = searchHaystack(entry);
+      return terms.every((term) => hay.includes(term));
+    }
+
+    /**
+     * 把文本按检索词切成片段：[{text, hit}]。
+     * 重叠命中会合并成一段（避免嵌套 <span>）；无命中则整段返回。
+     */
+    function highlightSegments(text, terms) {
+      const s = String(text ?? '');
+      if (!s || !terms || !terms.length) return [{ text: s, hit: false }];
+      const lower = s.toLowerCase();
+      const marks = [];
+      for (const term of terms) {
+        if (!term) continue;
+        let from = 0;
+        for (;;) {
+          const idx = lower.indexOf(term, from);
+          if (idx < 0) break;
+          marks.push([idx, idx + term.length]);
+          from = idx + term.length; // 同一检索词不重叠匹配
+        }
+      }
+      if (!marks.length) return [{ text: s, hit: false }];
+      marks.sort((a, b) => a[0] - b[0]);
+      const merged = [];
+      for (const m of marks) {
+        const last = merged[merged.length - 1];
+        if (last && m[0] <= last[1]) last[1] = Math.max(last[1], m[1]);
+        else merged.push([m[0], m[1]]);
+      }
+      const out = [];
+      let pos = 0;
+      for (const [a, b] of merged) {
+        if (a > pos) out.push({ text: s.slice(pos, a), hit: false });
+        out.push({ text: s.slice(a, b), hit: true });
+        pos = b;
+      }
+      if (pos < s.length) out.push({ text: s.slice(pos), hit: false });
+      return out;
+    }
+
+    /** 渲染高亮文本：命中片段套 .dpk-hit（主题色），其余原样。 */
+    function highlightText(text, terms) {
+      return highlightSegments(text, terms).map((seg, i) => (seg.hit
+        ? h('span', { key: `h${i}`, className: 'dpk-hit' }, seg.text)
+        : seg.text));
+    }
+
     // 来源 repo 归一化（与宿主 index.js 的 repoOf 同口径）：http(s) URL → owner/repo，去 .git
     function repoKeyOf(entry) {
       let repo = entry?.source?.repo ?? '';
@@ -741,6 +1087,15 @@ window.__ModuleLoader__.load({
       }),
     );
 
+    // 搜索框放大镜（描边 SVG，跟随主题色）
+    const SEARCH_ICON = h('svg', { viewBox: '0 0 16 16', width: 12, height: 12, 'aria-hidden': true },
+      h('circle', { cx: 6.9, cy: 6.9, r: 4.1, fill: 'none', stroke: 'currentColor', strokeWidth: 1.4 }),
+      h('path', {
+        d: 'M10 10l3.1 3.1',
+        fill: 'none', stroke: 'currentColor', strokeWidth: 1.4, strokeLinecap: 'round',
+      }),
+    );
+
     const COPY_ICON = h('svg', { viewBox: '0 0 16 16', width: 11, height: 11, 'aria-hidden': true },
       h('rect', { x: 5.75, y: 5.75, width: 7.5, height: 7.5, rx: 1.5, fill: 'none', stroke: 'currentColor', strokeWidth: 1.4 }),
       h('path', {
@@ -755,6 +1110,17 @@ window.__ModuleLoader__.load({
         fill: 'none', stroke: 'currentColor', strokeWidth: 1.6, strokeLinecap: 'round', strokeLinejoin: 'round',
       }),
     );
+
+    // 分组收纳三角（内联 SVG；字符 ▸/▾ 在小字号 + caption 色下几乎不可见）。
+    // 展开 = 朝下的小三角，收起 = 朝右的小三角。
+    function CollapseArrow({ collapsed }) {
+      const path = collapsed
+        ? 'M5.25 3.5 9.5 8l-4.25 4.5z'
+        : 'M3.5 5.25 8 9.5l4.5-4.25z';
+      return h('svg', { viewBox: '0 0 16 16', width: 12, height: 12, 'aria-hidden': true },
+        h('path', { d: path }),
+      );
+    }
 
     // 本地来源图标：hover 显示插件所在路径，点击复制到剪贴板（成败各有短暂反馈）。
     function LocalOpenIcon({ path }) {
@@ -791,7 +1157,7 @@ window.__ModuleLoader__.load({
       }, flash === 'ok' ? CHECK_ICON : COPY_ICON);
     }
 
-    function Row({ entry, checked, disabled, onToggle, opStatus, onUpdate, busy }) {
+    function Row({ entry, checked, disabled, onToggle, opStatus, onUpdate, busy, terms }) {
       const gk = groupKeyOf(entry);
       // GitHub 行不显示 repo 徽标：与包名重复且挤占行内更新按钮位置
       const badgeText = gk === 'official' ? t('badgeOfficial')
@@ -840,7 +1206,7 @@ window.__ModuleLoader__.load({
             className: 'dpk-name',
             // repo 不上行内（与包名重复且挤压按钮）；悬停同时给出全名与来源
             'data-tip': repoLabel ? `${entry.name} · ${repoLabel}` : entry.name,
-          }, entry.name),
+          }, highlightText(entry.name, terms)),
           // 来源入口图标：npm/GitHub 点击开详情页；本地 hover 显示路径、点击复制
           openUrl
             ? h('a', {
@@ -854,7 +1220,7 @@ window.__ModuleLoader__.load({
             }, OPEN_ICON)
             : null,
           entry.localPath ? h(LocalOpenIcon, { path: entry.localPath }) : null,
-          entry.version ? h('span', { className: 'dpk-ver', 'data-tip': `v${entry.version}` }, `v${entry.version}`) : null,
+          entry.version ? h('span', { className: 'dpk-ver', 'data-tip': `v${entry.version}` }, highlightText(`v${entry.version}`, terms)) : null,
           badgeText ? h('span', { className: 'dpk-badge' }, badgeText) : null,
           h('div', { className: 'dpk-rowops' },
             checkBadgeOf(entry),
@@ -870,7 +1236,7 @@ window.__ModuleLoader__.load({
             h('span', { className: 'dpk-state' }, enabled === false ? t('stateDisabled') : entry.started ? t('stateOn') : t('stateOff')),
           ),
         ),
-        entry.description ? h('div', { className: 'dpk-rowdesc', 'data-tip': entry.description }, entry.description) : null,
+        entry.description ? h('div', { className: 'dpk-rowdesc', 'data-tip': entry.description }, highlightText(entry.description, terms)) : null,
       );
     }
 
@@ -893,12 +1259,28 @@ window.__ModuleLoader__.load({
       const [checkState, setCheckState] = React.useState({});
       const [saving, setSaving] = React.useState(false);
       const [saveFlash, setSaveFlash] = React.useState(null); // 'ok' | {err}
+      // 显示位置开关（设置页是否也显示本插件）：默认关；改动在重新进入页面后生效
+      const [showInSettings, setShowInSettings] = React.useState(false);
+      const [locationFlash, setLocationFlash] = React.useState(null); // 'ok' | {err}
       const proxyRef = React.useRef(null);
       const [installing, setInstalling] = React.useState(false);
       const installRef = React.useRef(null);
       // M2 批量状态
       const [selected, setSelected] = React.useState(() => new Set());
       const [confirmOp, setConfirmOp] = React.useState(null); // 待二次确认的批量操作
+      // 导出：弹框状态（null = 未打开）+ 预演结果 + 已勾选配置项 + 运行中标记
+      const [exportState, setExportState] = React.useState(null);
+      const [exportPlan, setExportPlan] = React.useState(null);
+      const [exportConfigRels, setExportConfigRels] = React.useState(() => new Set());
+      const [exporting, setExporting] = React.useState(false);
+      // 导入：批次 id + 预检结果 + 策略选择 + 运行中标记 + 隐藏的文件 input
+      const [importState, setImportState] = React.useState(null); // 'uploading' | 'analyze' | 'running' | null
+      const [importPlan, setImportPlan] = React.useState(null);
+      const [importId, setImportId] = React.useState(null);
+      const [importPluginStrategies, setImportPluginStrategies] = React.useState(() => new Map());
+      const [importConfigStrategies, setImportConfigStrategies] = React.useState(() => new Map());
+      const [importOnlyConfig, setImportOnlyConfig] = React.useState(false);
+      const importFileRef = React.useRef(null);
       // 确认浮层无遮罩：Esc 关闭补偿（原先"点遮罩关闭"已随遮罩移除）
       React.useEffect(() => {
         if (!confirmOp) return;
@@ -925,6 +1307,15 @@ window.__ModuleLoader__.load({
       }, []);
       // 只看可更新（默认关）；分组折叠（会话内记忆）
       const [onlyUpdatable, setOnlyUpdatable] = React.useState(false);
+      // 搜索：query = 输入框实时值；search = 防抖后真正生效的查询串
+      const [query, setQuery] = React.useState('');
+      const [search, setSearch] = React.useState('');
+      // 输入后停顿 SEARCH_DEBOUNCE_MS 才筛（连打时不抖动）；清空则立即生效
+      React.useEffect(() => {
+        if (!query) { setSearch(''); return undefined; }
+        const timer = setTimeout(() => setSearch(query), SEARCH_DEBOUNCE_MS);
+        return () => clearTimeout(timer);
+      }, [query]);
       const [collapsedGroups, setCollapsedGroups] = React.useState(() => new Set());
       const toggleGroupCollapse = React.useCallback((key) => {
         setCollapsedGroups((prev) => {
@@ -947,6 +1338,10 @@ window.__ModuleLoader__.load({
           if (data && data.ok) {
             setSnap(data);
             saveCachedSnapshot(data);
+            // 显示位置开关跟随快照（宿主半是唯一真值来源）
+            if (data.settings && typeof data.settings.showInSettings === 'boolean') {
+              setShowInSettings(data.settings.showInSettings);
+            }
           } else {
             setErr(t('loadFailed'));
           }
@@ -1099,9 +1494,25 @@ window.__ModuleLoader__.load({
         const r = await callSaveSettings({ proxyUrl: proxyRef.current?.value ?? '' });
         if (r?.ok) {
           setSaveFlash('ok');
-          setSnap((s) => (s ? { ...s, settings: { proxyUrl: r.proxyUrl ?? '' } } : s));
+          setSnap((s) => (s ? { ...s, settings: { ...(s.settings ?? {}), proxyUrl: r.proxyUrl ?? '' } } : s));
         } else {
           setSaveFlash({ err: r?.error ?? t('saveFailed') });
+        }
+        setSaving(false);
+      }, []);
+
+      // 保存「显示位置」开关（设置页是否也显示本插件）。
+      // 改动要重新进入页面才生效（槽位注册发生在挂载期），所以这里只落盘 + 提示。
+      const doSaveShowInSettings = React.useCallback(async (value) => {
+        setSaving(true);
+        setLocationFlash(null);
+        const r = await callSaveSettings({ showInSettings: value });
+        if (r?.ok) {
+          setShowInSettings(r.showInSettings === true);
+          setLocationFlash('ok');
+          setSnap((s) => (s ? { ...s, settings: { ...(s.settings ?? {}), showInSettings: r.showInSettings === true } } : s));
+        } else {
+          setLocationFlash({ err: r?.error ?? t('saveFailed') });
         }
         setSaving(false);
       }, []);
@@ -1150,11 +1561,16 @@ window.__ModuleLoader__.load({
 
       const plugins = Array.isArray(snap?.plugins) ? snap.plugins : [];
       const byName = React.useMemo(() => new Map(plugins.map((p) => [p.name, p])), [plugins]);
-      // 「只看可更新」过滤：只留有更新目标（检查结果为 update）的行
-      const visiblePlugins = React.useMemo(
-        () => (onlyUpdatable ? plugins.filter((p) => !p.official && updateSpecOf(p)) : plugins),
-        [plugins, onlyUpdatable],
-      );
+      // 搜索词（防抖后的 search → 切词）
+      const terms = React.useMemo(() => searchTerms(search), [search]);
+      const searching = terms.length > 0;
+      // 可见行 = 搜索过滤 ∧ 「只看可更新」过滤（两个筛选控件叠加生效）
+      const visiblePlugins = React.useMemo(() => {
+        let list = plugins;
+        if (onlyUpdatable) list = list.filter((p) => !p.official && updateSpecOf(p));
+        if (terms.length) list = list.filter((p) => matchesSearch(p, terms));
+        return list;
+      }, [plugins, onlyUpdatable, terms]);
 
       const toggleOne = React.useCallback((name) => {
         setSelected((prev) => {
@@ -1208,6 +1624,180 @@ window.__ModuleLoader__.load({
         // 四个批量按钮统一走二次确认弹框
         setConfirmOp(op);
       };
+
+      // ---------- M4 导出 ----------
+
+      /**
+       * 打开导出弹框：先向宿主半要「导出预演」（哪些插件 + 哪些配置），
+       * 再把配置清单默认全选（用户可逐项取消）。
+       *
+       * 预演失败也要能打开弹框 —— 用户至少要知道为什么导不了。
+       */
+      const openExportDialog = React.useCallback(async () => {
+        const names = [...selected].filter((n) => {
+          const p = byName.get(n);
+          return p && !p.official;
+        });
+        if (names.length === 0) {
+          storeBanner({ ok: false, text: t('exportNoPlugin') });
+          return;
+        }
+        setExportState('loading');
+        const plan = await callPlanExport(names);
+        if (!plan?.ok) {
+          setExportState(null);
+          storeBanner({ ok: false, text: `${t('exportPlanFailed')}：${plan?.error ?? '?'}` });
+          return;
+        }
+        setExportPlan(plan);
+        // 默认全选配置（可取消）；疑似凭据项即使勾选也不会被带走（宿主半再挡一层）
+        const rels = new Set();
+        for (const item of plan.config?.patch ?? []) rels.add(item.rel);
+        for (const item of plan.config?.home ?? []) rels.add(item.rel);
+        for (const item of plan.config?.declared ?? []) rels.add(item.rel);
+        setExportConfigRels(rels);
+        setExportState('open');
+      }, [selected, byName]);
+
+      /** 执行导出并下载。 */
+      const doExport = React.useCallback(async () => {
+        if (!exportPlan) return;
+        const names = (exportPlan.plugins ?? []).map((p) => p.name);
+        if (names.length === 0) {
+          storeBanner({ ok: false, text: t('exportNoPlugin') });
+          setExportState(null);
+          return;
+        }
+        setExporting(true);
+        setExportState('running');
+        try {
+          const r = await callExportPlugins({
+            names,
+            includeConfig: exportConfigRels.size > 0,
+            configRels: [...exportConfigRels],
+          });
+          if (!r?.ok) {
+            storeBanner({ ok: false, text: `${t('exportFailed')}：${r?.error ?? '?'}` });
+            setExportState('open');
+            return;
+          }
+          await downloadExport(r.filename);
+          setExportState(null);
+          setExportPlan(null);
+          const size = r.sizeBytes >= 1024 * 1024
+            ? `${(r.sizeBytes / 1024 / 1024).toFixed(1)} MB`
+            : `${Math.max(1, Math.round(r.sizeBytes / 1024))} KB`;
+          storeBanner({ ok: true, text: t('exportDone', { name: r.filename, size }) });
+          // 导出告警（如某个插件打包失败）不能吞掉 —— 横幅下方补一行
+          if (Array.isArray(r.warnings) && r.warnings.length > 0) {
+            for (const w of r.warnings) {
+              console.warn('[dsh-plugin-keeper] export warning:', w);
+            }
+          }
+        } catch (e) {
+          setExportState('open');
+          storeBanner({ ok: false, text: `${t('exportDownloadFailed')}：${e?.message ?? e}` });
+        } finally {
+          setExporting(false);
+        }
+      }, [exportPlan, exportConfigRels]);
+
+      // ---------- M5 导入 ----------
+
+      /** 打开文件选择器（隐藏的 input 由渲染层提供）。 */
+      const openImportPicker = React.useCallback(() => {
+        importFileRef.current?.click();
+      }, []);
+
+      /**
+       * 选好文件后：上传 → 宿主半预检 → 弹框展示兼容性与冲突。
+       */
+      const onImportFilePicked = React.useCallback(async (file) => {
+        if (!file) return;
+        setImportState('uploading');
+        setImportPlan(null);
+        try {
+          const up = await uploadImportPackage(file);
+          const plan = await callPlanImport(up.id);
+          if (!plan?.ok) {
+            setImportState(null);
+            storeBanner({ ok: false, text: `${t('importPlanFailed')}：${plan?.error ?? '?'}` });
+            return;
+          }
+          setImportId(up.id);
+          setImportPlan(plan);
+          // 默认策略（按之前拍板的）：
+          //  - 同名已装 → 保留本机（不主动卸载已装插件）
+          //  - 不兼容   → 跳过
+          //  - 配置冲突 → 保留本机（用户可逐项改成「以导出包为准」）
+          const ps = new Map();
+          for (const p of plan.plugins ?? []) {
+            if (p.compatibility?.status === 'incompatible') ps.set(p.name, 'skip');
+            else if (p.installed) ps.set(p.name, 'keep');
+            else ps.set(p.name, 'replace');
+          }
+          const cs = new Map();
+          for (const c of plan.config ?? []) cs.set(c.rel, 'keep');
+          setImportPluginStrategies(ps);
+          setImportConfigStrategies(cs);
+          setImportState('analyze');
+        } catch (e) {
+          setImportState(null);
+          storeBanner({ ok: false, text: `${t('importUploadFailed')}：${e?.message ?? e}` });
+        }
+      }, []);
+
+      /** 执行导入：把策略交给宿主半；插件安装由宿主半返回 tarball 路径后再逐个调官方 installBundle。 */
+      const doImport = React.useCallback(async () => {
+        if (!importPlan || !importId) return;
+        setImportState('running');
+        const pluginStrategies = [];
+        for (const [name, strategy] of importPluginStrategies) pluginStrategies.push({ name, strategy });
+        const configStrategies = [];
+        for (const [rel, strategy] of importConfigStrategies) configStrategies.push({ rel, strategy });
+        try {
+          const r = await callExecuteImport({
+            id: importId,
+            pluginStrategies: importOnlyConfig ? pluginStrategies.map((s) => ({ ...s, strategy: 'keep' })) : pluginStrategies,
+            configStrategies,
+          });
+          if (!r?.ok) {
+            setImportState('analyze');
+            storeBanner({ ok: false, text: `${t('importFailed')}：${r?.error ?? '?'}` });
+            return;
+          }
+          // 插件安装：走官方 pluginManager（与批量操作同一条通道）
+          const results = Array.isArray(r.results) ? [...r.results] : [];
+          let okCount = 0;
+          let skipCount = 0;
+          let failCount = 0;
+          for (const item of results) {
+            if (item.op === 'import' && item.status === 'ok' && item.tarballPath) {
+              try {
+                const applied = await callPm('installBundle', `file:${item.tarballPath}`, { enabled: true });
+                const mapped = mapChange(applied);
+                results.push({ name: item.name, op: 'import', status: mapped.status, note: mapped.note ?? '' });
+                if (mapped.status === 'ok' || mapped.status === 'restart') okCount += 1;
+                else if (mapped.status === 'skipped') skipCount += 1;
+                else failCount += 1;
+              } catch (e) {
+                results.push({ name: item.name, op: 'import', status: 'failed', note: String(e?.message ?? e) });
+                failCount += 1;
+              }
+            } else if (item.status === 'skipped') skipCount += 1;
+            else if (item.status === 'failed') failCount += 1;
+            else okCount += 1;
+          }
+          setImportState(null);
+          setImportPlan(null);
+          setImportId(null);
+          storeBanner({ ok: failCount === 0, text: t('importDone', { ok: okCount, skip: skipCount, fail: failCount }) });
+          await load();
+        } catch (e) {
+          setImportState('analyze');
+          storeBanner({ ok: false, text: `${t('importFailed')}：${e?.message ?? e}` });
+        }
+      }, [importPlan, importId, importPluginStrategies, importConfigStrategies, importOnlyConfig, load]);
 
       // 批量执行：快照 → 官方 pluginManager 逐行调用 → 刷新盘点 → 台账。
       // 顺序执行（pnpm 侧本就串行）；含本插件的操作放最后（中途把自己停了，后面的行没人执行）。
@@ -1396,6 +1986,20 @@ window.__ModuleLoader__.load({
             disabled: busy || selCount === 0,
             onClick: () => onBatchBtn('uninstall'),
           }, `${t('batchUninstall')} (${selCount})`),
+          // 导出所选：放在「卸载所选」右侧（导出是保留性操作，视觉上独立于破坏性操作）
+          h('button', {
+            className: 'dpk-btn',
+            type: 'button',
+            disabled: busy || selCount === 0,
+            onClick: () => { void openExportDialog(); },
+          }, `${t('batchExport')} (${selCount})`),
+          // 导入所选：紧跟导出（文件驱动，与勾选集无关，故不禁用）
+          h('button', {
+            className: 'dpk-btn',
+            type: 'button',
+            disabled: busy || importState === 'uploading' || importState === 'running',
+            onClick: () => { openImportPicker(); },
+          }, t('batchImport')),
         )
         : null;
 
@@ -1500,6 +2104,21 @@ window.__ModuleLoader__.load({
             }, installing ? t('installing') : t('installBtn')),
           ),
           h('div', { className: 'dpk-hint' }, t('installHint')),
+          // 显示位置：默认只在「插件」面板的页签显示；勾选后设置页也出现
+          h('div', { className: 'dpk-setrow' },
+            h('label', { className: 'dpk-switch' },
+              h('input', {
+                type: 'checkbox',
+                checked: showInSettings,
+                disabled: saving,
+                onChange: (e) => { void doSaveShowInSettings(e.target.checked); },
+              }),
+              t('showInSettings'),
+            ),
+          ),
+          h('div', { className: 'dpk-hint' }, t('showInSettingsHint')),
+          locationFlash === 'ok' ? h('div', { className: 'dpk-savedok' }, t('showInSettingsSaved')) : null,
+          locationFlash && locationFlash.err ? h('div', { className: 'dpk-savederr' }, locationFlash.err) : null,
         ),
       );
 
@@ -1542,8 +2161,213 @@ window.__ModuleLoader__.load({
         );
       })();
 
+      // 导出弹框：列出将导出的插件 + 可勾选的配置清单（含疑似凭据警示）
+      const exportModal = (() => {
+        if (!exportState || exportState === 'loading') return null;
+        if (!exportPlan) return null;
+        const cfgItems = [
+          ...(exportPlan.config?.patch ?? []).map((i) => ({ ...i, kindLabel: 'exportConfigPatch' })),
+          ...(exportPlan.config?.home ?? []).map((i) => ({ ...i, kindLabel: 'exportConfigHome' })),
+          ...(exportPlan.config?.declared ?? []).map((i) => ({ ...i, kindLabel: 'exportConfigDeclared' })),
+        ];
+        const toggleRel = (rel) => {
+          setExportConfigRels((prev) => {
+            const next = new Set(prev);
+            if (next.has(rel)) next.delete(rel); else next.add(rel);
+            return next;
+          });
+        };
+        return h('div', { className: 'dpk-modal is-wide' },
+          h('div', { className: 'dpk-mtitle' }, `${t('exportDialogTitle')} (${exportPlan.plugins?.length ?? 0})`),
+          h('div', { className: 'dpk-hint' }, t('exportWithConfigHint')),
+          h('div', { className: 'dpk-mlist' },
+            (exportPlan.plugins ?? []).map((p) => h('div', { key: p.name },
+              `${p.name}${p.version ? ` · v${p.version}` : ''}`)),
+          ),
+          h('div', { className: 'dpk-hint' }, t('exportConfigHeader')),
+          cfgItems.length === 0
+            ? h('div', { className: 'dpk-hint' }, t('exportConfigEmpty'))
+            : h('div', { className: 'dpk-cfglist' },
+              cfgItems.map((item) => {
+                const suspicious = item.suspicious === true;
+                const maybe = item.suspicious === undefined && item.score !== undefined && item.score < 80;
+                const checked = exportConfigRels.has(item.rel) && !suspicious;
+                return h('div', { className: `dpk-cfgrow${suspicious ? ' is-suspicious' : ''}`, key: item.rel },
+                  h('input', {
+                    type: 'checkbox',
+                    className: `dpk-cb${suspicious ? ' is-warn' : ''}`,
+                    checked,
+                    disabled: suspicious || exportState === 'running',
+                    onChange: () => toggleRel(item.rel),
+                  }),
+                  h('div', { className: 'dpk-cfgnames' },
+                    h('div', { className: 'dpk-cfgrel' }, item.rel),
+                    h('div', { className: 'dpk-cfgtag' },
+                      `${t(item.kindLabel)} · ${item.plugin ?? '-'}`,
+                      suspicious ? ` · ${t('exportConfigSuspicious')}` : '',
+                      maybe ? ` · ${t('exportConfigMaybe')}` : '',
+                    ),
+                  ),
+                );
+              }),
+            ),
+          h('div', { className: 'dpk-mfoot' },
+            h('button', {
+              className: 'dpk-btn',
+              type: 'button',
+              autoFocus: true,
+              disabled: exportState === 'running',
+              onClick: () => { setExportState(null); setExportPlan(null); },
+            }, t('dialogCancel')),
+            h('button', {
+              className: 'dpk-btn is-primary',
+              type: 'button',
+              disabled: exportState === 'running' || (exportPlan.plugins?.length ?? 0) === 0,
+              onClick: () => { void doExport(); },
+            }, exportState === 'running' ? t('exportRunning') : t('exportOk')),
+          ),
+        );
+      })();
+
+      // 导入弹框：预检结果（兼容性 + 冲突）+ 逐项策略选择 + 执行
+      const importModal = (() => {
+        if (!importState || importState === 'uploading' || !importPlan) return null;
+        const plugins = importPlan.plugins ?? [];
+        const configs = importPlan.config ?? [];
+        const setPluginStrategy = (name, strategy) => {
+          setImportPluginStrategies((prev) => {
+            const next = new Map(prev);
+            next.set(name, strategy);
+            return next;
+          });
+        };
+        const setConfigStrategy = (rel, strategy) => {
+          setImportConfigStrategies((prev) => {
+            const next = new Map(prev);
+            next.set(rel, strategy);
+            return next;
+          });
+        };
+        // 兼容性徽标
+        const compatBadge = (p) => {
+          const c = p.compatibility ?? {};
+          if (p.integrityOk === false) return h('span', { className: 'dpk-op is-failed' }, t('importIntegrityBad'));
+          if (c.status === 'compatible') return h('span', { className: 'dpk-op is-ok' }, t('importCompatOk'));
+          if (c.status === 'exempted') return h('span', { className: 'dpk-op is-restart' }, t('importCompatExempt'));
+          if (c.status === 'incompatible') return h('span', { className: 'dpk-op is-failed' }, t('importCompatBad'));
+          return h('span', { className: 'dpk-op is-skipped' }, t('importCompatUnknown'));
+        };
+        return h('div', { className: 'dpk-modal is-wide' },
+          h('div', { className: 'dpk-mtitle' }, t('importAnalyzeTitle')),
+          importPlan.sourceDshVersion
+            ? h('div', { className: 'dpk-hint' }, t('importSourceDsh', {
+              src: importPlan.sourceDshVersion,
+              local: importPlan.runtimeVersion,
+            }))
+            : null,
+          // ---- 插件清单 ----
+          h('div', { className: 'dpk-hint' }, t('importPluginStrategy')),
+          h('div', { className: 'dpk-cfglist' },
+            plugins.map((p) => {
+              const strategy = importPluginStrategies.get(p.name) ?? 'keep';
+              const incompatible = p.compatibility?.status === 'incompatible';
+              const conflicted = p.installed === true;
+              return h('div', { className: `dpk-cfgrow${conflicted ? ' is-suspicious' : ''}`, key: p.name },
+                h('div', { className: 'dpk-cfgnames' },
+                  h('div', { className: 'dpk-cfgrel' }, `${p.name}${p.version ? ` · v${p.version}` : ''}`),
+                  h('div', { className: 'dpk-cfgtag' },
+                    compatBadge(p),
+                    conflicted ? ` · ${t('importConflictPlugin')}${p.installedVersion ? ` (v${p.installedVersion})` : ''}` : '',
+                    incompatible ? ` · ${p.compatibility.note ?? ''}` : '',
+                    p.versionMismatch ? ` · ${t('importVersionDiff', { pkg: p.version, tar: p.version })}` : '',
+                  ),
+                ),
+                h('select', {
+                  className: 'dpk-select',
+                  value: strategy,
+                  disabled: importState === 'running',
+                  onChange: (e) => setPluginStrategy(p.name, e.target.value),
+                },
+                  h('option', { value: 'replace' }, t('importStrategyReplace')),
+                  h('option', { value: 'keep' }, t('importStrategyKeep')),
+                  h('option', { value: 'skip' }, t('importStrategySkip')),
+                ),
+              );
+            }),
+          ),
+          // ---- 配置清单 ----
+          h('div', { className: 'dpk-hint' }, t('importConfigStrategy')),
+          configs.length === 0
+            ? h('div', { className: 'dpk-hint' }, t('importNoConfig'))
+            : h('div', { className: 'dpk-cfglist' },
+              configs.map((c) => {
+                const strategy = importConfigStrategies.get(c.rel) ?? 'keep';
+                return h('div', { className: `dpk-cfgrow${c.conflict ? ' is-suspicious' : ''}`, key: c.rel },
+                  h('div', { className: 'dpk-cfgnames' },
+                    h('div', { className: 'dpk-cfgrel' }, c.rel),
+                    h('div', { className: 'dpk-cfgtag' },
+                      ` · ${c.plugin ?? '-'}`,
+                      c.conflict
+                        ? ` · ${c.kind === 'patch' ? t('importConflictPatch') : t('importConflictFile')}`
+                        : '',
+                    ),
+                  ),
+                  h('select', {
+                    className: 'dpk-select',
+                    value: strategy,
+                    disabled: importState === 'running',
+                    onChange: (e) => setConfigStrategy(c.rel, e.target.value),
+                  },
+                    h('option', { value: 'import' }, t('importStrategyReplace')),
+                    h('option', { value: 'keep' }, t('importStrategyKeep')),
+                  ),
+                );
+              }),
+            ),
+          // ---- 仅导配置 ----
+          h('label', { className: 'dpk-switch' },
+            h('input', {
+              type: 'checkbox',
+              checked: importOnlyConfig,
+              disabled: importState === 'running',
+              onChange: (e) => setImportOnlyConfig(e.target.checked),
+            }),
+            t('importOnlyConfig'),
+          ),
+          h('div', { className: 'dpk-mfoot' },
+            h('button', {
+              className: 'dpk-btn',
+              type: 'button',
+              autoFocus: true,
+              disabled: importState === 'running',
+              onClick: () => { setImportState(null); setImportPlan(null); setImportId(null); },
+            }, t('dialogCancel')),
+            h('button', {
+              className: 'dpk-btn is-primary',
+              type: 'button',
+              disabled: importState === 'running',
+              onClick: () => { void doImport(); },
+            }, importState === 'running' ? t('importRunning', { done: 0, total: 0 }) : t('importOk')),
+          ),
+        );
+      })();
+
       return h('div', { className: 'dpk-root' },
         confirmModal,
+        exportModal,
+        importModal,
+        // 隐藏的文件选择器（导入入口）
+        h('input', {
+          ref: importFileRef,
+          type: 'file',
+          accept: '.zip,application/zip',
+          style: { display: 'none' },
+          onChange: (e) => {
+            const file = e.target.files?.[0] ?? null;
+            e.target.value = ''; // 允许重选同一个文件
+            void onImportFilePicked(file);
+          },
+        }),
         h('div', { className: 'dpk-toolbar' },
           plugins.length > 0
             ? h('span', { className: 'dpk-summary' }, t('summary', {
@@ -1554,14 +2378,50 @@ window.__ModuleLoader__.load({
               local: counts.local,
             }))
             : (!loading && !err ? h('span', { className: 'dpk-summary' }, t('noPlugins')) : null),
-          h('label', { className: 'dpk-onlyup' },
-            h('input', {
-              type: 'checkbox',
-              checked: onlyUpdatable,
-              disabled: batchRunning,
-              onChange: () => setOnlyUpdatable((v) => !v),
-            }),
-            t('onlyUpdatable'),
+          // 筛选控件组：搜索框 + 「只看可更新」（两个条件叠加生效）
+          h('div', { className: 'dpk-filters' },
+            h('div', { className: 'dpk-search' },
+              h('span', { className: 'dpk-searchicon' }, SEARCH_ICON),
+              h('input', {
+                className: 'dpk-searchinput',
+                type: 'text',
+                value: query,
+                placeholder: t('searchPlaceholder'),
+                'aria-label': t('searchLabel'),
+                onChange: (e) => setQuery(e.target.value),
+                onKeyDown: (e) => {
+                  // Esc 清空（不冒泡，免得同时关掉确认弹框）
+                  if (e.key === 'Escape' && query) {
+                    e.stopPropagation();
+                    setQuery('');
+                  }
+                },
+              }),
+              query
+                ? h('button', {
+                  className: 'dpk-searchclear',
+                  type: 'button',
+                  'aria-label': t('searchClear'),
+                  'data-tip': t('searchClear'),
+                  onClick: () => setQuery(''),
+                }, '×')
+                : null,
+            ),
+            searching
+              ? h('span', { className: 'dpk-searchcount' }, t('searchCount', {
+                n: visiblePlugins.length,
+                total: plugins.length,
+              }))
+              : null,
+            h('label', { className: 'dpk-onlyup' },
+              h('input', {
+                type: 'checkbox',
+                checked: onlyUpdatable,
+                disabled: batchRunning,
+                onChange: () => setOnlyUpdatable((v) => !v),
+              }),
+              t('onlyUpdatable'),
+            ),
           ),
           h('div', { className: 'dpk-spacer' }),
           h('div', { className: 'dpk-tbgroup' },
@@ -1603,7 +2463,12 @@ window.__ModuleLoader__.load({
         batchProgress,
         loading && !snap
           ? h('div', { className: 'dpk-empty' }, t('loading'))
-          : groups.map(([key, list]) => {
+          : null,
+        // 搜索无命中：给一句明说（别让用户以为插件没了）
+        searching && visiblePlugins.length === 0
+          ? h('div', { className: 'dpk-empty' }, t('searchNoMatch', { q: search.trim() }))
+          : null,
+        groups.map(([key, list]) => {
             // 勾选限定：任意非官方插件可选中（启停/卸载批量不限可更新行；
             // 行内"更新"按钮按 updateSpecOf 独立显隐，批量更新对无目标行记 skipped）
             const eligible = list.filter((p) => !p.official);
@@ -1615,7 +2480,11 @@ window.__ModuleLoader__.load({
             const checkable = CHECKABLE_GROUPS.includes(key);
             return h('div', { className: 'dpk-group', key },
               h('div', { className: 'dpk-ghead', onClick: () => toggleGroupCollapse(key) },
-                h('span', { className: 'dpk-garrow' }, collapsed ? '▸' : '▾'),
+                h('span', {
+                  className: 'dpk-garrow',
+                  'data-tip': collapsed ? t('groupExpand') : t('groupCollapse'),
+                  'aria-label': collapsed ? t('groupExpand') : t('groupCollapse'),
+                }, h(CollapseArrow, { collapsed })),
                 eligible.length > 0
                   ? h('input', {
                     type: 'checkbox',
@@ -1657,6 +2526,7 @@ window.__ModuleLoader__.load({
                     onToggle: toggleOne,
                     onUpdate: onRowUpdate,
                     busy: batchRunning,
+                    terms, // 检索词：命中文本用主题色高亮
                     opStatus: batch && !batch.running
                       ? batch.results?.findLast((r) => r.name === entry.name) ?? null
                       : null,
@@ -1746,10 +2616,76 @@ window.__ModuleLoader__.load({
           parameters: [INPUT_PARAM],
           result: { mode: 'src-json' },
         },
+        {
+          id: 'dsh-plugin-keeper#dsh-plugin-keeper/planExport',
+          service: 'PluginKeeperService',
+          namespace: 'dsh-plugin-keeper',
+          method: 'planExport',
+          invocation: { kind: 'direct' },
+          parameters: [INPUT_PARAM],
+          result: { mode: 'src-json' },
+        },
+        {
+          id: 'dsh-plugin-keeper#dsh-plugin-keeper/exportPlugins',
+          service: 'PluginKeeperService',
+          namespace: 'dsh-plugin-keeper',
+          method: 'exportPlugins',
+          invocation: { kind: 'direct' },
+          parameters: [INPUT_PARAM],
+          result: { mode: 'src-json' },
+        },
+        {
+          id: 'dsh-plugin-keeper#dsh-plugin-keeper/planImport',
+          service: 'PluginKeeperService',
+          namespace: 'dsh-plugin-keeper',
+          method: 'planImport',
+          invocation: { kind: 'direct' },
+          parameters: [INPUT_PARAM],
+          result: { mode: 'src-json' },
+        },
+        {
+          id: 'dsh-plugin-keeper#dsh-plugin-keeper/executeImport',
+          service: 'PluginKeeperService',
+          namespace: 'dsh-plugin-keeper',
+          method: 'executeImport',
+          invocation: { kind: 'direct' },
+          parameters: [INPUT_PARAM],
+          result: { mode: 'src-json' },
+        },
       ],
     };
 
     // ---------- 装配 ----------
+
+    /**
+     * 「在设置页也显示」开关的当前值（模块级）。
+     *
+     * 为什么放模块级：槽位注册发生在**挂载期**，而开关值要等 RPC 回来才知道 ——
+     * 若在 apply 里直接注册 settings.section，开关为关时设置页仍会出现（违背预期）；
+     * 若等 RPC 再注册，则设置页未打开时槽类型可能还没声明（首验踩过的坑）。
+     *
+     * 折中：**先读一次宿主状态**，读到了就按开关决定；读不到（RPC 未就绪）就**保守地
+     * 不注册设置页**（插件页 Tab 恒在，功能不缺）。用户勾选后重新进入页面即生效。
+     */
+    let showInSettingsFlag = false;
+
+    /**
+     * 设置页入口的注册器（模块级引用）。
+     *
+     * 用途：开关查询返回后，若槽类型**已经声明**，需要立刻补注册；
+     * 若尚未声明，则等包裹器回调时再注册 —— 两者只会有一次注册发生。
+     */
+    let registerSettingsSection = null;
+
+    /** 读取「在设置页也显示」开关（宿主半是唯一真值来源）。 */
+    async function readShowInSettings() {
+      try {
+        const v = unwrapEnvelope(await rpcFace?.getSettings?.());
+        return v?.showInSettings === true;
+      } catch {
+        return false;
+      }
+    }
 
     function mountSection(rctx) {
       injectCss();
@@ -1758,6 +2694,12 @@ window.__ModuleLoader__.load({
       // 语言观察器只在声明后出手，避免启动期（槽类型未就绪）的注册失败噪声。
       let sectionDeclared = false;
       const register = () => {
+        // 显示位置开关为关时不挂设置页入口（插件页 Tab 恒在，功能不缺）。
+        if (!showInSettingsFlag) {
+          try { disposeEntry?.(); } catch { /* 已被上层销毁时忽略 */ }
+          disposeEntry = null;
+          return;
+        }
         try {
           disposeEntry?.();
         } catch { /* 已被上层销毁时忽略 */ }
@@ -1776,6 +2718,11 @@ window.__ModuleLoader__.load({
           // 理论上只在类型未声明时发生；留调试级日志兜底
           console.debug('[dsh-plugin-keeper] settings.section register deferred:', e?.message ?? e);
         }
+      };
+      // 暴露给「开关查询回来后补注册」用（槽类型已声明时立即生效）
+      registerSettingsSection = () => {
+        if (!sectionDeclared) return; // 类型未声明 → 等包裹器回调
+        register();
       };
       const registerIfDeclared = () => {
         if (!sectionDeclared) return;
@@ -1851,8 +2798,20 @@ window.__ModuleLoader__.load({
           (rctx) => {
             rpcFace = rctx.remote?.['dsh-plugin-keeper'] ?? null;
             pmFace = rctx.remote?.pluginManager ?? null;
-            rctx.effect(() => mountSection(rctx), 'dsh-plugin-keeper settings section');
+            // 插件页 Tab：恒有（默认入口）
             rctx.effect(() => mountPluginsTab(rctx), 'dsh-plugin-keeper plugins tab');
+            // 设置页 section：按「在设置页也显示」开关决定（默认关）。
+            // 开关值要问宿主半，但 slots.inject 的包裹器必须**立刻注册**
+            // （否则槽类型声明后再无人接手）—— 两段式：
+            //   ① 包裹器回调 → 开关已是 true 才真正注册；
+            //   ② 开关查询回来 → 若 true 则调 registerSettingsSection() 补注册
+            //      （槽类型未声明时它会跳过，等包裹器回调时再注册 → 只注册一次）。
+            rctx.effect(() => mountSection(rctx), 'dsh-plugin-keeper settings section');
+            void (async () => {
+              showInSettingsFlag = await readShowInSettings();
+              if (!showInSettingsFlag) return;
+              registerSettingsSection?.();
+            })();
           },
         );
       },

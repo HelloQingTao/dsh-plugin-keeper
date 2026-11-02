@@ -17,11 +17,27 @@
 
 import { readFile, writeFile, copyFile, mkdir, readdir, rm, stat, realpath } from 'node:fs/promises';
 import { readFileSync } from 'node:fs';
+import { randomBytes } from 'node:crypto';
 import { join, dirname, basename, isAbsolute, normalize } from 'node:path';
 import { homedir } from 'node:os';
 import { request, ProxyAgent, Agent, interceptors } from 'undici';
 import { gt, satisfies, valid } from 'semver';
 import { TypertRemoteService } from '@deepseek-ai/dsh-typert-protocol';
+import {
+  createExport,
+  discoverHomeConfig,
+  parsePatchRow,
+  splitPatchRows,
+} from './export.js';
+import { EXPORT_DIR_NAME } from './export.js';
+import {
+  IMPORT_DIR_NAME,
+  MAX_IMPORT_BYTES,
+  analyzeImportPackage,
+  applyPatchConfig,
+  cleanupImportStage,
+  stageImportPackage,
+} from './import.js';
 
 // 与 @deepseek-ai/dsh-typert-protocol 内部常量同值（该包不再导出 ./remote-methods
 // 子路径，但协议仍是这个字符串键 + {version:1, methods:[...]} 结构；宿主自己的
@@ -111,6 +127,135 @@ async function readJsonSafe(path, errors) {
   }
 }
 
+// ---------- 导出：配置抽取 ----------
+
+/** 读文件（不存在返回 null，不记错）。 */
+async function readFileSafe(path) {
+  try {
+    return await readFile(path, 'utf8');
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * 从 profile 的 patch 文档里抽出「属于这些插件的 config 片段」。
+ *
+ * 精确口径：patch 行里的 `name:` 与插件包名相等才算命中（不是模糊匹配 ——
+ * 模糊匹配会把「配置属于别的插件」这种错配写进导出包，比漏配更难查）。
+ *
+ * @returns {Array<{rel: string, kind: 'patch', plugin: string, path: string, text: string, id: string|null}>}
+ */
+function collectPatchConfig(patchText, plugins) {
+  const names = new Set(plugins.map((p) => p.name));
+  const out = [];
+  for (const row of splitPatchRows(patchText)) {
+    const parsed = parsePatchRow(row);
+    if (parsed.name === null || !names.has(parsed.name)) continue;
+    if (parsed.config === null) continue;
+    const rel = `patch/${parsed.name}.yml`;
+    out.push({
+      rel,
+      kind: 'patch',
+      plugin: parsed.name,
+      path: null, // 片段是内存文本，落盘时另写
+      text: parsed.config,
+      id: parsed.id,
+    });
+  }
+  return out;
+}
+
+/**
+ * 读插件自述声明的 dsh.dataDirs（配置目录）。
+ * 契约见 dsh-config-manager 的 docs/spec/plugin-data-declaration.md：
+ *   { "dsh": { "dataDirs": [ { "path": ".my-plugin", "role": "config" } ] } }
+ * 形状不认识就跳过（绝不猜路径）。
+ */
+async function readDeclaredDataDirs(plugin) {
+  const out = [];
+  const manifestPath = plugin.installedPath
+    ? join(plugin.installedPath, 'package.json')
+    : null;
+  if (manifestPath === null) return out;
+  const raw = await readJsonSafe(manifestPath);
+  const declared = raw?.dsh?.dataDirs;
+  if (!Array.isArray(declared)) return out;
+  for (const item of declared) {
+    if (item === null || typeof item !== 'object') continue;
+    const rel = typeof item.path === 'string' ? item.path.trim() : '';
+    // 只接受 POSIX 相对路径（拒绝绝对路径 / .. / 空段）
+    if (rel === '' || rel.startsWith('/') || /^[A-Za-z]:/.test(rel)) continue;
+    if (rel.split('/').some((seg) => seg === '' || seg === '.' || seg === '..')) continue;
+    const abs = join(homedir(), rel);
+    let sizeBytes = 0;
+    try {
+      const st = await stat(abs);
+      sizeBytes = st.size;
+    } catch {
+      continue; // 目录不存在 → 跳过
+    }
+    out.push({ rel, role: item.role === 'assets' ? 'assets' : 'config', sizeBytes });
+  }
+  return out;
+}
+
+// ---------- 导入：包读取与豁免表 ----------
+
+/** 导入暂存目录（相对 $DSH_HOME）。 */
+function importsRootOf() {
+  const home = serviceBridge?.profile?.home
+    || process.env.DSH_HOME
+    || join(homedir(), '.dsh');
+  return join(home, IMPORT_DIR_NAME);
+}
+
+/**
+ * 读导入批次里的包字节。
+ * @returns {Promise<Buffer|null>}
+ */
+async function readImportBuffer(home, id) {
+  if (!/^[\w.-]+$/.test(id)) return null;
+  try {
+    const data = await readFile(join(home, IMPORT_DIR_NAME, id, 'package.zip'));
+    return data;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * 读 profile 的兼容豁免表（compatibility.json）。
+ *
+ * 口径与宿主 readProfileCompatibility 一致：键必须是精确的 `<pkg>@<version>`，
+ * 值必须是 DSH 精确版本数组；不认识的记录**忽略**（不猜）。
+ */
+function readProfileExemptions(profileDir) {
+  const out = {};
+  if (!profileDir) return out;
+  let text;
+  try {
+    text = readFileSync(join(profileDir, 'compatibility.json'), 'utf8');
+  } catch {
+    return out;
+  }
+  let value;
+  try {
+    value = JSON.parse(text);
+  } catch {
+    return out;
+  }
+  if (value === null || typeof value !== 'object' || Array.isArray(value)) return out;
+  for (const [key, versions] of Object.entries(value)) {
+    const at = key.lastIndexOf('@');
+    if (at <= 0) continue;
+    if (!Array.isArray(versions)) continue;
+    if (!versions.every((v) => typeof v === 'string')) continue;
+    out[key] = versions;
+  }
+  return out;
+}
+
 // ---------- 状态文件（$DSH_HOME/plugin-keeper.json）----------
 
 function statePathOf() {
@@ -120,12 +265,20 @@ function statePathOf() {
   return join(home, 'plugin-keeper.json');
 }
 
-const STATE_DEFAULT = Object.freeze({ proxyUrl: '', lastCheck: null, lastBatch: null });
+const STATE_DEFAULT = Object.freeze({
+  proxyUrl: '',
+  // 「在设置页也显示插件运维」：默认关（插件页 Tab 常驻，设置页不重复出现）。
+  showInSettings: false,
+  lastCheck: null,
+  lastBatch: null,
+});
 
 async function readState() {
   const raw = await readJsonSafe(statePathOf());
   return {
     proxyUrl: typeof raw?.proxyUrl === 'string' ? raw.proxyUrl : '',
+    // 缺字段 = 旧状态文件 → 按默认（false）处理，不当成 true
+    showInSettings: raw?.showInSettings === true,
     lastCheck: raw?.lastCheck && typeof raw.lastCheck === 'object' ? raw.lastCheck : null,
     lastBatch: raw?.lastBatch && typeof raw.lastBatch === 'object' ? raw.lastBatch : null,
   };
@@ -335,6 +488,8 @@ async function collectInventory() {
       source,
       // 本地插件附「插件所在路径」（打开图标 hover/复制用），其余来源恒为 null
       localPath: source.kind === 'local' ? await localPluginPath(name, source, dir) : null,
+      // 安装位目录（导出打包用；本地源优先用 localPath —— 那才是真实源码）
+      installedPath: join(dir, 'node_modules', ...name.split('/')),
       hasClient: Boolean(meta.dsh?.client),
       hasPatch: Boolean(meta.dsh?.bundle?.patch),
     };
@@ -375,7 +530,13 @@ async function prepareBatchSnapshot(op) {
   const files = [];
   for (const src of sources) {
     const dest = join(dir, basename(src));
-    await copyFile(src, dest);
+    try {
+      await copyFile(src, dest);
+    } catch {
+      // 源文件不存在（新建 profile / 缺 package.json）不算失败 ——
+      // 快照能备多少备多少，缺的那份本来就不存在，恢复时也无从破坏。
+      continue;
+    }
     files.push({ from: src, to: dest });
   }
   const manifest = { id, at: new Date().toISOString(), op, profile: profile.name ?? null, files };
@@ -441,7 +602,7 @@ class PluginKeeperService extends TypertRemoteService {
       errors,
       lastCheckAt: state.lastCheck?.at ?? null,
       lastBatch: state.lastBatch,
-      settings: { proxyUrl: state.proxyUrl },
+      settings: { proxyUrl: state.proxyUrl, showInSettings: state.showInSettings },
       generatedAt: new Date().toISOString(),
     };
   }
@@ -500,20 +661,31 @@ class PluginKeeperService extends TypertRemoteService {
 
   async getSettings() {
     const state = await readState();
-    return { ok: true, proxyUrl: state.proxyUrl };
+    return { ok: true, proxyUrl: state.proxyUrl, showInSettings: state.showInSettings };
   }
 
-  /** 保存设置：当前仅 GitHub API 代理 URL（'' = 直连）。 */
+  /**
+   * 保存设置：
+   *  - proxyUrl：GitHub API 代理（'' = 直连）
+   *  - showInSettings：是否在设置页也显示本插件（默认关；插件页 Tab 恒有）
+   * 未传的字段保持原值（客户端只改一项时不覆盖另一项）。
+   */
   async saveSettings(input) {
     const proxyUrl = typeof input?.proxyUrl === 'string' ? input.proxyUrl.trim() : '';
     if (proxyUrl !== '' && !/^https?:\/\/\S+$/i.test(proxyUrl)) {
       throw new Error('代理 URL 需为 http(s):// 开头，或留空表示直连');
     }
+    const showInSettings = typeof input?.showInSettings === 'boolean' ? input.showInSettings : null;
     await withStateLock(async () => {
       const state = await readState();
-      await writeState({ ...state, proxyUrl });
+      await writeState({
+        ...state,
+        proxyUrl,
+        ...(showInSettings === null ? {} : { showInSettings }),
+      });
     });
-    return { ok: true, proxyUrl };
+    const latest = await readState();
+    return { ok: true, proxyUrl: latest.proxyUrl, showInSettings: latest.showInSettings };
   }
 
   /**
@@ -530,6 +702,308 @@ class PluginKeeperService extends TypertRemoteService {
       await writeState({ ...state, lastBatch: { id: manifest.id, at: manifest.at, op: manifest.op } });
     });
     return { ok: true, id: manifest.id, op: manifest.op, at: manifest.at, files: manifest.files };
+  }
+
+  /**
+   * 导入预演：解包 → 兼容性预检 → 冲突检测，返回给弹框展示。
+   *
+   * 输入是导出包的文件名（浏览器把文件传到宿主半的导入暂存目录后，
+   * 用本方法给出的 id 引用）。这里只读不写 —— 真正的安装与配置写入
+   * 由 executeImport 在用户确认策略后执行。
+   */
+  async planImport(input) {
+    const id = typeof input?.id === 'string' ? input.id : '';
+    if (!/^[\w.-]+$/.test(id)) return { ok: false, error: '非法的导入批次 id' };
+    const home = serviceBridge?.profile?.home ?? process.env.DSH_HOME ?? join(homedir(), '.dsh');
+    const buffer = await readImportBuffer(home, id);
+    if (buffer === null) return { ok: false, error: '导入包不存在或已被清理' };
+
+    const { plugins } = await collectInventory();
+    const exemptions = readProfileExemptions(serviceBridge?.profile?.dir ?? '');
+    try {
+      const analysis = await analyzeImportPackage(buffer, {
+        profileDir: serviceBridge?.profile?.dir ?? '',
+        home,
+        runtimeVersion: probeDshVersion() ?? '0.0.0',
+        exemptions,
+        installed: plugins.map((p) => ({ name: p.name, version: p.version })),
+        satisfies: (v, r) => satisfies(v, r, { includePrerelease: true }),
+      });
+      return { ok: true, id, ...analysis };
+    } catch (e) {
+      return { ok: false, error: String(e?.message ?? e) };
+    }
+  }
+
+  /**
+   * 执行导入：按用户选定的策略装插件 + 写配置。
+   *
+   * 策略（每个冲突项独立选）：
+   *  - 插件（同名已装）：'replace' 卸本机再装包内 tarball / 'keep' 跳过 / 'skip-incompatible' 跳过不兼容
+   *  - 配置（patch / 独立文件）：'import' 以导出包为准 / 'keep' 以本机为准
+   *
+   * 覆盖动作前先做 profile 快照（prepareBatchSnapshot），可一键恢复。
+   */
+  async executeImport(input) {
+    const id = typeof input?.id === 'string' ? input.id : '';
+    if (!/^[\w.-]+$/.test(id)) return { ok: false, error: '非法的导入批次 id' };
+    const home = serviceBridge?.profile?.home ?? process.env.DSH_HOME ?? join(homedir(), '.dsh');
+    const profileDir = serviceBridge?.profile?.dir ?? '';
+    const buffer = await readImportBuffer(home, id);
+    if (buffer === null) return { ok: false, error: '导入包不存在或已被清理' };
+
+    const { plugins } = await collectInventory();
+    const exemptions = readProfileExemptions(profileDir);
+    const runtimeVersion = probeDshVersion() ?? '0.0.0';
+    let analysis;
+    try {
+      analysis = await analyzeImportPackage(buffer, {
+        profileDir,
+        home,
+        runtimeVersion,
+        exemptions,
+        installed: plugins.map((p) => ({ name: p.name, version: p.version })),
+        satisfies: (v, r) => satisfies(v, r, { includePrerelease: true }),
+      });
+    } catch (e) {
+      return { ok: false, error: String(e?.message ?? e) };
+    }
+
+    // 暂存 tarball（官方 installBundle 要求绝对路径的 file: spec）
+    const staged = await stageImportPackage(buffer, home, id);
+    const pluginStrategies = new Map(
+      (Array.isArray(input?.pluginStrategies) ? input.pluginStrategies : [])
+        .filter((s) => s && typeof s.name === 'string')
+        .map((s) => [s.name, typeof s.strategy === 'string' ? s.strategy : 'keep']),
+    );
+    const configStrategies = new Map(
+      (Array.isArray(input?.configStrategies) ? input.configStrategies : [])
+        .filter((s) => s && typeof s.rel === 'string')
+        .map((s) => [s.rel, typeof s.strategy === 'string' ? s.strategy : 'keep']),
+    );
+
+    const results = [];
+    let snapshot = null;
+    const needSnapshot = analysis.config.some((c) => configStrategies.get(c.rel) === 'import');
+    if (needSnapshot) {
+      snapshot = await prepareBatchSnapshot('import');
+      await withStateLock(async () => {
+        const state = await readState();
+        await writeState({ ...state, lastBatch: { id: snapshot.id, at: snapshot.at, op: 'import' } });
+      });
+    }
+
+    // ---- 插件 ----
+    for (const p of analysis.plugins) {
+      const strategy = pluginStrategies.get(p.name) ?? 'keep';
+      if (strategy === 'keep') {
+        results.push({ name: p.name, op: 'import', status: 'skipped', note: '按策略保留本机版本' });
+        continue;
+      }
+      if (!p.hasTarball) {
+        results.push({ name: p.name, op: 'import', status: 'failed', note: '导出包里没有该插件的 tarball' });
+        continue;
+      }
+      if (p.compatibility.status === 'incompatible') {
+        results.push({
+          name: p.name,
+          op: 'import',
+          status: 'skipped',
+          note: `不兼容：${p.compatibility.note}`,
+        });
+        continue;
+      }
+      if (p.integrityOk === false) {
+        results.push({ name: p.name, op: 'import', status: 'failed', note: 'tarball 完整性校验失败（sha256 不符）' });
+        continue;
+      }
+      const tarballPath = staged.tarballs.get(p.tarball);
+      if (tarballPath === undefined) {
+        results.push({ name: p.name, op: 'import', status: 'failed', note: 'tarball 暂存失败' });
+        continue;
+      }
+      results.push({
+        name: p.name,
+        op: 'import',
+        status: 'ok',
+        note: `待安装（${p.version ?? '?'}）· ${tarballPath}`,
+        tarballPath,
+        version: p.version,
+      });
+    }
+
+    // ---- 配置 ----
+    // profile.patchPath 是宿主的权威路径（PROFILE_PATCH_FILENAME）；缺了再按约定拼。
+    const patchPath = serviceBridge?.profile?.patchPath ?? join(profileDir, 'cordis.patch.yml');
+    let patchText = await readFileSafe(patchPath);
+    let patchChanged = false;
+    for (const c of analysis.config) {
+      const strategy = configStrategies.get(c.rel) ?? 'keep';
+      if (strategy !== 'import') {
+        results.push({ name: c.rel, op: 'config', status: 'skipped', note: '按策略保留本机配置' });
+        continue;
+      }
+      if (c.kind === 'patch') {
+        if (patchText === null) {
+          results.push({ name: c.rel, op: 'config', status: 'failed', note: '读不到 profile 的 cordis.patch.yml' });
+          continue;
+        }
+        const applied = applyPatchConfig(patchText, {
+          pluginName: c.plugin,
+          patchId: c.patchId ?? c.localId ?? null,
+          newConfig: c.importedText,
+        });
+        patchText = applied.text;
+        patchChanged = applied.changed;
+        results.push({
+          name: c.rel,
+          op: 'config',
+          status: 'ok',
+          note: `profile 配置${applied.action === 'inserted' ? '新增' : '已替换'}`,
+        });
+      } else {
+        try {
+          await mkdir(dirname(c.localPath), { recursive: true });
+          await writeFile(c.localPath, c.importedText, 'utf8');
+          results.push({ name: c.rel, op: 'config', status: 'ok', note: '已写入独立配置文件' });
+        } catch (e) {
+          results.push({ name: c.rel, op: 'config', status: 'failed', note: String(e?.message ?? e) });
+        }
+      }
+    }
+    if (patchChanged && patchText !== null) {
+      try {
+        await writeFile(patchPath, patchText, 'utf8');
+      } catch (e) {
+        results.push({ name: 'cordis.patch.yml', op: 'config', status: 'failed', note: String(e?.message ?? e) });
+      }
+    }
+
+    return {
+      ok: true,
+      id,
+      results,
+      snapshotId: snapshot?.id ?? null,
+      tarballs: Object.fromEntries(staged.tarballs),
+      runtimeVersion,
+    };
+  }
+
+  /**
+   * 导出预演：列出「将导出哪些插件 + 哪些配置」，供弹框确认。
+   *
+   * 返回三类配置候选（都要在弹框里如实列出，用户可逐项取消）：
+   *  - patch：profile cordis.patch.yml 里该插件的 config 片段（精确，按 name 匹配）
+   *  - home：$DSH_HOME 顶层的独立配置文件/目录（启发式，带置信度）
+   *  - declared：插件自述声明的 dsh.dataDirs（本机暂无插件声明，接口先备好）
+   */
+  async planExport(input) {
+    const names = Array.isArray(input?.names) ? input.names.filter((n) => typeof n === 'string') : [];
+    const { plugins, profileName } = await collectInventory();
+    const byName = new Map(plugins.map((p) => [p.name, p]));
+    const targets = names.map((n) => byName.get(n)).filter((p) => p && !p.official);
+
+    const home = serviceBridge?.profile?.home ?? process.env.DSH_HOME ?? join(homedir(), '.dsh');
+    const patchPath = serviceBridge?.profile?.patchPath ?? join(serviceBridge?.profile?.dir ?? '', 'cordis.patch.yml');
+    const patchText = await readFileSafe(patchPath);
+    const patchItems = patchText === null ? [] : collectPatchConfig(patchText, targets);
+
+    const homeItems = await discoverHomeConfig(home, targets.map((p) => p.name));
+    const declaredItems = [];
+    for (const p of targets) {
+      const declared = await readDeclaredDataDirs(p);
+      for (const d of declared) {
+        declaredItems.push({
+          rel: d.rel,
+          kind: 'dir',
+          plugin: p.name,
+          path: join(homedir(), d.rel),
+          sizeBytes: d.sizeBytes,
+          role: d.role,
+          source: 'declared',
+        });
+      }
+    }
+
+    return {
+      ok: true,
+      profileName,
+      plugins: targets.map((p) => ({
+        name: p.name,
+        version: p.version,
+        spec: p.source?.spec ?? '',
+        sourceKind: p.source?.kind ?? 'unknown',
+        localPath: p.localPath,
+        hasConfig: patchItems.some((i) => i.plugin === p.name)
+          || homeItems.some((i) => i.plugin === p.name)
+          || declaredItems.some((i) => i.plugin === p.name),
+      })),
+      config: {
+        patch: patchItems,
+        home: homeItems.map((i) => ({
+          rel: i.rel,
+          kind: i.kind,
+          plugin: i.plugin,
+          path: i.path,
+          sizeBytes: i.sizeBytes,
+          score: i.score,
+          suspicious: i.suspicious,
+          source: 'home',
+        })),
+        declared: declaredItems,
+      },
+      warnings: [],
+    };
+  }
+
+  /**
+   * 执行导出：把所选插件打成 zip（可选带配置），落到 $DSH_HOME/plugin-keeper-exports/。
+   * 返回产物路径与文件名，浏览器再走 loopback 路由下载。
+   */
+  async exportPlugins(input) {
+    const names = Array.isArray(input?.names) ? input.names.filter((n) => typeof n === 'string') : [];
+    const includeConfig = input?.includeConfig === true;
+    const configRels = Array.isArray(input?.configRels) ? input.configRels.filter((r) => typeof r === 'string') : [];
+    const { plugins, profileName } = await collectInventory();
+    const byName = new Map(plugins.map((p) => [p.name, p]));
+    const targets = names.map((n) => byName.get(n)).filter((p) => p && !p.official);
+    if (targets.length === 0) return { ok: false, error: '没有可导出的插件（官方插件不参与导出）' };
+
+    const home = serviceBridge?.profile?.home ?? process.env.DSH_HOME ?? join(homedir(), '.dsh');
+    const patchPath = serviceBridge?.profile?.patchPath ?? join(serviceBridge?.profile?.dir ?? '', 'cordis.patch.yml');
+    const configItems = [];
+    if (includeConfig && configRels.length > 0) {
+      const patchText = await readFileSafe(patchPath);
+      const patchItems = patchText === null ? [] : collectPatchConfig(patchText, targets);
+      const homeItems = await discoverHomeConfig(home, targets.map((p) => p.name));
+      const allow = new Set(configRels);
+      for (const item of patchItems) {
+        if (!allow.has(item.rel)) continue;
+        configItems.push({ rel: item.rel, kind: 'patch', plugin: item.plugin, path: null, text: item.text });
+      }
+      for (const item of homeItems) {
+        if (!allow.has(item.rel)) continue;
+        if (item.suspicious) continue; // 疑似凭据：即使勾选也不带走
+        configItems.push({ rel: item.rel, kind: item.kind, plugin: item.plugin, path: item.path });
+      }
+    }
+
+    const result = await createExport({
+      home,
+      profileName,
+      dshVersion: probeDshVersion(),
+      plugins: targets,
+      configItems,
+    });
+    if (!result.ok) return { ok: false, error: result.error ?? '导出失败' };
+    return {
+      ok: true,
+      id: result.id,
+      filename: result.filename,
+      sizeBytes: result.sizeBytes,
+      manifest: result.manifest,
+      warnings: result.warnings,
+    };
   }
 
   /**
@@ -598,9 +1072,178 @@ markRemoteMethods(PluginKeeperService.prototype, [
   'prepareBatch',
   'restoreBatch',
   'reportBatch',
+  'planExport',
+  'exportPlugins',
+  'planImport',
+  'executeImport',
 ]);
 
 export const inject = ['profileContext'];
+
+/**
+ * 导出包下载路由（前缀）：/plugin-keeper/api/exports/<id>
+ *
+ * 为什么要走 HTTP 而不是 RPC：导出包可达几十 MB，base64 塞进 JSON 信封不现实。
+ * 宿主 webserver 没有静态目录挂载（实测），所以注册一条 loopback 路由是现成唯一通道
+ * （与 dsh-settings-arranger / dsh-railist / dsh-webseek 同款）。
+ *
+ * 围栏：peer 地址 + Host 头都必须是 loopback —— 这一对组合才挡得住 DNS rebinding。
+ */
+export const EXPORT_ROUTE_PREFIX = '/plugin-keeper/api/exports';
+
+/** 导入上传路由（exact）：POST 导出包字节，返回批次 id。 */
+export const IMPORT_UPLOAD_PATH = '/plugin-keeper/api/imports/upload';
+
+const LOOPBACK_ADDRESSES = ['127.0.0.1', '::1', '::ffff:127.0.0.1'];
+const LOOPBACK_HOSTNAMES = ['127.0.0.1', 'localhost', '::1'];
+
+/** 请求是否来自 loopback（peer + Host 双重判定）。 */
+export function isLoopbackRequest(req) {
+  const address = req?.socket?.remoteAddress;
+  if (typeof address !== 'string' || !LOOPBACK_ADDRESSES.includes(address)) return false;
+  const host = req?.headers?.host;
+  if (typeof host !== 'string') return false;
+  return LOOPBACK_HOSTNAMES.includes(hostnameOf(host));
+}
+
+/** Host 头里的主机名（`host`、`host:port`、`[::1]`、`[::1]:port`）。 */
+function hostnameOf(host) {
+  const authority = host.trim().toLowerCase();
+  if (authority.startsWith('[')) {
+    const end = authority.indexOf(']');
+    return end === -1 ? '' : authority.slice(1, end);
+  }
+  const first = authority.indexOf(':');
+  if (first === -1) return authority;
+  return first === authority.lastIndexOf(':') ? authority.slice(0, first) : authority;
+}
+
+/** 导出产物目录（相对 $DSH_HOME）。 */
+function exportsRootOf() {
+  const home = serviceBridge?.profile?.home
+    || process.env.DSH_HOME
+    || join(homedir(), '.dsh');
+  return join(home, EXPORT_DIR_NAME);
+}
+
+/**
+ * 下载路由的 handler。
+ *
+ * 路径形如 /plugin-keeper/api/exports/<文件名>；文件名必须匹配安全字符集，
+ * 且必须落在导出产物目录内（防路径穿越）。
+ */
+export function createExportDownloadHandler() {
+  return async function handle(req, res) {
+    if (!isLoopbackRequest(req)) {
+      res.writeHead(403, { 'content-type': 'application/json; charset=utf-8' });
+      res.end(`${JSON.stringify({ ok: false, error: 'refused: loopback-only' })}\n`);
+      return;
+    }
+    const method = (req.method ?? 'GET').toUpperCase();
+    if (method !== 'GET' && method !== 'HEAD') {
+      res.writeHead(405, { 'content-type': 'application/json; charset=utf-8' });
+      res.end(`${JSON.stringify({ ok: false, error: `${method} not allowed` })}\n`);
+      return;
+    }
+    const url = new URL(req.url ?? '/', 'http://localhost');
+    // 归一化重复斜杠（`//x` 会被 URL 解析成 protocol-relative，pathname 丢掉首段）
+    let pathname = url.pathname.replace(/\/{2,}/g, '/');
+    if (pathname.startsWith(EXPORT_ROUTE_PREFIX)) {
+      pathname = pathname.slice(EXPORT_ROUTE_PREFIX.length);
+      if (!pathname.startsWith('/')) pathname = `/${pathname}`;
+    }
+    const filename = decodeURIComponent(pathname.replace(/^\/+/, ''));
+    if (!/^[A-Za-z0-9._-]+\.zip$/.test(filename)) {
+      res.writeHead(400, { 'content-type': 'application/json; charset=utf-8' });
+      res.end(`${JSON.stringify({ ok: false, error: 'invalid export filename' })}\n`);
+      return;
+    }
+    const root = exportsRootOf();
+    const path = join(root, filename);
+    // 双保险：文件名已白名单，这里再确认解析结果仍在导出目录内
+    if (!path.startsWith(`${root}/`)) {
+      res.writeHead(400, { 'content-type': 'application/json; charset=utf-8' });
+      res.end(`${JSON.stringify({ ok: false, error: 'path escapes export root' })}\n`);
+      return;
+    }
+    let data;
+    try {
+      data = await readFile(path);
+    } catch {
+      res.writeHead(404, { 'content-type': 'application/json; charset=utf-8' });
+      res.end(`${JSON.stringify({ ok: false, error: 'export not found' })}\n`);
+      return;
+    }
+    res.writeHead(200, {
+      'content-type': 'application/zip',
+      'content-length': data.byteLength,
+      'content-disposition': `attachment; filename="${filename}"`,
+      'cache-control': 'no-store',
+    });
+    if (method === 'HEAD') { res.end(); return; }
+    res.end(data);
+  };
+}
+
+/**
+ * 导入上传路由的 handler：POST 原始 zip 字节 → 暂存 → 返回批次 id。
+ *
+ * 围栏与下载路由同款（peer + Host 都必须 loopback）。体积上限 MAX_IMPORT_BYTES，
+ * 超限直接拒绝（不把超大 body 收进内存）。
+ */
+export function createImportUploadHandler() {
+  return async function handle(req, res) {
+    if (!isLoopbackRequest(req)) {
+      res.writeHead(403, { 'content-type': 'application/json; charset=utf-8' });
+      res.end(`${JSON.stringify({ ok: false, error: 'refused: loopback-only' })}\n`);
+      return;
+    }
+    const method = (req.method ?? 'POST').toUpperCase();
+    if (method !== 'POST') {
+      res.writeHead(405, { 'content-type': 'application/json; charset=utf-8' });
+      res.end(`${JSON.stringify({ ok: false, error: `${method} not allowed` })}\n`);
+      return;
+    }
+    const chunks = [];
+    let size = 0;
+    let aborted = false;
+    await new Promise((resolve) => {
+      req.on('data', (chunk) => {
+        if (aborted) return;
+        size += chunk.length;
+        if (size > MAX_IMPORT_BYTES) {
+          // 立刻拒绝：继续收会把内存吃满
+          aborted = true;
+          resolve();
+          return;
+        }
+        chunks.push(chunk);
+      });
+      req.on('end', () => resolve());
+      req.on('error', () => resolve());
+    });
+    if (aborted) {
+      res.writeHead(413, { 'content-type': 'application/json; charset=utf-8' });
+      res.end(`${JSON.stringify({ ok: false, error: `导入包超过体积上限（${MAX_IMPORT_BYTES} 字节）` })}\n`);
+      return;
+    }
+    const home = serviceBridge?.profile?.home
+      || process.env.DSH_HOME
+      || join(homedir(), '.dsh');
+    const id = `${new Date().toISOString().replace(/[:.]/g, '-')}-${randomBytes(3).toString('hex')}`;
+    const dir = join(home, IMPORT_DIR_NAME, id);
+    try {
+      await mkdir(dir, { recursive: true });
+      await writeFile(join(dir, 'package.zip'), Buffer.concat(chunks));
+    } catch (e) {
+      res.writeHead(500, { 'content-type': 'application/json; charset=utf-8' });
+      res.end(`${JSON.stringify({ ok: false, error: String(e?.message ?? e) })}\n`);
+      return;
+    }
+    res.writeHead(200, { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' });
+    res.end(`${JSON.stringify({ ok: true, id, sizeBytes: size })}\n`);
+  };
+}
 
 export function apply(ctx) {
   const profile = ctx.profileContext ?? null;
@@ -609,4 +1252,26 @@ export function apply(ctx) {
   ctx.effect(() => () => {
     serviceBridge = null;
   }, 'dsh-plugin-keeper bridge cleanup');
+
+  // 导出包下载 / 导入上传路由：webServer 是可选服务（无 web 端部署也要能装上本插件），
+  // 因此放在 ctx.inject(['webServer']) 里，服务未就绪时静默跳过。
+  ctx.inject(['webServer'], (webCtx) => {
+    const webServer = webCtx.reflect.get('webServer');
+    webCtx.effect(
+      () => webServer.register({
+        kind: 'prefix',
+        path: EXPORT_ROUTE_PREFIX,
+        handler: createExportDownloadHandler(),
+      }),
+      'dsh-plugin-keeper: export download route',
+    );
+    webCtx.effect(
+      () => webServer.register({
+        kind: 'exact',
+        path: IMPORT_UPLOAD_PATH,
+        handler: createImportUploadHandler(),
+      }),
+      'dsh-plugin-keeper: import upload route',
+    );
+  });
 }

@@ -1,28 +1,42 @@
 # Changelog
 
-## 未发布
+## 0.3.0 (2026-11-02)
 
 ### English
 
-- Instant first paint: the inventory is cached in the browser, so opening the tab renders the last known list immediately and the fresh snapshot replaces it in the background — no more full-page "Loading…"
-- Load and check RPCs now carry timeouts (5s / 30s) with visible degradation instead of an endless spinner
-- Update checks are now per group: the npm group and the GitHub group run independently (within-group concurrency npm 8 / GitHub 3), so a slow or failing group no longer blocks the other
-- Each group header gained its own "check this group" button and that group's result counts
-- Host-side inventory collection runs concurrently instead of serially
-- A finished check no longer triggers an extra full refresh; results are merged in place
-- Language switches no longer refetch the inventory
-- Added timing marks on both halves (`[dsh-plugin-keeper] …`) to locate slow phases
+- **Export selected plugins**: a new "Export selected" button next to "Uninstall selected" produces a portable zip package (one `npm pack` tarball per plugin, plus a manifest and an `INSTALL.md` with ready-to-run install commands)
+- The export dialog lets you toggle "also export the matching plugin configuration" and pick individual configuration items: profile `cordis.patch.yml` fragments (exact, matched by plugin name), standalone config files under `$DSH_HOME` (heuristic, each item labelled with its confidence), and plugin-declared `dsh.dataDirs`
+- Exported packages never carry credential files; items that look like credentials are listed in the dialog but never packaged
+- The export package is downloaded through a loopback-only HTTP route (peer address + `Host` header must both be loopback)
+- **Import package**: an "Import package" button sits right after "Export selected"; choose a zip and the plugin pre-checks it before touching anything
+  - **Compatibility pre-check** mirrors the host's own gate (`evaluatePluginCompatibility`): `engines.dsh` decides alone, otherwise every `@deepseek-ai/dsh*` peer must match; `workspace:` peers count as the current runtime; the profile's `compatibility.json` exemptions are honoured
+  - Incompatible plugins are skipped by default and reported with the exact unmet requirement
+  - **Conflict handling** per item: same-name-already-installed (keep local / use the package / skip), profile config fragment (keep local / use the package), standalone config file (keep local / use the package)
+  - Configuration is written with line-level text edits, so your hand-edited `cordis.patch.yml` keeps its comments and formatting
+  - A config snapshot is taken before anything is overwritten and stays restorable in-page
+  - "Import configuration only" installs no plugins at all
+- **Display location setting**: the panel now lives only in the sidebar Plugins tab by default; a new switch in "Check settings" can also show it as a Settings section (applies after re-entering the page)
+- The group collapse arrow is now an inline SVG triangle at a readable size and contrast, with a hover hint
+- Packaged plugins that carry lifecycle scripts (`prepare` / `prepack`) are staged in a temp directory with `scripts` stripped before packing — without this, `npm pack` fails on packages such as `dsh-config-manager` and `billion-context`
+- **Plugin search**: a search box in the toolbar (next to the "Updatable only" filter) narrows the inventory by package name, description, version or source repository; typing filters automatically after a short pause, matched parts are highlighted in yellow, and a "n / total matched" counter tells you how much is left
 
 ### 中文
 
-- 首屏秒开：盘点结果缓存到浏览器，打开页签立即渲染上次列表，新快照后台覆盖，不再整页「加载中…」
-- 加载与检查 RPC 加超时（5s / 30s）与可见降级，不再无限转圈
-- 检查更新改为按分组独立：npm 组与 GitHub 组互不阻塞（组内并发 npm 8 / GitHub 3）
-- 分组头部新增「检查本组」入口与本组结果计数
-- 宿主半盘点由串行改为并发
-- 检查完不再额外全量刷新，结果就地合并
-- 语言切换不再重拉盘点数据
-- 两端新增耗时打点（`[dsh-plugin-keeper] …`）便于定位慢在哪一段
+- **导出所选插件**：「卸载所选」右侧新增「导出所选」按钮，产出可移植的 zip 导出包（每个插件一个 `npm pack` tarball + manifest + 带安装命令的 `INSTALL.md`）
+- 导出弹框可勾选「同时导出插件对应配置」，并逐项选择：profile `cordis.patch.yml` 配置片段（按插件名精确匹配）、`$DSH_HOME` 下的独立配置文件（启发式，逐项标注置信度）、插件自述声明的 `dsh.dataDirs`
+- 导出包不含凭据文件；疑似凭据的文件在弹框里列出但不会被打包
+- 导出包通过 loopback 专用 HTTP 路由下载（peer 地址与 `Host` 头都必须是 loopback）
+- **导入所选**：「导出所选」右侧新增「导入所选」，选 zip 后先做导入预检，确认后才动任何东西
+  - **兼容性预检**复刻宿主官方闸门（`evaluatePluginCompatibility`）：`engines.dsh` 说了算，否则每个 `@deepseek-ai/dsh*` peer 都要满足；`workspace:` peer 视为当前运行时；profile 的 `compatibility.json` 豁免表生效
+  - 不兼容的插件默认跳过，并如实写明未满足的要求
+  - **冲突逐项可选**：同名已装（保留本机 / 以导出包为准 / 跳过）、profile 配置片段（保留本机 / 以导出包为准）、独立配置文件（保留本机 / 以导出包为准）
+  - 配置写入走行级文本编辑 —— 你手改的 `cordis.patch.yml` 的注释与格式原样保留
+  - 覆盖前自动做配置快照，页内可一键恢复
+  - 支持「仅导入配置」：完全不装插件
+- **显示位置设置**：面板默认只在侧栏「插件」页签显示；「检查设置」里新增开关可同时显示在设置页（重新进入页面后生效）
+- 分组收纳图标改为内联 SVG 三角（尺寸与对比度可读），并带悬停提示
+- 带生命周期脚本（`prepare` / `prepack`）的插件改为「临时目录 + 剥离 scripts」后再打包 —— 否则 `npm pack` 会在 `dsh-config-manager`、`billion-context` 这类包上失败
+- **插件搜索**：工具栏新增搜索框（与「只看可更新」并列），按 包名 / 简述 / 版本 / 来源仓库 检索；输入停顿约 0.2 秒自动筛选，命中文本黄色高亮，并显示「匹配 n / 总数」计数
 
 ## 0.2.0 (2026-10-24)
 
