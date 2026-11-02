@@ -4,6 +4,10 @@ A plugin ops console for DeepSeek Harness (DSH 0.2.x): inventory the installed p
 
 It only manages plugins you already have. No marketplace, no hot restart — the host requires a process restart when package contents change.
 
+![Plugin Ops panel](docs/screenshot.png)
+
+*The sidebar Plugins page → "插件运维" tab*
+
 ## What you can do
 
 - See every plugin installed in the current profile in one place, grouped by where it came from (official / npm / GitHub / local)
