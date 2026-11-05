@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.3.1 (2026-11-05)
+
+### English
+
+- **Available on npm** — the plugin is now installable with `dsh plugin add dsh-plugin-keeper`; the npm page carries the full bilingual README and the panel screenshot
+- **Panel screenshot on the package page** — the screenshot now renders on npmjs.com instead of showing a broken image
+
+### 中文
+
+- **已上架 npm** — 现在可以直接用 `dsh plugin add dsh-plugin-keeper` 安装；npm 页面展示完整双语 README 与面板截图
+- **npm 页面图片正常显示** — 面板截图在 npmjs.com 上正常渲染，不再是破图
+
 ## 0.3.0 (2026-11-02)
 
 ### English
