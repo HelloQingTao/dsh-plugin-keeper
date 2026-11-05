@@ -4,7 +4,7 @@ DeepSeek Harness (DSH 0.2.x) 的插件运维台：盘点已装插件、批量更
 
 只管已装的插件；不做插件市场，也不做热重启（宿主要求包内容变更必须重启进程）。
 
-![插件运维面板](docs/screenshot.png)
+![插件运维面板](https://raw.githubusercontent.com/HelloQingTao/dsh-plugin-keeper/master/docs/screenshot.png)
 
 *侧栏「插件」→「插件运维」页签*
 
