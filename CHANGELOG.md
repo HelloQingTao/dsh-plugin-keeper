@@ -1,16 +1,28 @@
 # Changelog
 
-## 0.3.1 (2026-11-05)
+## 0.3.2 (2026-11-05)
+
+### 中文
+
+- **npm 页面改成中英双语** — README 合并成一份，英文在前、中文在后，顶部可一键切换语言
+- **不再有单独的英文文件** — 原英文独立文件改为指向主 README 的入口，两份内容不会再各自漂移
 
 ### English
 
-- **Available on npm** — the plugin is now installable with `dsh plugin add dsh-plugin-keeper`; the npm page carries the full bilingual README and the panel screenshot
-- **Panel screenshot on the package page** — the screenshot now renders on npmjs.com instead of showing a broken image
+- **Bilingual README on npm** — the README is now a single file with English first and Chinese below, with a language switch at the top
+- **No more separate English file** — the standalone English file is now a pointer into the main README, so the two versions can no longer drift apart
+
+## 0.3.1 (2026-11-05)
 
 ### 中文
 
 - **已上架 npm** — 现在可以直接用 `dsh plugin add dsh-plugin-keeper` 安装；npm 页面展示完整双语 README 与面板截图
 - **npm 页面图片正常显示** — 面板截图在 npmjs.com 上正常渲染，不再是破图
+
+### English
+
+- **Available on npm** — the plugin is now installable with `dsh plugin add dsh-plugin-keeper`; the npm page carries the full bilingual README and the panel screenshot
+- **Panel screenshot on the package page** — the screenshot now renders on npmjs.com instead of showing a broken image
 
 ## 0.3.0 (2026-11-02)
 
