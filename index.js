@@ -790,6 +790,8 @@ export class PluginKeeperService extends TypertRemoteService {
    * 密码为空 = 沿用落盘密码；返回值不含任何凭据。
    */
   async testProxy(input) {
+    // 诊断用：只打字段名，不打值，凭据绝不进日志
+    console.log(`[dsh-plugin-keeper] testProxy called: inputFields=[${Object.keys(input ?? {}).join(',')}]`);
     let state;
     try {
       state = await readState();

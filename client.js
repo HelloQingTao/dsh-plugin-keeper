@@ -80,6 +80,8 @@ window.__ModuleLoader__.load({
         proxyPassPlaceholder: '留空 = 保持原密码',
         proxyCredentialHint: '账号密码按 HTTP Basic 认证发送，特殊字符自动编码；密码不回显，清空账号即取消认证。',
         testProxyBtn: '测试连通性',
+        testProxyNoFace: '宿主半区未就绪（远程方法不可用），请刷新页面或重启 dsh web',
+        testProxyEmpty: '宿主无返回（RPC 被拒绝或超时），请刷新页面后重试',
         testProxyTesting: '测试中…',
         testProxyOk: '代理可用',
         testProxyFail: '代理不可用',
@@ -268,6 +270,8 @@ window.__ModuleLoader__.load({
         proxyPassPlaceholder: 'Leave empty to keep current',
         proxyCredentialHint: 'Credentials are sent as HTTP Basic auth with automatic escaping; the password is never echoed. Clear the username to disable authentication.',
         testProxyBtn: 'Test connectivity',
+        testProxyNoFace: 'Host half is not ready (remote method unavailable). Refresh the page or restart dsh web.',
+        testProxyEmpty: 'No response from host (RPC rejected or timed out). Refresh the page and retry.',
         testProxyTesting: 'Testing…',
         testProxyOk: 'Proxy reachable',
         testProxyFail: 'Proxy unreachable',
@@ -1549,15 +1553,19 @@ window.__ModuleLoader__.load({
 
       // 测试代理连通性：用输入框的即时值，不保存、不安装
       const doTestProxy = React.useCallback(async () => {
+        if (typeof rpcFace?.testProxy !== 'function') {
+          setProxyTest({ ok: false, error: t('testProxyNoFace') });
+          return;
+        }
         setTesting(true);
         setProxyTest(null);
         try {
-          const r = unwrapEnvelope(await rpcFace?.testProxy?.({
+          const r = unwrapEnvelope(await rpcFace.testProxy({
             proxyUrl: proxyRef.current?.value ?? '',
             proxyUser: proxyUserRef.current?.value ?? '',
             proxyPass: proxyPassRef.current?.value ?? '',
           }));
-          setProxyTest(r ?? { ok: false, error: 'no response' });
+          setProxyTest(r ?? { ok: false, error: t('testProxyEmpty') });
         } catch (e) {
           setProxyTest({ ok: false, error: String(e?.message ?? e) });
         } finally {
@@ -2685,10 +2693,37 @@ window.__ModuleLoader__.load({
           result: { mode: 'src-json' },
         },
         {
+          id: 'dsh-plugin-keeper#dsh-plugin-keeper/getSettings',
+          service: 'PluginKeeperService',
+          namespace: 'dsh-plugin-keeper',
+          method: 'getSettings',
+          invocation: { kind: 'direct' },
+          parameters: [],
+          result: { mode: 'src-json' },
+        },
+        {
           id: 'dsh-plugin-keeper#dsh-plugin-keeper/saveSettings',
           service: 'PluginKeeperService',
           namespace: 'dsh-plugin-keeper',
           method: 'saveSettings',
+          invocation: { kind: 'direct' },
+          parameters: [INPUT_PARAM],
+          result: { mode: 'src-json' },
+        },
+        {
+          id: 'dsh-plugin-keeper#dsh-plugin-keeper/normalizeGithubSpec',
+          service: 'PluginKeeperService',
+          namespace: 'dsh-plugin-keeper',
+          method: 'normalizeGithubSpec',
+          invocation: { kind: 'direct' },
+          parameters: [INPUT_PARAM],
+          result: { mode: 'src-json' },
+        },
+        {
+          id: 'dsh-plugin-keeper#dsh-plugin-keeper/testProxy',
+          service: 'PluginKeeperService',
+          namespace: 'dsh-plugin-keeper',
+          method: 'testProxy',
           invocation: { kind: 'direct' },
           parameters: [INPUT_PARAM],
           result: { mode: 'src-json' },
