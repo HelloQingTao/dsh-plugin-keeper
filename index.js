@@ -843,23 +843,27 @@ export class PluginKeeperService extends TypertRemoteService {
     if (typeof input?.proxyPass === 'string' && input.proxyPass !== '') candidate.proxyPass = input.proxyPass;
     if (!candidate.proxyUser) candidate.proxyPass = '';
     const effective = composeProxyUrl(candidate.proxyUrl, candidate.proxyUser, candidate.proxyPass);
-    const dispatcher = probeDispatcher(effective);
+    // GitHub 走配置的代理；npm registry 是直连基线，不经过配置的代理
+    const githubDispatcher = probeDispatcher(effective);
+    const directDispatcher = probeDispatcher('');
     const t0 = Date.now();
     const [api, registry, gitCheck] = await Promise.all([
-      probeHttp('https://api.github.com/rate_limit', dispatcher),
-      probeHttp('https://registry.npmjs.org/-/ping', dispatcher),
+      probeHttp('https://api.github.com/rate_limit', githubDispatcher),
+      probeHttp('https://registry.npmjs.org/-/ping', directDispatcher),
       probeGit(effective),
     ]);
-    try { await Promise.resolve(dispatcher.close?.()); } catch { /* 关闭失败不影响结果 */ }
+    try {
+      await Promise.resolve(githubDispatcher.close?.());
+      await Promise.resolve(directDispatcher.close?.());
+    } catch { /* 关闭失败不影响结果 */ }
     const checks = [
       { id: 'githubApi', ...api },
       { id: 'npmRegistry', ...registry },
       { id: 'gitRemote', ...gitCheck },
     ];
     return done({
-      // 代理通道（HTTP）与安装链路（git）分开判定：git 偶发慢/TLS 失败
-      // 不代表代理不通，不能把整体判成「代理不可用」
-      ok: checks[0].ok === true || checks[1].ok === true,
+      // 代理通道只看 GitHub API；npm 是直连基线，不参与「代理是否可用」的判定
+      ok: checks[0].ok === true,
       installOk: checks[2].ok === true,
       mode: effective ? (candidate.proxyUser ? 'proxy-with-auth' : 'proxy') : 'system-default',
       elapsedMs: Date.now() - t0,

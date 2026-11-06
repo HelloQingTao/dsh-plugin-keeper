@@ -17,6 +17,9 @@ const PROXY_KEYS = ['HTTPS_PROXY', 'https_proxy', 'HTTP_PROXY', 'http_proxy', 'A
 const BYPASS_KEYS = ['NO_PROXY', 'no_proxy'];
 const ALL_KEYS = [...PROXY_KEYS, ...BYPASS_KEYS];
 const LOOPBACK_BYPASS = 'localhost,127.0.0.1,::1';
+// 安装子进程里 git 与 pnpm 共用同一份 env，无法按进程区分代理。
+// 把 registry 域名放进 NO_PROXY：GitHub 走代理，npm 依赖下载保持直连。
+const REGISTRY_BYPASS = 'registry.npmjs.org,.npmjs.org,registry.npmmirror.com,.npmmirror.com,registry.yarnpkg.com';
 const ENV_MARKER = '\u0000system-env';
 
 let pnpmCommand = 'pnpm';
@@ -98,7 +101,7 @@ export function proxyEnvOverlay(proxyUrl) {
   const out = {};
   for (const k of PROXY_KEYS) out[k] = proxyUrl;
   const inherited = [process.env.NO_PROXY, process.env.no_proxy].filter(Boolean).join(',');
-  const bypass = [inherited, LOOPBACK_BYPASS].filter(Boolean).join(',');
+  const bypass = [inherited, LOOPBACK_BYPASS, REGISTRY_BYPASS].filter(Boolean).join(',');
   for (const k of BYPASS_KEYS) out[k] = bypass;
   return out;
 }
@@ -171,23 +174,56 @@ export function releaseInstallProxy(profile) {
   snapshots.delete(env);
 }
 
-let dispatcherKey = null;
-let dispatcher = null;
+let proxyDispatcherKey = null;
+let proxyDispatcher = null;
+let envDispatcherKey = null;
+let envDispatcher = null;
+let lastDispatcherKey = null;
 
-/** 检查更新用的 dispatcher：配了代理走 ProxyAgent，没配跟随系统环境。 */
-export function dispatcherFor(_url, proxyUrl) {
-  const key = proxyUrl || ENV_MARKER;
-  if (key === dispatcherKey && dispatcher) return dispatcher;
-  const previous = dispatcher;
-  const base = proxyUrl ? new ProxyAgent(proxyUrl) : new EnvHttpProxyAgent();
-  dispatcher = base.compose(interceptors.redirect({ maxRedirections: 3 }));
-  dispatcherKey = key;
-  if (previous) {
-    try {
-      Promise.resolve(previous.close?.()).catch(() => {});
-    } catch { /* 旧 dispatcher 关闭失败不影响新请求 */ }
+/** 系统代理环境变量的指纹：变化后重建 EnvHttpProxyAgent（它在构造时读一次 env）。 */
+function systemProxyFingerprint() {
+  return [
+    process.env.HTTPS_PROXY, process.env.https_proxy, process.env.HTTP_PROXY, process.env.http_proxy,
+    process.env.ALL_PROXY, process.env.all_proxy, process.env.NO_PROXY, process.env.no_proxy,
+  ].join('|');
+}
+
+/** 配置的代理只服务 GitHub 目标；npm registry 等一律走系统默认（直连）。 */
+function usesConfiguredProxy(url, proxyUrl) {
+  if (!proxyUrl) return false;
+  try {
+    const host = new URL(url).hostname.toLowerCase();
+    return host === 'github.com' || host.endsWith('.github.com');
+  } catch {
+    return false;
   }
-  return dispatcher;
+}
+
+/** 检查更新用的 dispatcher：GitHub 目标走配置的代理，其余目标跟随系统环境。 */
+export function dispatcherFor(url, proxyUrl) {
+  if (usesConfiguredProxy(url, proxyUrl)) {
+    if (proxyDispatcherKey !== proxyUrl || !proxyDispatcher) {
+      const previous = proxyDispatcher;
+      proxyDispatcher = new ProxyAgent(proxyUrl).compose(interceptors.redirect({ maxRedirections: 3 }));
+      proxyDispatcherKey = proxyUrl;
+      if (previous) {
+        try { Promise.resolve(previous.close?.()).catch(() => {}); } catch { /* 关闭失败不影响新请求 */ }
+      }
+    }
+    lastDispatcherKey = proxyUrl;
+    return proxyDispatcher;
+  }
+  const fingerprint = systemProxyFingerprint();
+  if (!envDispatcher || envDispatcherKey !== fingerprint) {
+    const previous = envDispatcher;
+    envDispatcher = new EnvHttpProxyAgent().compose(interceptors.redirect({ maxRedirections: 3 }));
+    envDispatcherKey = fingerprint;
+    if (previous) {
+      try { Promise.resolve(previous.close?.()).catch(() => {}); } catch { /* 关闭失败不影响新请求 */ }
+    }
+  }
+  lastDispatcherKey = ENV_MARKER;
+  return envDispatcher;
 }
 
 /** 连通性测试用的一次性 dispatcher：不复用全局缓存，未保存的配置不会影响当前策略。 */
@@ -198,5 +234,5 @@ export function probeDispatcher(proxyUrl) {
 
 /** 自检用：当前 dispatcher 档位。 */
 export function dispatcherStatus() {
-  return { key: dispatcherKey === ENV_MARKER ? 'system-env' : dispatcherKey };
+  return { key: lastDispatcherKey === ENV_MARKER ? 'system-env' : lastDispatcherKey };
 }
