@@ -65,14 +65,15 @@ window.__ModuleLoader__.load({
         checkDone: '检查完成：可更新 {update} · 最新 {latest} · 失败 {error}',
         checkDoneFail: '检查完成，但有 {fail} 项失败',
         checkErrDetail: '失败原因：{note}',
-        checkConnHint: '连接类错误通常是 GitHub API 代理不可达或网络受限：请在下方「检查设置」确认代理已启动（npm 通道不受影响）。徽标停留在上次成功检查的结果，请修正后重新检查。',
+        checkConnHint: '连接类错误通常是代理不可达或网络受限：请在下方确认代理已启动，或留空改用系统代理。徽标停留在上次成功检查的结果，请修正后重新检查。',
         checkedAt: '检查于 {time}',
         installLabel: '从 GitHub 安装',
-        installHint: '输入 owner/repo 或 GitHub 链接，直接从 GitHub 仓库安装插件（不经 npm）；安装后如需重启会另行提示。',
-        settingsTitle: '检查设置',
-        proxyLabel: 'GitHub API 代理',
-        proxyPlaceholder: 'http://127.0.0.1:33210（留空 = 直连）',
-        proxyHint: '仅作用于 GitHub 检查（api.github.com）；npm registry 始终直连。支持 http(s) 代理。',
+        installHint: '支持 owner/repo、github:owner/repo#tag、完整 GitHub 链接（含 .git、/tree/tag）、git@ SSH；安装与检查更新共用下方代理设置。',
+        settingsTitle: '代理与安装设置',
+        proxyLabel: 'HTTP 代理',
+        proxyPlaceholder: '127.0.0.1:7890（可不带 http://）',
+        proxyHint: '留空 = 跟随系统代理（环境变量 / git 配置）；填写后检查更新与 GitHub 安装都走此代理，不带前缀会自动补齐。',
+        proxyUnsupported: '代理未能注入安装进程：{reason}。请把 HTTPS_PROXY 写进 ~/.dsh/.env 并重启 dsh web。',
         save: '保存',
         saving: '保存中…',
         saved: '已保存',
@@ -83,7 +84,7 @@ window.__ModuleLoader__.load({
         installRestart: '已安装 {name}，重启后生效',
         installFailed: '安装失败',
         installBad: '无法识别的仓库地址',
-        installPlaceholder: 'owner/repo 或 GitHub 链接',
+        installPlaceholder: 'owner/repo、github:owner/repo#tag 或 GitHub 链接',
         // ---- M2 批量 ----
         batchUpdate: '更新所选',
         batchEnable: '启用所选',
@@ -239,14 +240,15 @@ window.__ModuleLoader__.load({
         checkDone: 'Checked: {update} updatable · {latest} latest · {error} failed',
         checkDoneFail: 'Checked, but {fail} failed',
         checkErrDetail: 'Reason: {note}',
-        checkConnHint: 'Connection errors usually mean the GitHub API proxy is down or the network is restricted: check the proxy in Check settings below (npm checks are unaffected). Badges keep showing the last successful check until you re-check.',
+        checkConnHint: 'Connection errors usually mean the proxy is down or the network is restricted: check the proxy below, or leave it empty to use the system proxy. Badges keep showing the last successful check until you re-check.',
         checkedAt: 'Checked at {time}',
         installLabel: 'Install from GitHub',
-        installHint: 'Enter owner/repo or a GitHub URL to install a plugin straight from GitHub (not via npm); a restart prompt follows if needed.',
-        settingsTitle: 'Check settings',
-        proxyLabel: 'GitHub API proxy',
-        proxyPlaceholder: 'http://127.0.0.1:33210 (empty = direct)',
-        proxyHint: 'Applies to GitHub checks (api.github.com) only; npm registry is always direct. http(s) proxy supported.',
+        installHint: 'Accepts owner/repo, github:owner/repo#tag, full GitHub URLs (.git, /tree/tag) and git@ SSH; installs and update checks share the proxy setting below.',
+        settingsTitle: 'Proxy & install settings',
+        proxyLabel: 'HTTP proxy',
+        proxyPlaceholder: '127.0.0.1:7890 (http:// is optional)',
+        proxyHint: 'Empty = follow the system proxy (env vars / git config). When set, both update checks and GitHub installs use it. A missing scheme is added automatically.',
+        proxyUnsupported: 'The proxy could not be injected into the install process: {reason}. Put HTTPS_PROXY in ~/.dsh/.env and restart dsh web.',
         save: 'Save',
         saving: 'Saving…',
         saved: 'Saved',
@@ -257,7 +259,7 @@ window.__ModuleLoader__.load({
         installRestart: 'Installed {name}, takes effect after restart',
         installFailed: 'Install failed',
         installBad: 'Unrecognized repository address',
-        installPlaceholder: 'owner/repo or GitHub URL',
+        installPlaceholder: 'owner/repo, github:owner/repo#tag or GitHub URL',
         // ---- M2 batch ----
         batchUpdate: 'Update selected',
         batchEnable: 'Enable selected',
@@ -1008,12 +1010,9 @@ window.__ModuleLoader__.load({
         : seg.text));
     }
 
-    // 来源 repo 归一化（与宿主 index.js 的 repoOf 同口径）：http(s) URL → owner/repo，去 .git
+    // host 半区 parseSource 已把 source.repo 统一成 owner/repo
     function repoKeyOf(entry) {
-      let repo = entry?.source?.repo ?? '';
-      const m = /^https?:\/\/github\.com\/([^/]+)\/([^/#?]+)/i.exec(repo);
-      if (m) repo = `${m[1]}/${m[2]}`;
-      return repo.replace(/\.git$/i, '');
+      return String(entry?.source?.repo ?? '');
     }
 
     // 批量更新目标 spec：npm → name@latest；github → github:repo#tag（已是最新则无目标）
@@ -1494,6 +1493,7 @@ window.__ModuleLoader__.load({
         const r = await callSaveSettings({ proxyUrl: proxyRef.current?.value ?? '' });
         if (r?.ok) {
           setSaveFlash('ok');
+          if (proxyRef.current && typeof r.proxyUrl === 'string') proxyRef.current.value = r.proxyUrl;
           setSnap((s) => (s ? { ...s, settings: { ...(s.settings ?? {}), proxyUrl: r.proxyUrl ?? '' } } : s));
         } else {
           setSaveFlash({ err: r?.error ?? t('saveFailed') });
@@ -1517,25 +1517,18 @@ window.__ModuleLoader__.load({
         setSaving(false);
       }, []);
 
-      // ---------- M3 GitHub 直装 ----------
-
-      // 输入归一化：owner/repo | github:owner/repo#ref | https://github.com/owner/repo(.git)(#ref|/tree/ref)
-      const normGithubInput = (raw) => {
-        let s = String(raw ?? '').trim();
-        if (!s) return null;
-        s = s.replace(/^git\+/i, '').replace(/^github:/i, '').replace(/^https?:\/\/github\.com\//i, '').replace(/\.git$/i, '');
-        s = s.replace(/\/tree\/([^/]+)$/i, '#$1');
-        const m = s.match(/^([\w.-]+)\/([\w.-]+)(?:#([^\s#]+))?$/);
-        return m ? { owner: m[1], repo: m[2], ref: m[3] || null } : null;
-      };
+      // ---------- GitHub 直装 ----------
+      // spec 归一化只有 host 半区 github-spec.js 一份实现，客户端只消费结果，
+      // 避免带/不带 github: 前缀在两处正则里漂移。
 
       const doInstall = React.useCallback(async () => {
-        const parsed = normGithubInput(installRef.current?.value);
-        if (!parsed) {
-          storeBanner({ ok: false, text: t('installBad') });
+        const normalized = unwrapEnvelope(await rpcFace?.normalizeGithubSpec?.({ raw: installRef.current?.value ?? '' }));
+        const spec = normalized?.ok ? normalized.spec : null;
+        if (!spec) {
+          const why = normalized?.error || '宿主半区未就绪，请重启 dsh web';
+          storeBanner({ ok: false, text: `${t('installBad')}：${why}` });
           return;
         }
-        const spec = `github:${parsed.owner}/${parsed.repo}${parsed.ref ? `#${parsed.ref}` : ''}`;
         setInstalling(true);
         storeBanner(null);
         try {
@@ -2085,6 +2078,10 @@ window.__ModuleLoader__.load({
             saveFlash && saveFlash.err ? h('span', { className: 'dpk-savederr' }, saveFlash.err) : null,
           ),
           h('div', { className: 'dpk-hint' }, t('proxyHint')),
+          snap?.proxy && (!snap.proxy.ok || !snap.proxy.verified)
+            ? h('div', { className: 'dpk-savederr' },
+                t('proxyUnsupported', { reason: snap.proxy.reason ?? 'unknown' }))
+            : null,
           h('div', { className: 'dpk-setrow' },
             h('span', { className: 'dpk-setlabel' }, t('installLabel')),
             h('input', {

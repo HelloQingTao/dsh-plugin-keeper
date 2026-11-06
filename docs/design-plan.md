@@ -169,5 +169,6 @@
 - **M0 骨架+盘点** ✅ commit 63929a2（改名 bd95a57→dsh-plugin-keeper）：settings.section 页签、来源分组、双语、主题 token
 - **M1 检查更新** ✅ commits 087950c + 82a2172：npm/GitHub 双通道、代理、兼容预判、undici v7 redirect interceptor、状态落 $DSH_HOME/plugin-keeper.json
 - **M2 批量操作** ✅ commits 1d43f67 + 42b5336 + a8df6b2：多选批量 启用/停用/卸载/更新、armed 二次确认、快照/恢复、结果台账、跨会话 lastBatch、官方 listBundles 状态并入；真机验证 settings-arranger 停用→恢复→启用全链路
-- **M3 GitHub 安装+官方整合** ✅ commit 4f12b92：plugins.tab 页签（侧栏插件面板）、GitHub 直装 e2e（真实装卸 capability-panel 验证）、错误诊断完整回显；两个实验项（nav 图标注入/深度嵌入）按拍板默认不做
+- **M3 GitHub 安装+官方整合** ⚠️ commit 4f12b92（部分完成）：plugins.tab 页签（侧栏插件面板）、裸 `github:` spec 直装、错误诊断完整回显。**M3 验收项「经镜像前缀/代理装通一个 github 插件」当时未实现**：只覆盖直连路径；「真实装卸 capability-panel」也无脚本、日志或产物留痕，不应记为完整 ✅。两个实验项（nav 图标注入/深度嵌入）按拍板默认不做。
+- **代理双通道与 spec 归一化（补齐）**：留空跟随系统代理，配置后检查更新（GitHub API + npm registry）与 GitHub 安装都走代理 —— 安装侧经 `profileContext.packageManager.env` 注入宿主 git/pnpm 子进程；带/不带 `github:` 前缀的地址统一由 `github-spec.js` 收敛。验收以真实链路自检脚本为准，不再以文档声明代替。
 - **M4 发布准备**：性能体检五查通过（定时器自清/无硬编码色/无 index key/Observer 有清理/无输入侧放大）、敏感筛查通过（无密钥无绝对路径）、双语 README+CHANGELOG 就绪；**push/tag/publish 等用户明确说「发布」**

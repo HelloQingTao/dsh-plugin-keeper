@@ -12,6 +12,8 @@
   "files": [
     "index.js",
     "client.js",
+    "proxy-policy.js",
+    "github-spec.js",
     "export.js",
     "import.js",
     "cordis.patch.yml",

@@ -7,8 +7,9 @@
  * - 官方包（dsh / @deepseek-ai/*）只标记，不做任何写操作。
  * - M1：一键检查更新——npm registry /latest 与 GitHub releases→tags 双通道，
  *   engines.dsh 兼容预判，结果持久化到 $DSH_HOME/plugin-keeper.json。
- * - GitHub API 代理：用户在页签里配置 HTTP(S) 代理 URL，仅作用于 api.github.com
- *   （registry 直连；下载侧镜像前缀属 M3）。
+ * - 代理：页签里配置 http(s) 代理后，检查更新（GitHub API + npm registry）与
+ *   GitHub 安装都走它；留空则跟随系统 HTTP(S)_PROXY / NO_PROXY / git 配置。
+ * - GitHub 安装地址归一化见 github-spec.js（带/不带 github: 前缀统一收敛）。
  *
  * 依赖解析：@deepseek-ai/dsh-typert-protocol 走 peerDependencies（^0.2.0-rc.2），
  * 宿主 ResolutionRouter 会把它路由到安装域的同一份副本，保证类标记一致。
@@ -20,9 +21,18 @@ import { readFileSync } from 'node:fs';
 import { randomBytes } from 'node:crypto';
 import { join, dirname, basename, isAbsolute, normalize } from 'node:path';
 import { homedir } from 'node:os';
-import { request, ProxyAgent, Agent, interceptors } from 'undici';
+import { request } from 'undici';
 import { gt, satisfies, valid } from 'semver';
 import { TypertRemoteService } from '@deepseek-ai/dsh-typert-protocol';
+import {
+  dispatcherFor,
+  normalizeProxyUrl,
+  applyInstallProxy,
+  releaseInstallProxy,
+  setPnpmCommand,
+  setContextVerified,
+} from './proxy-policy.js';
+import { normalizeGithubSpec as parseGithubSpec, tryNormalizeGithubSpec, githubRepoKey } from './github-spec.js';
 import {
   createExport,
   discoverHomeConfig,
@@ -70,15 +80,12 @@ function isOfficial(name) {
  * npm 范围（^1.2.3 / ~2.0 / 1.2.3 / latest…）= npm；github:… = GitHub；
  * file:/link:/workspace: = 本地；http(s):// 直链归入 GitHub 组（同为远端仓库分发）。
  */
-function parseSource(spec) {
+export function parseSource(spec) {
   if (typeof spec !== 'string' || spec === '') return { kind: 'unknown', spec: String(spec ?? '') };
-  if (spec.startsWith('github:')) {
-    const rest = spec.slice(7);
-    const seg = rest.split('#')[0].split('/');
-    const repo = seg.length >= 2 ? `${seg[0]}/${seg[1]}` : rest;
-    return { kind: 'github', spec, repo };
-  }
   if (/^(file|link|workspace):/.test(spec)) return { kind: 'local', spec };
+  // 带/不带 github: 前缀、完整 URL、SSH、.git、#ref 都收敛成 owner/repo + ref
+  const g = tryNormalizeGithubSpec(spec);
+  if (g) return { kind: 'github', spec, repo: `${g.owner}/${g.repo}`, ref: g.ref };
   if (/^https?:/i.test(spec)) return { kind: 'github', spec, repo: spec };
   return { kind: 'npm', spec };
 }
@@ -312,25 +319,12 @@ function probeDshVersion() {
   return dshVersionCache;
 }
 
-// ---------- HTTP（undici；GitHub 走可选代理）----------
+// ---------- HTTP（undici；代理策略见 proxy-policy.js）----------
 
-let directAgent = null;
-let proxyAgent = null;
-let proxyAgentUrl = '';
-// undici v7 起 request 不再收 maxRedirections，重定向要靠 dispatcher 上的 redirect 拦截器
-const redirectInterceptor = () => interceptors.redirect({ maxRedirections: 3 });
-
-function dispatcherFor(url, proxyUrl) {
-  if (proxyUrl && url.startsWith('https://api.github.com/')) {
-    if (proxyUrl !== proxyAgentUrl) {
-      proxyAgent = new ProxyAgent(proxyUrl).compose(redirectInterceptor());
-      proxyAgentUrl = proxyUrl;
-    }
-    return proxyAgent;
-  }
-  if (!directAgent) directAgent = new Agent().compose(redirectInterceptor());
-  return directAgent;
-}
+// 配了代理 → 所有请求（含 npm registry）走 ProxyAgent；
+// 留空 → EnvHttpProxyAgent 跟随系统 HTTP(S)_PROXY / NO_PROXY。
+// dispatcherFor 由 proxy-policy.js 提供并按 proxyUrl 缓存；undici v7 起
+// request 不再收 maxRedirections，重定向拦截器在策略模块里挂到 dispatcher 上。
 
 /**
  * GET JSON。404 返回 {notFound:true}（调用方按降级语义处理），4xx/5xx 抛错。
@@ -388,13 +382,39 @@ function countResults(results) {
   return counts;
 }
 
+// ---------- 代理策略应用（幂等，多个入口共用） ----------
+
+let lastProxyStatus = { ok: false, verified: false, reason: 'not-applied', proxyUrl: '' };
+
+/** 按落盘的 proxyUrl 应用安装通道；检查通道由 dispatcherFor 按同值懒切换。 */
+async function applyProxyPolicy(stateOverride) {
+  let proxyUrl = '';
+  try {
+    proxyUrl = (stateOverride ?? await readState()).proxyUrl || '';
+  } catch (e) {
+    lastProxyStatus = { ok: false, verified: false, reason: `state-read-failed: ${e?.message ?? e}`, proxyUrl: '' };
+    return lastProxyStatus;
+  }
+  const applied = applyInstallProxy(serviceBridge?.profile, proxyUrl);
+  lastProxyStatus = {
+    ok: applied.ok,
+    verified: applied.verified ?? false,
+    reason: applied.reason ?? null,
+    proxyUrl,
+  };
+  return lastProxyStatus;
+}
+
+function proxyStatus() {
+  return { ...lastProxyStatus };
+}
+
 // ---------- 检查更新 ----------
 
 function repoOf(plugin) {
-  let repo = plugin.source?.repo ?? '';
-  const m = /^https?:\/\/github\.com\/([^/]+)\/([^/#?]+)/i.exec(repo);
-  if (m) repo = `${m[1]}/${m[2]}`;
-  return repo.replace(/\.git$/i, '');
+  const repo = plugin.source?.repo ?? '';
+  // parseSource 已统一成 owner/repo；这里只兜底旧快照里的 URL 形态
+  return githubRepoKey(repo) ?? repo.replace(/\.git$/i, '');
 }
 
 function stripV(s) {
@@ -409,7 +429,7 @@ async function checkOne(plugin, { proxyUrl }, dshVersion) {
   const kind = plugin.source?.kind;
   const installed = valid(plugin.version ?? undefined);
   if (kind === 'npm') {
-    const { notFound, json } = await fetchJson(`https://registry.npmjs.org/${plugin.name}/latest`);
+    const { notFound, json } = await fetchJson(`https://registry.npmjs.org/${plugin.name}/latest`, { proxyUrl });
     if (notFound) return { status: 'no-release', note: 'registry 上没有该包' };
     const latest = valid(stripV(json?.version) ?? undefined);
     if (!latest || !installed) return { status: 'unknown-version', latest: json?.version ?? null };
@@ -570,7 +590,7 @@ async function restoreBatchSnapshot(id) {
 /**
  * 运行态 RPC 服务：浏览器半区经 ctx.remote['dsh-plugin-keeper'] 调用。
  */
-class PluginKeeperService extends TypertRemoteService {
+export class PluginKeeperService extends TypertRemoteService {
   static inject = [];
 
   constructor(ctx) {
@@ -587,6 +607,7 @@ class PluginKeeperService extends TypertRemoteService {
     const { errors, profileName, plugins, started } = await collectInventory();
     const t1 = Date.now();
     const state = await readState();
+    await applyProxyPolicy(state);
     const t2 = Date.now();
     for (const p of plugins) {
       p.check = state.lastCheck?.results?.[p.name] ?? null;
@@ -603,6 +624,7 @@ class PluginKeeperService extends TypertRemoteService {
       lastCheckAt: state.lastCheck?.at ?? null,
       lastBatch: state.lastBatch,
       settings: { proxyUrl: state.proxyUrl, showInSettings: state.showInSettings },
+      proxy: proxyStatus(),
       generatedAt: new Date().toISOString(),
     };
   }
@@ -664,27 +686,36 @@ class PluginKeeperService extends TypertRemoteService {
     return { ok: true, proxyUrl: state.proxyUrl, showInSettings: state.showInSettings };
   }
 
+  /** GitHub 安装地址归一化的唯一入口；顺便在安装前同步一次代理策略。 */
+  async normalizeGithubSpec(input) {
+    await applyProxyPolicy();
+    try {
+      return { ok: true, ...parseGithubSpec(input?.raw ?? input) };
+    } catch (e) {
+      return { ok: false, error: String(e?.message ?? e) };
+    }
+  }
+
   /**
    * 保存设置：
-   *  - proxyUrl：GitHub API 代理（'' = 直连）
-   *  - showInSettings：是否在设置页也显示本插件（默认关；插件页 Tab 恒有）
-   * 未传的字段保持原值（客户端只改一项时不覆盖另一项）。
+   *  - proxyUrl：'' = 跟随系统代理；填 host:port 自动补 http://
+   *  - showInSettings：是否在设置页也显示本插件
+   * 只更新显式传入的字段（点开关不会清空代理）；保存后立即应用策略。
    */
   async saveSettings(input) {
-    const proxyUrl = typeof input?.proxyUrl === 'string' ? input.proxyUrl.trim() : '';
-    if (proxyUrl !== '' && !/^https?:\/\/\S+$/i.test(proxyUrl)) {
-      throw new Error('代理 URL 需为 http(s):// 开头，或留空表示直连');
-    }
+    const hasProxy = Object.hasOwn(input ?? {}, 'proxyUrl');
+    const proxyUrl = hasProxy ? normalizeProxyUrl(input.proxyUrl) : null;
     const showInSettings = typeof input?.showInSettings === 'boolean' ? input.showInSettings : null;
     await withStateLock(async () => {
       const state = await readState();
       await writeState({
         ...state,
-        proxyUrl,
+        ...(proxyUrl === null ? {} : { proxyUrl }),
         ...(showInSettings === null ? {} : { showInSettings }),
       });
     });
     const latest = await readState();
+    await applyProxyPolicy(latest);
     return { ok: true, proxyUrl: latest.proxyUrl, showInSettings: latest.showInSettings };
   }
 
@@ -696,6 +727,7 @@ class PluginKeeperService extends TypertRemoteService {
   async prepareBatch(input) {
     const op = typeof input?.op === 'string' ? input.op : '';
     if (!BATCH_OPS.has(op)) throw new Error(`不支持的操作：${op || '(空)'}`);
+    await applyProxyPolicy();
     const manifest = await prepareBatchSnapshot(op);
     await withStateLock(async () => {
       const state = await readState();
@@ -1069,6 +1101,7 @@ markRemoteMethods(PluginKeeperService.prototype, [
   'checkGroup',
   'getSettings',
   'saveSettings',
+  'normalizeGithubSpec',
   'prepareBatch',
   'restoreBatch',
   'reportBatch',
@@ -1248,8 +1281,20 @@ export function createImportUploadHandler() {
 export function apply(ctx) {
   const profile = ctx.profileContext ?? null;
   serviceBridge = { profile };
+  // 启动按落盘设置恢复代理；pluginManager 挂载后校验 profile 是否同源，
+  // 并取宿主真实的 pnpmCommand（CLI 启动时 profile.packageManager 可能不存在）。
+  void applyProxyPolicy();
+  ctx.inject(['pluginManager'], (pmCtx) => {
+    const pm = pmCtx.reflect.get('pluginManager');
+    setPnpmCommand(pm?.pnpmCommand);
+    setContextVerified(Boolean(pm) && pm.profile === profile);
+    // 启动期一次性日志：可从 dsh web 输出确认引用校验与注入通道是否真的挂上
+    console.log(`[dsh-plugin-keeper] proxy injection ready: context=${pm?.profile === profile ? 'same-ref' : 'MISMATCH'} pnpmCommand=${pm?.pnpmCommand ?? 'default'}`);
+    void applyProxyPolicy();
+  });
   ctx.effect(() => ctx.plugin(PluginKeeperService), 'dsh-plugin-keeper rpc service');
   ctx.effect(() => () => {
+    releaseInstallProxy(profile);
     serviceBridge = null;
   }, 'dsh-plugin-keeper bridge cleanup');
 

@@ -24,6 +24,14 @@ import { tmpdir } from 'node:os';
 import { basename, dirname, join, relative, sep } from 'node:path';
 import { deflateRawSync } from 'node:zlib';
 import { promisify } from 'node:util';
+import { tryNormalizeGithubSpec } from './github-spec.js';
+
+/** 导出包里的可安装 spec：统一成 github:owner/repo[#ref]，无效则回退到本地 tarball。 */
+export function githubInstallSpec(plugin, fallback) {
+  if (plugin?.source?.kind !== 'github') return fallback;
+  const g = tryNormalizeGithubSpec(plugin.source?.spec) ?? tryNormalizeGithubSpec(plugin.source?.repo);
+  return g ? g.spec : fallback;
+}
 
 const execFileAsync = promisify(execFile);
 
@@ -649,9 +657,7 @@ export async function createExport({ home, profileName, dshVersion, plugins, con
         // 目标机可直接执行的安装命令（本地 tarball 需先解包，故给 npm/github 源优先）
         installSpec: plugin.source?.kind === 'npm' && plugin.source?.spec
           ? `${plugin.name}@${plugin.version ?? 'latest'}`
-          : plugin.source?.kind === 'github' && plugin.source?.repo
-            ? `github:${plugin.source.repo}`
-            : `file:${entryName}`,
+          : githubInstallSpec(plugin, `file:${entryName}`),
       });
     }
 
