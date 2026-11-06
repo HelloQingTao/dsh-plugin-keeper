@@ -20,6 +20,20 @@ export function normalizeGithubSpec(raw) {
   if (!s) throw new Error('地址为空');
   if (/\s/.test(s)) throw new Error('地址不能包含空格');
 
+  // codeload tarball 直链（profile 依赖里常见）：
+  // https://codeload.github.com/<owner>/<repo>/tar.gz/<sha-or-tag>
+  // 归一出 owner/repo 与 ref，才能让打开图标、复制名称、批量更新都拿到仓库信息。
+  const codeload = /^https?:\/\/(?:www\.)?codeload\.github\.com\/([^/]+)\/([^/]+)\/tar\.gz\/(.+)$/i.exec(s);
+  if (codeload) {
+    const owner = codeload[1];
+    const repo = codeload[2].replace(/\.git$/i, '');
+    const ref = codeload[3].replace(/\/+$/, '') || null;
+    if (!NAME.test(owner) || !NAME.test(repo)) {
+      throw new Error(`需要 owner/repo 或 GitHub 链接，收到：${original.slice(0, 120)}`);
+    }
+    return { owner, repo, ref, spec: `github:${owner}/${repo}${ref ? `#${ref}` : ''}` };
+  }
+
   s = s.replace(/^git\+/i, '');
   if (/^git@github\.com:/i.test(s)) s = `https://github.com/${s.slice('git@github.com:'.length)}`;
   else if (/^ssh:\/\/git@github\.com\//i.test(s)) s = s.replace(/^ssh:\/\/git@github\.com\//i, 'https://github.com/');

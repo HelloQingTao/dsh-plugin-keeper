@@ -160,6 +160,8 @@ window.__ModuleLoader__.load({
         openSource: '打开插件所在地址',
         copyPath: '复制插件所在路径',
         copied: '路径已复制',
+        copySpec: '复制可安装名称',
+        specCopied: '安装名称已复制',
         copyFail: '复制失败',
         // ---- 显示位置 ----
         showInSettings: '在设置页也显示「插件运维」',
@@ -352,6 +354,8 @@ window.__ModuleLoader__.load({
         openSource: 'Open plugin home page',
         copyPath: 'Copy plugin path',
         copied: 'Path copied',
+        copySpec: 'Copy installable name',
+        specCopied: 'Installable name copied',
         copyFail: 'Copy failed',
         // ---- 显示位置 ----
         showInSettings: 'Also show "Plugin Ops" in Settings',
@@ -1078,11 +1082,28 @@ window.__ModuleLoader__.load({
         // 非 github.com 的 http(s) 直链（parseSource 归入 GitHub 组）原样打开；
         // github.com 裸域名（无法归一出 owner/repo）视为不可定位
         if (/^https?:\/\//i.test(repo)) {
+          // codeload tarball 直链（profile 里常见的 github 依赖）也要能打开仓库页
+          const m = /^https?:\/\/(?:www\.)?(?:codeload\.)?github\.com\/([^/]+)\/([^/#?]+)/i.exec(repo);
+          if (m) return `https://github.com/${m[1]}/${m[2].replace(/\.git$/i, '')}`;
           return /^https?:\/\/github\.com\/.+/i.test(repo) ? repo : null;
         }
         return /^[^/]+\/[^/]+$/.test(repo) ? `https://github.com/${repo}` : null;
       }
       return null;
+    }
+
+    // 名字后面的 copy 复制「可直接安装的名称」：
+    // npm → name@version；github → github:owner/repo[#ref]；其余 → 原始 spec / 包名。
+    function installSpecOf(entry) {
+      const kind = entry?.source?.kind;
+      if (kind === 'npm') return entry?.version ? `${entry.name}@${entry.version}` : entry?.name;
+      if (kind === 'github') {
+        const repo = repoKeyOf(entry);
+        const ref = entry?.source?.ref ?? null;
+        if (repo && /^[^/]+\/[^/]+$/.test(repo)) return `github:${repo}${ref ? `#${ref}` : ''}`;
+        return entry?.source?.spec || entry?.name;
+      }
+      return entry?.source?.spec || entry?.name;
     }
 
     // 复制文本：clipboard API 优先（安全上下文），失败回退 execCommand。
@@ -1156,8 +1177,9 @@ window.__ModuleLoader__.load({
       );
     }
 
-    // 本地来源图标：hover 显示插件所在路径，点击复制到剪贴板（成败各有短暂反馈）。
-    function LocalOpenIcon({ path }) {
+    // 通用复制按钮：hover 显示将复制的内容，点击写入剪贴板，成败各有短暂反馈。
+    // 名字后面用它复制「可直接安装的名称」，本地来源用它复制插件路径。
+    function CopyIcon({ text, tip, ariaLabel, copiedText }) {
       // 'idle' | 'ok' | 'fail'：ok 短暂打勾变绿，fail 短暂变红并提示复制失败
       const [flash, setFlash] = React.useState('idle');
       const timerRef = React.useRef(null);
@@ -1169,15 +1191,15 @@ window.__ModuleLoader__.load({
       const onCopy = async (e) => {
         e.stopPropagation();
         const btn = e.currentTarget; // React 事件对象异步后 currentTarget 不可靠，先捕获
-        const ok = await copyText(path);
+        const ok = await copyText(text);
         if (!aliveRef.current) return;
         setFlash(ok ? 'ok' : 'fail');
-        updateTipIfActive(btn, ok ? t('copied') : t('copyFail'));
+        updateTipIfActive(btn, ok ? copiedText : t('copyFail'));
         clearTimeout(timerRef.current);
         timerRef.current = setTimeout(() => {
           if (aliveRef.current) {
             setFlash('idle');
-            updateTipIfActive(btn, path);
+            updateTipIfActive(btn, tip);
           }
         }, 1400);
       };
@@ -1185,8 +1207,8 @@ window.__ModuleLoader__.load({
       return h('button', {
         className: `dpk-open${cls}`,
         type: 'button',
-        'data-tip': flash === 'ok' ? t('copied') : flash === 'fail' ? t('copyFail') : path,
-        'aria-label': t('copyPath'),
+        'data-tip': flash === 'ok' ? copiedText : flash === 'fail' ? t('copyFail') : tip,
+        'aria-label': ariaLabel,
         onClick: onCopy,
       }, flash === 'ok' ? CHECK_ICON : COPY_ICON);
     }
@@ -1225,6 +1247,7 @@ window.__ModuleLoader__.load({
           + (opStatus.note && opStatus.status !== 'ok' ? ` · ${opStatus.note}` : ''))
         : null;
       const spec = updateSpecOf(entry);
+      const installSpec = installSpecOf(entry);
       return h('div', rowProps,
         h('div', { className: 'dpk-rowmain' },
           h('input', {
@@ -1241,6 +1264,13 @@ window.__ModuleLoader__.load({
             // repo 不上行内（与包名重复且挤压按钮）；悬停同时给出全名与来源
             'data-tip': repoLabel ? `${entry.name} · ${repoLabel}` : entry.name,
           }, highlightText(entry.name, terms)),
+          // 名字后面：复制可直接安装的名称（npm → name@version，github → github:owner/repo#ref）
+          h(CopyIcon, {
+            text: installSpec,
+            tip: `${t('copySpec')}：${installSpec}`,
+            ariaLabel: t('copySpec'),
+            copiedText: t('specCopied'),
+          }),
           // 来源入口图标：npm/GitHub 点击开详情页；本地 hover 显示路径、点击复制
           openUrl
             ? h('a', {
@@ -1253,7 +1283,12 @@ window.__ModuleLoader__.load({
               onClick: (e) => e.stopPropagation(),
             }, OPEN_ICON)
             : null,
-          entry.localPath ? h(LocalOpenIcon, { path: entry.localPath }) : null,
+          entry.localPath ? h(CopyIcon, {
+            text: entry.localPath,
+            tip: entry.localPath,
+            ariaLabel: t('copyPath'),
+            copiedText: t('copied'),
+          }) : null,
           entry.version ? h('span', { className: 'dpk-ver', 'data-tip': `v${entry.version}` }, highlightText(`v${entry.version}`, terms)) : null,
           badgeText ? h('span', { className: 'dpk-badge' }, badgeText) : null,
           h('div', { className: 'dpk-rowops' },
@@ -1302,6 +1337,8 @@ window.__ModuleLoader__.load({
       const proxyUserRef = React.useRef(null);
       const proxyPassRef = React.useRef(null);
       const [installing, setInstalling] = React.useState(false);
+      // 安装结果就地显示在按钮下方，不再塞进模块级顶部横幅
+      const [installFlash, setInstallFlash] = React.useState(null);
       const installRef = React.useRef(null);
       // M2 批量状态
       const [selected, setSelected] = React.useState(() => new Set());
@@ -1602,25 +1639,25 @@ window.__ModuleLoader__.load({
         const spec = normalized?.ok ? normalized.spec : null;
         if (!spec) {
           const why = normalized?.error || '宿主半区未就绪，请重启 dsh web';
-          storeBanner({ ok: false, text: `${t('installBad')}：${why}` });
+          setInstallFlash({ ok: false, text: `${t('installBad')}：${why}` });
           return;
         }
         setInstalling(true);
-        storeBanner(null);
+        setInstallFlash(null);
         try {
           const r = unwrapEnvelope(await pmFace?.installBundle?.(spec, { enabled: true }));
           const errText = r?.error?.diagnostic || r?.error?.code || (r?.status === 'refused' ? r?.reason : null);
           if (r?.application === 'restart-required') {
-            storeBanner({ ok: true, text: t('installRestart', { name: r.target ?? spec }) });
+            setInstallFlash({ ok: true, text: t('installRestart', { name: r.target ?? spec }) });
           } else if (r?.application === 'applied' || r?.application === 'overridden') {
-            storeBanner({ ok: true, text: t('installDone', { name: r.target ?? spec }) });
+            setInstallFlash({ ok: true, text: t('installDone', { name: r.target ?? spec }) });
           } else {
-            storeBanner({ ok: false, text: `${t('installFailed')}${errText ? `：${errText}` : ''}` });
+            setInstallFlash({ ok: false, text: `${t('installFailed')}${errText ? `：${errText}` : ''}` });
           }
           if (installRef.current) installRef.current.value = '';
           await load();
         } catch (e) {
-          storeBanner({ ok: false, text: `${t('installFailed')}：${e?.message ?? e}` });
+          setInstallFlash({ ok: false, text: `${t('installFailed')}：${e?.message ?? e}` });
         } finally {
           setInstalling(false);
         }
@@ -2222,6 +2259,9 @@ window.__ModuleLoader__.load({
               onClick: () => { void doInstall(); },
             }, installing ? t('installing') : t('installBtn')),
           ),
+          installFlash
+            ? h('div', { className: `dpk-banner${installFlash.ok ? ' is-ok' : ''}` }, installFlash.text)
+            : null,
           h('div', { className: 'dpk-hint' }, t('installHint')),
           // 显示位置：默认只在「插件」面板的页签显示；勾选后设置页也出现
           h('div', { className: 'dpk-setrow' },
