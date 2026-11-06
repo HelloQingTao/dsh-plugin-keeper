@@ -1479,8 +1479,15 @@ export function apply(ctx) {
     const pm = pmCtx.reflect.get('pluginManager');
     setPnpmCommand(pm?.pnpmCommand);
     setContextVerified(Boolean(pm) && pm.profile === profile);
-    // 启动期一次性日志：可从 dsh web 输出确认引用校验与注入通道是否真的挂上
-    console.log(`[dsh-plugin-keeper] proxy injection ready: context=${pm?.profile === profile ? 'same-ref' : 'MISMATCH'} pnpmCommand=${pm?.pnpmCommand ?? 'default'}`);
+    // 宿主默认只给 GitHub 仓库预检 5s（githubConnectionTimeoutMs）。经代理的
+    // git ls-remote 实测 10~25s，5s 必然超时并把安装判成 spec-host 失败。
+    // 放宽到 30s：只影响这个实例预检的上限，不改 pnpm 下载/构建时限。
+    const beforeTimeout = pm?.githubConnectionTimeoutMs;
+    if (typeof beforeTimeout === 'number' && beforeTimeout < 30000) {
+      pm.githubConnectionTimeoutMs = 30000;
+    }
+    // 启动期一次性日志：可从 dsh web 输出确认引用校验、注入通道与预检时限
+    console.log(`[dsh-plugin-keeper] proxy injection ready: context=${pm?.profile === profile ? 'same-ref' : 'MISMATCH'} pnpmCommand=${pm?.pnpmCommand ?? 'default'} githubCheckTimeout=${beforeTimeout}->${pm?.githubConnectionTimeoutMs ?? 'default'}`);
     void applyProxyPolicy();
   });
   ctx.effect(() => ctx.plugin(PluginKeeperService), 'dsh-plugin-keeper rpc service');

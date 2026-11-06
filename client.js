@@ -92,8 +92,8 @@ window.__ModuleLoader__.load({
         testProxyBtn: '测试连通性',
         testProxyNoFace: '宿主半区未就绪（远程方法不可用），请刷新页面或重启 dsh web',
         testProxyEmpty: '宿主无返回（RPC 被拒绝或超时），请刷新页面后重试',
-        testProxyTesting: '测试中… {n}s',
-        testProxySlowHint: 'git 链路经代理通常需 10~25 秒，失败会自动重试一次；上方按钮显示真实等待时长。',
+        testProxyTesting: '测试中…',
+        testProxyRunning: '测试中，已等待 {n}s；git 链路经代理通常需 10~25 秒，失败会自动重试一次。',
         testProxyOk: '代理可用',
         testProxyFail: '代理不可用',
         testInstallOk: '安装链路（git）正常',
@@ -303,8 +303,8 @@ window.__ModuleLoader__.load({
         testProxyBtn: 'Test connectivity',
         testProxyNoFace: 'Host half is not ready (remote method unavailable). Refresh the page or restart dsh web.',
         testProxyEmpty: 'No response from host (RPC rejected or timed out). Refresh the page and retry.',
-        testProxyTesting: 'Testing… {n}s',
-        testProxySlowHint: 'The git path through a proxy usually takes 10–25s and retries once on failure; the button shows the real elapsed time.',
+        testProxyTesting: 'Testing…',
+        testProxyRunning: 'Testing, waited {n}s; the git path through a proxy usually takes 10–25s and retries once on failure.',
         testProxyOk: 'Proxy reachable',
         testProxyFail: 'Proxy unreachable',
         testInstallOk: 'Install path (git) OK',
@@ -775,6 +775,26 @@ window.__ModuleLoader__.load({
       installProgress = { ...installProgress, ...patch };
       notifyProgress();
     }
+    // 独立计时组件：每秒只重渲染自己，避免整块设置面板跟着重排/跳动。
+    // 按钮文案保持固定宽度，计时只出现在说明行里（不新增/删除 DOM 行）。
+    function TestTimer() {
+      const [n, setN] = React.useState(0);
+      React.useEffect(() => {
+        let cancelled = false;
+        const started = Date.now();
+        const tick = () => {
+          if (cancelled) return;
+          const elapsed = Math.floor((Date.now() - started) / 1000);
+          setN(elapsed);
+          if (elapsed >= 60) return; // 兜底：任何情况下都不无限挂定时器
+          setTimeout(tick, 1000);
+        };
+        tick();
+        return () => { cancelled = true; };
+      }, []);
+      return h('span', null, t('testProxyRunning', { n }));
+    }
+
     function stageLabel(phase, attempt) {
       if (phase === 'applying') return t('stageApplying');
       if (phase === 'cancelling') return t('stageCancelling');
@@ -1389,20 +1409,6 @@ window.__ModuleLoader__.load({
       const [saveFlash, setSaveFlash] = React.useState(null); // 'ok' | {err}
       const [testing, setTesting] = React.useState(false);
       const [proxyTest, setProxyTest] = React.useState(null);
-      const [testElapsed, setTestElapsed] = React.useState(0);
-      // 真实等待计时（不是模拟进度）；用递归 setTimeout，宿主沙箱只保证 setTimeout
-      React.useEffect(() => {
-        if (!testing) { setTestElapsed(0); return; }
-        let cancelled = false;
-        const started = Date.now();
-        const tickElapsed = () => {
-          if (cancelled) return;
-          setTestElapsed(Math.floor((Date.now() - started) / 1000));
-          setTimeout(tickElapsed, 1000);
-        };
-        tickElapsed();
-        return () => { cancelled = true; };
-      }, [testing]);
       // 显示位置开关（设置页是否也显示本插件）：默认关；改动在重新进入页面后生效
       const [showInSettings, setShowInSettings] = React.useState(false);
       const [locationFlash, setLocationFlash] = React.useState(null); // 'ok' | {err}
@@ -2331,7 +2337,7 @@ window.__ModuleLoader__.load({
               type: 'button',
               disabled: saving || testing || loading,
               onClick: () => { void doTestProxy(); },
-            }, testing ? t('testProxyTesting', { n: testElapsed }) : t('testProxyBtn')),
+            }, testing ? t('testProxyTesting') : t('testProxyBtn')),
             saveFlash === 'ok' ? h('span', { className: 'dpk-savedok' }, t('saved')) : null,
             saveFlash && saveFlash.err ? h('span', { className: 'dpk-savederr' }, saveFlash.err) : null,
           ),
@@ -2368,8 +2374,7 @@ window.__ModuleLoader__.load({
             }),
           ),
           h('div', { className: 'dpk-hint' }, t('proxyCredentialHint')),
-          h('div', { className: 'dpk-hint' }, t('testProxyHint')),
-          testing ? h('div', { className: 'dpk-hint' }, t('testProxySlowHint')) : null,
+          h('div', { className: 'dpk-hint' }, testing ? h(TestTimer) : t('testProxyHint')),
           proxyTest ? h('div', { className: 'dpk-hint' },
             h('div', { className: proxyTest.ok ? 'dpk-savedok' : 'dpk-savederr' },
               `${proxyTest.ok ? t('testProxyOk') : t('testProxyFail')} · ${proxyTest.mode ?? ''} · ${proxyTest.elapsedMs ?? 0}ms${proxyTest.error ? ` — ${proxyTest.error}` : ''}`),
