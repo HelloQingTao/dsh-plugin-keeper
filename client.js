@@ -69,6 +69,7 @@ window.__ModuleLoader__.load({
         checkedAt: '检查于 {time}',
         installLabel: '从 GitHub 安装',
         installHint: '支持 owner/repo、github:owner/repo#tag、完整 GitHub 链接（含 .git、/tree/tag）、git@ SSH；安装与检查更新共用下方代理设置。',
+        installNoResponse: '安装请求已发出，宿主暂未返回结果；下方实时日志可查看进度',
         settingsTitle: '高级配置',
         settingsBtn: '高级配置',
         sectionProxy: '网络代理',
@@ -108,6 +109,14 @@ window.__ModuleLoader__.load({
         installing: '安装中…',
         installDone: '已安装 {name}，刷新列表可见',
         installRestart: '已安装 {name}，重启后生效',
+        installStage: '安装进度',
+        stageStarting: '准备中（解析地址、连接仓库）',
+        stageInstalling: '正在安装依赖 · 第 {index}/{total} 个源 {registry}',
+        stageInstallingSimple: '正在安装依赖（pnpm 运行中）',
+        stageApplying: '正在应用到 profile',
+        stageCancelling: '正在取消安装',
+        installLogCount: '{n} 行输出',
+        installCancel: '取消安装',
         installFailed: '安装失败',
         installBad: '无法识别的仓库地址',
         installPlaceholder: 'owner/repo、github:owner/repo#tag 或 GitHub 链接',
@@ -270,6 +279,7 @@ window.__ModuleLoader__.load({
         checkedAt: 'Checked at {time}',
         installLabel: 'Install from GitHub',
         installHint: 'Accepts owner/repo, github:owner/repo#tag, full GitHub URLs (.git, /tree/tag) and git@ SSH; installs and update checks share the proxy setting below.',
+        installNoResponse: 'Install request sent but the host has not returned yet; see the live log below',
         settingsTitle: 'Advanced settings',
         settingsBtn: 'Advanced',
         sectionProxy: 'Network proxy',
@@ -309,6 +319,14 @@ window.__ModuleLoader__.load({
         installing: 'Installing…',
         installDone: 'Installed {name}, refresh the list to see it',
         installRestart: 'Installed {name}, takes effect after restart',
+        installStage: 'Install progress',
+        stageStarting: 'Preparing (resolving spec, connecting)',
+        stageInstalling: 'Installing dependencies · source {index}/{total} {registry}',
+        stageInstallingSimple: 'Installing dependencies (pnpm running)',
+        stageApplying: 'Applying to profile',
+        stageCancelling: 'Cancelling install',
+        installLogCount: '{n} log lines',
+        installCancel: 'Cancel install',
         installFailed: 'Install failed',
         installBad: 'Unrecognized repository address',
         installPlaceholder: 'owner/repo, github:owner/repo#tag or GitHub URL',
@@ -481,6 +499,7 @@ window.__ModuleLoader__.load({
 /* 高级配置按功能分区：只加分隔线与间距，标题复用 dpk-gtitle，不引入新颜色/圆角 */
 .dpk-setsec{display:flex;flex-direction:column;gap:8px;padding-top:10px;border-top:1px solid var(--dsw-alias-border-l1);}
 .dpk-setsec:first-child{border-top:none;padding-top:0;}
+.dpk-instprog{display:flex;flex-direction:column;gap:6px;}
 .dpk-setrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
 .dpk-setlabel{font-size:12px;color:var(--dsw-alias-label-secondary);white-space:nowrap;}
 .dpk-input{background:var(--dsw-alias-bg-layer-1);border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-primary);border-radius:var(--dsw-radius-md,8px);padding:3px 10px;font:inherit;font-size:12px;line-height:20px;min-width:280px;}
@@ -737,6 +756,34 @@ window.__ModuleLoader__.load({
 
     let rpcFace = null; // remote.dsh-plugin-keeper face，由装配段注入
     let pmFace = null; // remote.pluginManager（官方）face，批量操作直接调用
+
+    // ---------- 安装进度：订阅宿主真实事件流，不做假进度 ----------
+    // installBundle 带 requestId 后，宿主会 emit：
+    //   plugin-manager/install-state  { requestId, phase, attempt? }
+    //   plugin-manager/install-log   { requestId, stream, text, ... }（pnpm 实时输出）
+    let installProgress = { requestId: null, phase: 'starting', attempt: null, lines: [], status: 'idle' };
+    const progressListeners = new Set();
+    function notifyProgress() {
+      const snapshot = { ...installProgress, lines: [...installProgress.lines] };
+      for (const fn of progressListeners) {
+        try { fn(snapshot); } catch { /* 单个订阅者失败不影响其它 */ }
+      }
+    }
+    function updateProgress(patch) {
+      installProgress = { ...installProgress, ...patch };
+      notifyProgress();
+    }
+    function stageLabel(phase, attempt) {
+      if (phase === 'applying') return t('stageApplying');
+      if (phase === 'cancelling') return t('stageCancelling');
+      if (phase === 'installing') {
+        if (attempt?.total) return t('stageInstalling', {
+          index: attempt.index ?? 1, total: attempt.total, registry: String(attempt.registry ?? '-'),
+        });
+        return t('stageInstallingSimple');
+      }
+      return t('stageStarting');
+    }
 
     // ---------- 批量/横幅模块级状态（切页签、组件重挂载不丢失） ----------
     // settings.section 与 plugins.tab 两个挂载点共享同一份执行状态：批量执行循环
@@ -1349,6 +1396,12 @@ window.__ModuleLoader__.load({
       const [installing, setInstalling] = React.useState(false);
       // 安装结果就地显示在按钮下方，不再塞进模块级顶部横幅
       const [installFlash, setInstallFlash] = React.useState(null);
+      const [progress, setProgress] = React.useState(installProgress);
+      React.useEffect(() => {
+        const listener = (snapshot) => setProgress(snapshot);
+        progressListeners.add(listener);
+        return () => { progressListeners.delete(listener); };
+      }, []);
       const [settingsOpen, setSettingsOpen] = React.useState(false);
       // 台账清空后连跨会话残留提示一起隐藏，直到下一次批量重新置位
       const [ledgerDismissed, setLedgerDismissed] = React.useState(false);
@@ -1661,22 +1714,33 @@ window.__ModuleLoader__.load({
           setInstallFlash({ ok: false, text: `${t('installBad')}：${why}` });
           return;
         }
+        // requestId 是宿主进度事件的关联键：没有它宿主不会 emit install-state / install-log
+        const requestId = `dpk-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+        updateProgress({ requestId, phase: 'starting', attempt: null, lines: [], status: 'running' });
         setInstalling(true);
         setInstallFlash(null);
         try {
-          const r = unwrapEnvelope(await pmFace?.installBundle?.(spec, { enabled: true }));
+          const r = unwrapEnvelope(await pmFace?.installBundle?.(spec, { enabled: true, requestId }));
           const errText = r?.error?.diagnostic || r?.error?.code || (r?.status === 'refused' ? r?.reason : null);
-          if (r?.application === 'restart-required') {
+          let ok = false;
+          if (!r) {
+            // RPC 没给结果（超时/断连）时宿主可能仍在装：不误报失败，进度面板继续显示事件流
+            setInstallFlash({ ok: false, text: t('installNoResponse') });
+          } else if (r.application === 'restart-required') {
             setInstallFlash({ ok: true, text: t('installRestart', { name: r.target ?? spec }) });
-          } else if (r?.application === 'applied' || r?.application === 'overridden') {
+            ok = true;
+          } else if (r.application === 'applied' || r.application === 'overridden') {
             setInstallFlash({ ok: true, text: t('installDone', { name: r.target ?? spec }) });
+            ok = true;
           } else {
             setInstallFlash({ ok: false, text: `${t('installFailed')}${errText ? `：${errText}` : ''}` });
           }
+          if (r) updateProgress({ status: ok ? 'done' : 'failed' });
           if (installRef.current) installRef.current.value = '';
           await load();
         } catch (e) {
           setInstallFlash({ ok: false, text: `${t('installFailed')}：${e?.message ?? e}` });
+          updateProgress({ status: 'failed' });
         } finally {
           setInstalling(false);
         }
@@ -2324,6 +2388,27 @@ window.__ModuleLoader__.load({
           ),
           installFlash
             ? h('div', { className: `dpk-banner${installFlash.ok ? ' is-ok' : ''}` }, installFlash.text)
+            : null,
+          // 实时进度：阶段来自 install-state，日志行来自宿主转发的 pnpm 输出（非模拟）
+          progress.status !== 'idle'
+            ? h('div', { className: 'dpk-instprog' },
+                h('div', { className: 'dpk-hint' },
+                  `${t('installStage')}：${stageLabel(progress.phase, progress.attempt)} · ${t('installLogCount', { n: progress.lines.length })}`),
+                progress.lines.length
+                  ? h('div', { className: 'dpk-mlist' },
+                      progress.lines.slice(-8).map((line, i) => h('div', {
+                        key: i,
+                        className: line.stream === 'stderr' ? 'dpk-savederr' : 'dpk-hint',
+                      }, line.text)))
+                  : null,
+                progress.status === 'running'
+                  ? h('button', {
+                      className: 'dpk-btn is-mini',
+                      type: 'button',
+                      onClick: () => { void pmFace?.cancelInstall?.(progress.requestId); },
+                    }, t('installCancel'))
+                  : null,
+              )
             : null,
           h('div', { className: 'dpk-hint' }, t('installHint')),
           ),
@@ -3069,6 +3154,22 @@ window.__ModuleLoader__.load({
             //   ② 开关查询回来 → 若 true 则调 registerSettingsSection() 补注册
             //      （槽类型未声明时它会跳过，等包裹器回调时再注册 → 只注册一次）。
             rctx.effect(() => mountSection(rctx), 'dsh-plugin-keeper settings section');
+            // 宿主的真实安装事件流：只有本次 requestId 的事件才进进度面板
+            rctx.effect(() => {
+              const offs = [
+                rctx.remote?.$on?.('plugin-manager/install-state', (p) => {
+                  if (!p || p.requestId !== installProgress.requestId) return;
+                  updateProgress({ phase: p.phase, attempt: p.attempt ?? null });
+                }),
+                rctx.remote?.$on?.('plugin-manager/install-log', (chunk) => {
+                  if (!chunk || chunk.requestId !== installProgress.requestId) return;
+                  const text = String(chunk.text ?? '').trim();
+                  if (!text) return;
+                  updateProgress({ lines: [...installProgress.lines, { stream: chunk.stream, text }].slice(-40) });
+                }),
+              ].filter(Boolean);
+              return () => { for (const off of offs) { try { off?.(); } catch { /* 忽略解绑异常 */ } } };
+            }, 'dsh-plugin-keeper install progress');
             void (async () => {
               showInSettingsFlag = await readShowInSettings();
               if (!showInSettingsFlag) return;
