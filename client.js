@@ -69,8 +69,13 @@ window.__ModuleLoader__.load({
         checkedAt: '检查于 {time}',
         installLabel: '从 GitHub 安装',
         installHint: '支持 owner/repo、github:owner/repo#tag、完整 GitHub 链接（含 .git、/tree/tag）、git@ SSH；安装与检查更新共用下方代理设置。',
-        settingsTitle: '代理与安装设置',
-        settingsBtn: '设置',
+        settingsTitle: '高级配置',
+        settingsBtn: '高级配置',
+        sectionProxy: '网络代理',
+        sectionInstall: '从 GitHub 安装',
+        sectionDisplay: '显示位置',
+        collapseAllGroups: '一键折叠全部分组',
+        expandAllGroups: '一键展开全部分组',
         dialogClose: '关闭',
         clearLedger: '清空',
         clearLedgerAria: '清空所有消息',
@@ -265,8 +270,13 @@ window.__ModuleLoader__.load({
         checkedAt: 'Checked at {time}',
         installLabel: 'Install from GitHub',
         installHint: 'Accepts owner/repo, github:owner/repo#tag, full GitHub URLs (.git, /tree/tag) and git@ SSH; installs and update checks share the proxy setting below.',
-        settingsTitle: 'Proxy & install settings',
-        settingsBtn: 'Settings',
+        settingsTitle: 'Advanced settings',
+        settingsBtn: 'Advanced',
+        sectionProxy: 'Network proxy',
+        sectionInstall: 'Install from GitHub',
+        sectionDisplay: 'Display',
+        collapseAllGroups: 'Collapse all groups',
+        expandAllGroups: 'Expand all groups',
         dialogClose: 'Close',
         clearLedger: 'Clear',
         clearLedgerAria: 'Clear all messages',
@@ -468,6 +478,9 @@ window.__ModuleLoader__.load({
 .dpk-check.is-warn{color:var(--dsw-alias-state-warn-primary);border-color:var(--dsw-alias-state-warn-primary);}
 .dpk-check.is-err{color:var(--dsw-alias-state-error-primary);border-color:var(--dsw-alias-state-error-primary);}
 .dpk-setbody{display:flex;flex-direction:column;gap:8px;padding-top:8px;}
+/* 高级配置按功能分区：只加分隔线与间距，标题复用 dpk-gtitle，不引入新颜色/圆角 */
+.dpk-setsec{display:flex;flex-direction:column;gap:8px;padding-top:10px;border-top:1px solid var(--dsw-alias-border-l1);}
+.dpk-setsec:first-child{border-top:none;padding-top:0;}
 .dpk-setrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
 .dpk-setlabel{font-size:12px;color:var(--dsw-alias-label-secondary);white-space:nowrap;}
 .dpk-input{background:var(--dsw-alias-bg-layer-1);border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-primary);border-radius:var(--dsw-radius-md,8px);padding:3px 10px;font:inherit;font-size:12px;line-height:20px;min-width:280px;}
@@ -2070,6 +2083,8 @@ window.__ModuleLoader__.load({
       const checking = Boolean(checkInfo?.checking);
       const busy = loading || checking || batchRunning;
 
+      // 一键折叠：全部已折叠时点击展开，否则（含部分折叠）点击折叠全部
+      const allCollapsed = GROUP_ORDER.every((k) => collapsedGroups.has(k));
       // 批量工具条：常驻显示（选中与否都在，避免列表跳动）；无选中时按钮禁用。
       // 四个按钮点击后弹二次确认框（列出将处理的插件），确认才执行。
       const batchBar = !batchRunning
@@ -2113,13 +2128,21 @@ window.__ModuleLoader__.load({
             disabled: busy || importState === 'uploading' || importState === 'running',
             onClick: () => { openImportPicker(); },
           }, t('batchImport')),
-          // 设置：把「代理与安装」整体收进二级弹框，入口紧跟导入所选
+          // 高级配置：代理 / 安装 / 显示位置收进二级弹框
           h('button', {
             className: 'dpk-btn',
             type: 'button',
             'aria-label': t('settingsTitle'),
             onClick: () => setSettingsOpen(true),
           }, t('settingsBtn')),
+          // 一键折叠/展开全部分组：图标复用分组头的收纳三角，无新增视觉
+          h('button', {
+            className: 'dpk-btn is-mini',
+            type: 'button',
+            'aria-label': allCollapsed ? t('expandAllGroups') : t('collapseAllGroups'),
+            'data-tip': allCollapsed ? t('expandAllGroups') : t('collapseAllGroups'),
+            onClick: () => setCollapsedGroups(allCollapsed ? new Set() : new Set(GROUP_ORDER)),
+          }, h('span', { className: 'dpk-garrow' }, h(CollapseArrow, { collapsed: allCollapsed }))),
         )
         : null;
 
@@ -2202,6 +2225,9 @@ window.__ModuleLoader__.load({
         },
           h('div', { className: 'dpk-mtitle' }, t('settingsTitle')),
           h('div', { className: 'dpk-setbody' },
+          // ---- 分区 1：网络代理 ----
+          h('div', { className: 'dpk-setsec' },
+            h('div', { className: 'dpk-gtitle' }, t('sectionProxy')),
           h('div', { className: 'dpk-setrow' },
             h('span', { className: 'dpk-setlabel' }, t('proxyLabel')),
             h('input', {
@@ -2274,6 +2300,10 @@ window.__ModuleLoader__.load({
               className: c.ok ? 'dpk-savedok' : 'dpk-savederr',
             }, `${t(CHECK_LABEL_KEY[c.id] ?? c.id)}: ${c.ok ? 'OK' : 'FAIL'}${c.status ? ` ${c.status}` : ''} · ${c.ms ?? 0}ms${c.error ? ` — ${c.error}` : ''}`)) : []),
           ) : null,
+          ),
+          // ---- 分区 2：从 GitHub 安装 ----
+          h('div', { className: 'dpk-setsec' },
+            h('div', { className: 'dpk-gtitle' }, t('sectionInstall')),
           h('div', { className: 'dpk-setrow' },
             h('span', { className: 'dpk-setlabel' }, t('installLabel')),
             h('input', {
@@ -2296,6 +2326,10 @@ window.__ModuleLoader__.load({
             ? h('div', { className: `dpk-banner${installFlash.ok ? ' is-ok' : ''}` }, installFlash.text)
             : null,
           h('div', { className: 'dpk-hint' }, t('installHint')),
+          ),
+          // ---- 分区 3：显示位置 ----
+          h('div', { className: 'dpk-setsec' },
+            h('div', { className: 'dpk-gtitle' }, t('sectionDisplay')),
           // 显示位置：默认只在「插件」面板的页签显示；勾选后设置页也出现
           h('div', { className: 'dpk-setrow' },
             h('label', { className: 'dpk-switch' },
@@ -2311,6 +2345,7 @@ window.__ModuleLoader__.load({
           h('div', { className: 'dpk-hint' }, t('showInSettingsHint')),
           locationFlash === 'ok' ? h('div', { className: 'dpk-savedok' }, t('showInSettingsSaved')) : null,
           locationFlash && locationFlash.err ? h('div', { className: 'dpk-savederr' }, locationFlash.err) : null,
+          ),
           ),
           h('div', { className: 'dpk-mfoot' },
             h('button', {
