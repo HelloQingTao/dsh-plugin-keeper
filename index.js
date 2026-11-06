@@ -19,6 +19,7 @@
 
 import { readFile, writeFile, chmod, copyFile, mkdir, readdir, rm, stat, realpath } from 'node:fs/promises';
 import { readFileSync } from 'node:fs';
+import { spawn } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
 import { join, dirname, basename, isAbsolute, normalize } from 'node:path';
 import { homedir } from 'node:os';
@@ -30,6 +31,8 @@ import {
   normalizeProxyUrl,
   composeProxyUrl,
   splitProxyCredentials,
+  proxyEnvOverlay,
+  probeDispatcher,
   applyInstallProxy,
   releaseInstallProxy,
   setPnpmCommand,
@@ -442,6 +445,57 @@ function proxyStatus() {
   return { ...lastProxyStatus };
 }
 
+// ---------- 代理连通性测试（host 半区，凭据绝不回浏览器） ----------
+
+/** git / undici 的错误里可能带 http://user:pass@host —— 一律脱敏并截断。 */
+function redactProxyText(value) {
+  return String(value ?? '')
+    .replace(/:\/\/[^@\s/]*@/g, '://***@')
+    .replace(/\s+/g, ' ')
+    .slice(0, 300);
+}
+
+async function probeHttp(url, dispatcher, timeoutMs = 8000) {
+  const t0 = Date.now();
+  try {
+    const res = await request(url, {
+      dispatcher,
+      signal: AbortSignal.timeout(timeoutMs),
+      headers: { 'user-agent': 'dsh-plugin-keeper', accept: 'application/json' },
+    });
+    await res.body.dump();
+    return { ok: res.statusCode < 500, status: res.statusCode, ms: Date.now() - t0 };
+  } catch (e) {
+    return { ok: false, ms: Date.now() - t0, error: redactProxyText(e?.message ?? e) };
+  }
+}
+
+function probeGit(proxyUrl, timeoutMs = 10000) {
+  const t0 = Date.now();
+  const env = {
+    ...process.env,
+    PATH: process.env.PATH,
+    GIT_TERMINAL_PROMPT: '0', GIT_ASKPASS: '', SSH_ASKPASS: '', SSH_ASKPASS_REQUIRE: 'never',
+    LC_ALL: 'C',
+    ...(proxyUrl ? proxyEnvOverlay(proxyUrl) : {}),
+  };
+  return new Promise((resolve) => {
+    const child = spawn('git', ['-c', 'credential.helper=', 'ls-remote', '--',
+      'https://github.com/octocat/Hello-World', 'HEAD'], { env, stdio: ['ignore', 'pipe', 'pipe'] });
+    let stdout = '';
+    let stderr = '';
+    child.stdout.on('data', (d) => { stdout += d; });
+    child.stderr.on('data', (d) => { stderr += d; });
+    const timer = setTimeout(() => child.kill('SIGTERM'), timeoutMs);
+    const done = (extra) => { clearTimeout(timer); resolve({ ms: Date.now() - t0, ...extra }); };
+    child.on('error', (e) => done({ ok: false, error: redactProxyText(e?.message ?? e) }));
+    child.on('close', (code) => {
+      if (code === 0 && /^[0-9a-f]{40}\s+HEAD/.test(stdout.trim())) done({ ok: true });
+      else done({ ok: false, error: redactProxyText(stderr.trim() || stdout.trim() || `git exit ${code}`) });
+    });
+  });
+}
+
 // ---------- 检查更新 ----------
 
 function repoOf(plugin) {
@@ -729,6 +783,53 @@ export class PluginKeeperService extends TypertRemoteService {
     } catch (e) {
       return { ok: false, error: String(e?.message ?? e) };
     }
+  }
+
+  /**
+   * 测试代理连通性：按输入框里的即时值（不保存、不落盘）验证三条真实链路。
+   * 密码为空 = 沿用落盘密码；返回值不含任何凭据。
+   */
+  async testProxy(input) {
+    let state;
+    try {
+      state = await readState();
+    } catch (e) {
+      return { ok: false, error: `读取配置失败：${String(e?.message ?? e)}` };
+    }
+    const candidate = { ...state };
+    try {
+      if (typeof input?.proxyUrl === 'string') {
+        const split = splitProxyCredentials(normalizeProxyUrl(input.proxyUrl));
+        candidate.proxyUrl = split.proxyUrl;
+        if (split.proxyUser) { candidate.proxyUser = split.proxyUser; candidate.proxyPass = split.proxyPass; }
+      }
+    } catch (e) {
+      return { ok: false, error: String(e?.message ?? e) };
+    }
+    if (typeof input?.proxyUser === 'string') candidate.proxyUser = input.proxyUser.trim();
+    if (typeof input?.proxyPass === 'string' && input.proxyPass !== '') candidate.proxyPass = input.proxyPass;
+    if (!candidate.proxyUser) candidate.proxyPass = '';
+    const effective = composeProxyUrl(candidate.proxyUrl, candidate.proxyUser, candidate.proxyPass);
+    const dispatcher = probeDispatcher(effective);
+    const t0 = Date.now();
+    const [api, registry, gitCheck] = await Promise.all([
+      probeHttp('https://api.github.com/rate_limit', dispatcher),
+      probeHttp('https://registry.npmjs.org/-/ping', dispatcher),
+      probeGit(effective),
+    ]);
+    try { await Promise.resolve(dispatcher.close?.()); } catch { /* 关闭失败不影响结果 */ }
+    const checks = [
+      { id: 'githubApi', ...api },
+      { id: 'npmRegistry', ...registry },
+      { id: 'gitRemote', ...gitCheck },
+    ];
+    return {
+      // 检查更新（GitHub API）与安装（git）两条主链路都通才算可用
+      ok: checks[0].ok === true && checks[2].ok === true,
+      mode: effective ? (candidate.proxyUser ? 'proxy-with-auth' : 'proxy') : 'system-default',
+      elapsedMs: Date.now() - t0,
+      checks,
+    };
   }
 
   /**
@@ -1156,6 +1257,7 @@ markRemoteMethods(PluginKeeperService.prototype, [
   'getSettings',
   'saveSettings',
   'normalizeGithubSpec',
+  'testProxy',
   'prepareBatch',
   'restoreBatch',
   'reportBatch',

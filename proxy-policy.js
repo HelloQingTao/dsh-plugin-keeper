@@ -190,6 +190,12 @@ export function dispatcherFor(_url, proxyUrl) {
   return dispatcher;
 }
 
+/** 连通性测试用的一次性 dispatcher：不复用全局缓存，未保存的配置不会影响当前策略。 */
+export function probeDispatcher(proxyUrl) {
+  const base = proxyUrl ? new ProxyAgent(proxyUrl) : new EnvHttpProxyAgent();
+  return base.compose(interceptors.redirect({ maxRedirections: 3 }));
+}
+
 /** 自检用：当前 dispatcher 档位。 */
 export function dispatcherStatus() {
   return { key: dispatcherKey === ENV_MARKER ? 'system-env' : dispatcherKey };

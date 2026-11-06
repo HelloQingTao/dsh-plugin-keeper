@@ -79,6 +79,14 @@ window.__ModuleLoader__.load({
         proxyUserPlaceholder: '可选',
         proxyPassPlaceholder: '留空 = 保持原密码',
         proxyCredentialHint: '账号密码按 HTTP Basic 认证发送，特殊字符自动编码；密码不回显，清空账号即取消认证。',
+        testProxyBtn: '测试连通性',
+        testProxyTesting: '测试中…',
+        testProxyOk: '代理可用',
+        testProxyFail: '代理不可用',
+        testProxyHint: '按当前输入框的值测试（不保存、不安装），同时验证检查更新与安装两条通道。',
+        checkGithubApi: 'GitHub API',
+        checkNpmRegistry: 'npm registry',
+        checkGitRemote: 'GitHub git 远程',
         save: '保存',
         saving: '保存中…',
         saved: '已保存',
@@ -259,6 +267,14 @@ window.__ModuleLoader__.load({
         proxyUserPlaceholder: 'Optional',
         proxyPassPlaceholder: 'Leave empty to keep current',
         proxyCredentialHint: 'Credentials are sent as HTTP Basic auth with automatic escaping; the password is never echoed. Clear the username to disable authentication.',
+        testProxyBtn: 'Test connectivity',
+        testProxyTesting: 'Testing…',
+        testProxyOk: 'Proxy reachable',
+        testProxyFail: 'Proxy unreachable',
+        testProxyHint: 'Tests the current input (nothing is saved or installed) across both update-check and install paths.',
+        checkGithubApi: 'GitHub API',
+        checkNpmRegistry: 'npm registry',
+        checkGitRemote: 'GitHub git remote',
         save: 'Save',
         saving: 'Saving…',
         saved: 'Saved',
@@ -1039,6 +1055,7 @@ window.__ModuleLoader__.load({
     }
 
     const OP_LABEL_KEY = { update: 'opUpdate', enable: 'opEnable', disable: 'opDisable', uninstall: 'opUninstall' };
+    const CHECK_LABEL_KEY = { githubApi: 'checkGithubApi', npmRegistry: 'checkNpmRegistry', gitRemote: 'checkGitRemote' };
 
     // ---------- 打开图标（包名后的来源入口） ----------
 
@@ -1268,6 +1285,8 @@ window.__ModuleLoader__.load({
       const [checkState, setCheckState] = React.useState({});
       const [saving, setSaving] = React.useState(false);
       const [saveFlash, setSaveFlash] = React.useState(null); // 'ok' | {err}
+      const [testing, setTesting] = React.useState(false);
+      const [proxyTest, setProxyTest] = React.useState(null);
       // 显示位置开关（设置页是否也显示本插件）：默认关；改动在重新进入页面后生效
       const [showInSettings, setShowInSettings] = React.useState(false);
       const [locationFlash, setLocationFlash] = React.useState(null); // 'ok' | {err}
@@ -1526,6 +1545,24 @@ window.__ModuleLoader__.load({
           setSaveFlash({ err: r?.error ?? t('saveFailed') });
         }
         setSaving(false);
+      }, []);
+
+      // 测试代理连通性：用输入框的即时值，不保存、不安装
+      const doTestProxy = React.useCallback(async () => {
+        setTesting(true);
+        setProxyTest(null);
+        try {
+          const r = unwrapEnvelope(await rpcFace?.testProxy?.({
+            proxyUrl: proxyRef.current?.value ?? '',
+            proxyUser: proxyUserRef.current?.value ?? '',
+            proxyPass: proxyPassRef.current?.value ?? '',
+          }));
+          setProxyTest(r ?? { ok: false, error: 'no response' });
+        } catch (e) {
+          setProxyTest({ ok: false, error: String(e?.message ?? e) });
+        } finally {
+          setTesting(false);
+        }
       }, []);
 
       // 保存「显示位置」开关（设置页是否也显示本插件）。
@@ -2098,9 +2135,15 @@ window.__ModuleLoader__.load({
             h('button', {
               className: 'dpk-btn',
               type: 'button',
-              disabled: saving || loading,
+              disabled: saving || testing || loading,
               onClick: () => { void doSave(); },
             }, saving ? t('saving') : t('save')),
+            h('button', {
+              className: 'dpk-btn',
+              type: 'button',
+              disabled: saving || testing || loading,
+              onClick: () => { void doTestProxy(); },
+            }, testing ? t('testProxyTesting') : t('testProxyBtn')),
             saveFlash === 'ok' ? h('span', { className: 'dpk-savedok' }, t('saved')) : null,
             saveFlash && saveFlash.err ? h('span', { className: 'dpk-savederr' }, saveFlash.err) : null,
           ),
@@ -2137,6 +2180,15 @@ window.__ModuleLoader__.load({
             }),
           ),
           h('div', { className: 'dpk-hint' }, t('proxyCredentialHint')),
+          h('div', { className: 'dpk-hint' }, t('testProxyHint')),
+          proxyTest ? h('div', { className: 'dpk-hint' },
+            h('div', { className: proxyTest.ok ? 'dpk-savedok' : 'dpk-savederr' },
+              `${proxyTest.ok ? t('testProxyOk') : t('testProxyFail')} · ${proxyTest.mode ?? ''} · ${proxyTest.elapsedMs ?? 0}ms${proxyTest.error ? ` — ${proxyTest.error}` : ''}`),
+            ...(Array.isArray(proxyTest.checks) ? proxyTest.checks.map((c) => h('div', {
+              key: c.id,
+              className: c.ok ? 'dpk-savedok' : 'dpk-savederr',
+            }, `${t(CHECK_LABEL_KEY[c.id] ?? c.id)}: ${c.ok ? 'OK' : 'FAIL'}${c.status ? ` ${c.status}` : ''} · ${c.ms ?? 0}ms${c.error ? ` — ${c.error}` : ''}`)) : []),
+          ) : null,
           h('div', { className: 'dpk-setrow' },
             h('span', { className: 'dpk-setlabel' }, t('installLabel')),
             h('input', {
