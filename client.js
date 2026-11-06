@@ -85,6 +85,8 @@ window.__ModuleLoader__.load({
         testProxyTesting: '测试中…',
         testProxyOk: '代理可用',
         testProxyFail: '代理不可用',
+        testInstallOk: '安装链路（git）正常',
+        testInstallFail: '安装链路（git）未通过：可能超时或 TLS 握手失败，代理本身仍可用',
         testProxyHint: '按当前输入框的值测试（不保存、不安装），同时验证检查更新与安装两条通道。',
         checkGithubApi: 'GitHub API',
         checkNpmRegistry: 'npm registry',
@@ -275,6 +277,8 @@ window.__ModuleLoader__.load({
         testProxyTesting: 'Testing…',
         testProxyOk: 'Proxy reachable',
         testProxyFail: 'Proxy unreachable',
+        testInstallOk: 'Install path (git) OK',
+        testInstallFail: 'Install path (git) failed: timeout or TLS handshake; the proxy itself still works',
         testProxyHint: 'Tests the current input (nothing is saved or installed) across both update-check and install paths.',
         checkGithubApi: 'GitHub API',
         checkNpmRegistry: 'npm registry',
@@ -2192,6 +2196,9 @@ window.__ModuleLoader__.load({
           proxyTest ? h('div', { className: 'dpk-hint' },
             h('div', { className: proxyTest.ok ? 'dpk-savedok' : 'dpk-savederr' },
               `${proxyTest.ok ? t('testProxyOk') : t('testProxyFail')} · ${proxyTest.mode ?? ''} · ${proxyTest.elapsedMs ?? 0}ms${proxyTest.error ? ` — ${proxyTest.error}` : ''}`),
+            ...(Array.isArray(proxyTest.checks) ? [h('div', {
+              className: proxyTest.installOk ? 'dpk-savedok' : 'dpk-savederr',
+            }, proxyTest.installOk ? t('testInstallOk') : t('testInstallFail'))] : []),
             ...(Array.isArray(proxyTest.checks) ? proxyTest.checks.map((c) => h('div', {
               key: c.id,
               className: c.ok ? 'dpk-savedok' : 'dpk-savederr',

@@ -470,8 +470,7 @@ async function probeHttp(url, dispatcher, timeoutMs = 8000) {
   }
 }
 
-function probeGit(proxyUrl, timeoutMs = 10000) {
-  const t0 = Date.now();
+function probeGit(proxyUrl, timeoutMs = 20000) {
   const env = {
     ...process.env,
     PATH: process.env.PATH,
@@ -479,21 +478,38 @@ function probeGit(proxyUrl, timeoutMs = 10000) {
     LC_ALL: 'C',
     ...(proxyUrl ? proxyEnvOverlay(proxyUrl) : {}),
   };
-  return new Promise((resolve) => {
+  const runOnce = (ms) => new Promise((resolve) => {
+    const t0 = Date.now();
+    let timedOut = false;
+    let settled = false;
     const child = spawn('git', ['-c', 'credential.helper=', 'ls-remote', '--',
       'https://github.com/octocat/Hello-World', 'HEAD'], { env, stdio: ['ignore', 'pipe', 'pipe'] });
     let stdout = '';
     let stderr = '';
     child.stdout.on('data', (d) => { stdout += d; });
     child.stderr.on('data', (d) => { stderr += d; });
-    const timer = setTimeout(() => child.kill('SIGTERM'), timeoutMs);
-    const done = (extra) => { clearTimeout(timer); resolve({ ms: Date.now() - t0, ...extra }); };
+    const done = (extra) => {
+      if (settled) return;
+      settled = true;
+      clearTimeout(timer);
+      resolve({ ms: Date.now() - t0, ...extra });
+    };
+    // 超时会 SIGTERM 掉 git，此时 code=null；必须明确写成「超时」，别再显示 git exit null
+    const timer = setTimeout(() => { timedOut = true; child.kill('SIGTERM'); }, ms);
     child.on('error', (e) => done({ ok: false, error: redactProxyText(e?.message ?? e) }));
     child.on('close', (code) => {
       if (code === 0 && /^[0-9a-f]{40}\s+HEAD/.test(stdout.trim())) done({ ok: true });
+      else if (timedOut) done({ ok: false, timedOut: true, error: `git 检查超时（${ms}ms），代理可能较慢` });
       else done({ ok: false, error: redactProxyText(stderr.trim() || stdout.trim() || `git exit ${code}`) });
     });
   });
+  return (async () => {
+    const first = await runOnce(timeoutMs);
+    // 代理侧偶发 GnuTLS 握手失败 → 快速失败时重试一次；若已超时就不再重试，避免久等
+    if (first.ok || first.timedOut) return first;
+    const second = await runOnce(timeoutMs);
+    return { ...second, ms: first.ms + second.ms, retried: true };
+  })();
 }
 
 // ---------- 检查更新 ----------
@@ -826,8 +842,10 @@ export class PluginKeeperService extends TypertRemoteService {
       { id: 'gitRemote', ...gitCheck },
     ];
     return {
-      // 检查更新（GitHub API）与安装（git）两条主链路都通才算可用
-      ok: checks[0].ok === true && checks[2].ok === true,
+      // 代理通道（HTTP）与安装链路（git）分开判定：git 偶发慢/TLS 失败
+      // 不代表代理不通，不能把整体判成「代理不可用」
+      ok: checks[0].ok === true || checks[1].ok === true,
+      installOk: checks[2].ok === true,
       mode: effective ? (candidate.proxyUser ? 'proxy-with-auth' : 'proxy') : 'system-default',
       elapsedMs: Date.now() - t0,
       checks,
