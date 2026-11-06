@@ -470,6 +470,10 @@ async function probeHttp(url, dispatcher, timeoutMs = 8000) {
   }
 }
 
+// 连通性测试的并发闸门：连点会堆出多个 git 子进程，越等越慢。
+// 窗口自过期（30s），即使某次调用异常没清理也不会永久锁住。
+let activeTestProxy = 0;
+
 function probeGit(proxyUrl, timeoutMs = 20000) {
   const env = {
     ...process.env,
@@ -806,13 +810,24 @@ export class PluginKeeperService extends TypertRemoteService {
    * 密码为空 = 沿用落盘密码；返回值不含任何凭据。
    */
   async testProxy(input) {
+    const startedAt = Date.now();
     // 诊断用：只打字段名，不打值，凭据绝不进日志
     console.log(`[dsh-plugin-keeper] testProxy called: inputFields=[${Object.keys(input ?? {}).join(',')}]`);
+    if (activeTestProxy && startedAt - activeTestProxy < 30000) {
+      const waited = Math.round((startedAt - activeTestProxy) / 1000);
+      return { ok: false, error: `上一次连通性测试仍在进行（已 ${waited}s），请等它结束` };
+    }
+    activeTestProxy = startedAt;
+    const done = (r) => {
+      activeTestProxy = 0;
+      console.log(`[dsh-plugin-keeper] testProxy done: ${Date.now() - startedAt}ms`);
+      return r;
+    };
     let state;
     try {
       state = await readState();
     } catch (e) {
-      return { ok: false, error: `读取配置失败：${String(e?.message ?? e)}` };
+      return done({ ok: false, error: `读取配置失败：${String(e?.message ?? e)}` });
     }
     const candidate = { ...state };
     try {
@@ -822,7 +837,7 @@ export class PluginKeeperService extends TypertRemoteService {
         if (split.proxyUser) { candidate.proxyUser = split.proxyUser; candidate.proxyPass = split.proxyPass; }
       }
     } catch (e) {
-      return { ok: false, error: String(e?.message ?? e) };
+      return done({ ok: false, error: String(e?.message ?? e) });
     }
     if (typeof input?.proxyUser === 'string') candidate.proxyUser = input.proxyUser.trim();
     if (typeof input?.proxyPass === 'string' && input.proxyPass !== '') candidate.proxyPass = input.proxyPass;
@@ -841,7 +856,7 @@ export class PluginKeeperService extends TypertRemoteService {
       { id: 'npmRegistry', ...registry },
       { id: 'gitRemote', ...gitCheck },
     ];
-    return {
+    return done({
       // 代理通道（HTTP）与安装链路（git）分开判定：git 偶发慢/TLS 失败
       // 不代表代理不通，不能把整体判成「代理不可用」
       ok: checks[0].ok === true || checks[1].ok === true,
@@ -849,7 +864,7 @@ export class PluginKeeperService extends TypertRemoteService {
       mode: effective ? (candidate.proxyUser ? 'proxy-with-auth' : 'proxy') : 'system-default',
       elapsedMs: Date.now() - t0,
       checks,
-    };
+    });
   }
 
   /**
