@@ -70,6 +70,10 @@ window.__ModuleLoader__.load({
         installLabel: '从 GitHub 安装',
         installHint: '支持 owner/repo、github:owner/repo#tag、完整 GitHub 链接（含 .git、/tree/tag）、git@ SSH；安装与检查更新共用下方代理设置。',
         settingsTitle: '代理与安装设置',
+        settingsBtn: '设置',
+        dialogClose: '关闭',
+        clearLedger: '清空',
+        clearLedgerAria: '清空所有消息',
         proxyLabel: 'HTTP 代理',
         proxyPlaceholder: '127.0.0.1:7890（可不带 http://）',
         proxyHint: '留空 = 跟随系统代理（环境变量 / git 配置）；填写后检查更新与 GitHub 安装都走此代理，不带前缀会自动补齐。需要认证时在下方填写账号密码，不用拼进地址。',
@@ -264,6 +268,10 @@ window.__ModuleLoader__.load({
         installLabel: 'Install from GitHub',
         installHint: 'Accepts owner/repo, github:owner/repo#tag, full GitHub URLs (.git, /tree/tag) and git@ SSH; installs and update checks share the proxy setting below.',
         settingsTitle: 'Proxy & install settings',
+        settingsBtn: 'Settings',
+        dialogClose: 'Close',
+        clearLedger: 'Clear',
+        clearLedgerAria: 'Clear all messages',
         proxyLabel: 'HTTP proxy',
         proxyPlaceholder: '127.0.0.1:7890 (http:// is optional)',
         proxyHint: 'Empty = follow the system proxy (env vars / git config). When set, both update checks and GitHub installs use it. A missing scheme is added automatically. Enter credentials below instead of putting them in the address.',
@@ -463,9 +471,6 @@ window.__ModuleLoader__.load({
 .dpk-check.is-update{color:var(--dsw-alias-brand-primary);border-color:var(--dsw-alias-brand-primary);}
 .dpk-check.is-warn{color:var(--dsw-alias-state-warn-primary);border-color:var(--dsw-alias-state-warn-primary);}
 .dpk-check.is-err{color:var(--dsw-alias-state-error-primary);border-color:var(--dsw-alias-state-error-primary);}
-.dpk-settings{border:1px solid var(--dsw-alias-border-l1);border-radius:var(--dsw-radius-md,8px);padding:8px 12px;}
-.dpk-settings>summary{cursor:pointer;font-size:12px;font-weight:500;color:var(--dsw-alias-label-secondary);user-select:none;}
-.dpk-settings>summary:hover{color:var(--dsw-alias-brand-primary);}
 .dpk-setbody{display:flex;flex-direction:column;gap:8px;padding-top:8px;}
 .dpk-setrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
 .dpk-setlabel{font-size:12px;color:var(--dsw-alias-label-secondary);white-space:nowrap;}
@@ -549,6 +554,8 @@ window.__ModuleLoader__.load({
 .dpk-switch input{accent-color:var(--dsw-alias-brand-primary);margin:0;width:13px;height:13px;}
 /* 导出弹框：比确认框宽（要列清单） */
 .dpk-modal.is-wide{width:520px;}
+/* 设置项较多：限制高度并让内容滚动，其余外观完全沿用 dpk-modal */
+.dpk-modal.is-settings{max-height:min(80vh,720px);overflow:auto;}
 .dpk-cfglist{display:flex;flex-direction:column;gap:6px;max-height:260px;overflow:auto;}
 .dpk-cfgrow{display:flex;align-items:flex-start;gap:8px;padding:6px 10px;border:1px solid var(--dsw-alias-border-l1);border-radius:var(--dsw-radius-md,8px);background:var(--dsw-alias-bg-layer-2);}
 .dpk-cfgrow.is-suspicious{border-color:var(--dsw-alias-state-warn-primary);}
@@ -1339,6 +1346,9 @@ window.__ModuleLoader__.load({
       const [installing, setInstalling] = React.useState(false);
       // 安装结果就地显示在按钮下方，不再塞进模块级顶部横幅
       const [installFlash, setInstallFlash] = React.useState(null);
+      const [settingsOpen, setSettingsOpen] = React.useState(false);
+      // 台账清空后连跨会话残留提示一起隐藏，直到下一次批量重新置位
+      const [ledgerDismissed, setLedgerDismissed] = React.useState(false);
       const installRef = React.useRef(null);
       // M2 批量状态
       const [selected, setSelected] = React.useState(() => new Set());
@@ -1363,6 +1373,12 @@ window.__ModuleLoader__.load({
         window.addEventListener('keydown', onKey);
         return () => window.removeEventListener('keydown', onKey);
       }, [confirmOp]);
+      React.useEffect(() => {
+        if (!settingsOpen) return;
+        const onKey = (e) => { if (e.key === 'Escape') setSettingsOpen(false); };
+        window.addEventListener('keydown', onKey);
+        return () => window.removeEventListener('keydown', onKey);
+      }, [settingsOpen]);
       const [restoring, setRestoring] = React.useState(false);
       // 批量/横幅状态在模块级 batchStore（切页签存活）；订阅变更触发重渲染
       const [, bump] = React.useReducer((x) => x + 1, 0);
@@ -1920,6 +1936,7 @@ window.__ModuleLoader__.load({
           return p && !p.official;
         });
         if (!names.length) return;
+        setLedgerDismissed(false); // 新一轮批量重新展示台账
         names.sort((a, b) => (a === SELF) - (b === SELF)); // self last
 
         const results = []; // 执行循环持有：组件卸载后循环仍推进并写 store
@@ -2106,6 +2123,13 @@ window.__ModuleLoader__.load({
             disabled: busy || importState === 'uploading' || importState === 'running',
             onClick: () => { openImportPicker(); },
           }, t('batchImport')),
+          // 设置：把「代理与安装」整体收进二级弹框，入口紧跟导入所选
+          h('button', {
+            className: 'dpk-btn',
+            type: 'button',
+            'aria-label': t('settingsTitle'),
+            onClick: () => setSettingsOpen(true),
+          }, t('settingsBtn')),
         )
         : null;
 
@@ -2129,6 +2153,18 @@ window.__ModuleLoader__.load({
               fail: batch.counts?.fail ?? 0,
               skip: batch.counts?.skip ?? 0,
             }) + (batch.restored ? ` ${t('restoredLedger')}` : '')),
+            h('div', { className: 'dpk-spacer' }),
+            h('button', {
+              className: 'dpk-btn is-mini',
+              type: 'button',
+              'aria-label': t('clearLedgerAria'),
+              'data-tip': t('clearLedgerAria'),
+              onClick: () => {
+                storeBatch(null);
+                storeBanner(null);
+                setLedgerDismissed(true);
+              },
+            }, t('clearLedger')),
           ),
           batch.snapshotId
             ? h('div', { className: 'dpk-ledrow' },
@@ -2151,7 +2187,7 @@ window.__ModuleLoader__.load({
         : null;
 
       // 跨会话残留的批量快照（状态文件 lastBatch）——只提示存在与恢复入口
-      const lastBatchLine = !batch && snap?.lastBatch?.id
+      const lastBatchLine = !batch && !ledgerDismissed && snap?.lastBatch?.id
         ? h('div', { className: 'dpk-ledrow' },
           h('span', { className: 'dpk-hint' }, t('lastBatchLine', {
             op: t(OP_LABEL_KEY[snap.lastBatch.op] ?? snap.lastBatch.op ?? ''),
@@ -2166,9 +2202,16 @@ window.__ModuleLoader__.load({
         )
         : null;
 
-      const settingsEl = h('details', { className: 'dpk-settings' },
-        h('summary', null, t('settingsTitle')),
-        h('div', { className: 'dpk-setbody' },
+      // 设置二级弹框：复用已有的 dpk-modal 体系（确认/导出/导入弹框同款），
+      // 内容仍是原来的 dpk-setbody，避免在列表里长期占一大块空间。
+      const settingsModal = !settingsOpen ? null
+        : h('div', {
+          className: 'dpk-modal is-wide is-settings',
+          role: 'dialog',
+          'aria-label': t('settingsTitle'),
+        },
+          h('div', { className: 'dpk-mtitle' }, t('settingsTitle')),
+          h('div', { className: 'dpk-setbody' },
           h('div', { className: 'dpk-setrow' },
             h('span', { className: 'dpk-setlabel' }, t('proxyLabel')),
             h('input', {
@@ -2278,8 +2321,16 @@ window.__ModuleLoader__.load({
           h('div', { className: 'dpk-hint' }, t('showInSettingsHint')),
           locationFlash === 'ok' ? h('div', { className: 'dpk-savedok' }, t('showInSettingsSaved')) : null,
           locationFlash && locationFlash.err ? h('div', { className: 'dpk-savederr' }, locationFlash.err) : null,
-        ),
-      );
+          ),
+          h('div', { className: 'dpk-mfoot' },
+            h('button', {
+              className: 'dpk-btn',
+              type: 'button',
+              autoFocus: true,
+              onClick: () => setSettingsOpen(false),
+            }, t('dialogClose')),
+          ),
+        );
 
       // 二次确认弹框：列出将要处理的插件名单，确认才真正执行
       const confirmModal = (() => {
@@ -2515,6 +2566,7 @@ window.__ModuleLoader__.load({
         confirmModal,
         exportModal,
         importModal,
+        settingsModal,
         // 隐藏的文件选择器（导入入口）
         h('input', {
           ref: importFileRef,
@@ -2696,7 +2748,6 @@ window.__ModuleLoader__.load({
           }),
         ledger,
         lastBatchLine,
-        settingsEl,
       );
     }
 
