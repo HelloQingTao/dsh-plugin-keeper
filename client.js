@@ -162,8 +162,6 @@ window.__ModuleLoader__.load({
         checkTimeout: '检查超时，请检查网络或 GitHub 代理设置',
         // ---- 打开图标（包名后的来源入口） ----
         openSource: '打开插件所在地址',
-        copyPath: '复制插件所在路径',
-        copied: '路径已复制',
         copySpec: '复制可安装名称',
         specCopied: '安装名称已复制',
         copyFail: '复制失败',
@@ -360,8 +358,6 @@ window.__ModuleLoader__.load({
         checkTimeout: 'Check timed out; check the network or the GitHub proxy setting',
         // ---- 打开图标（包名后的来源入口） ----
         openSource: 'Open plugin home page',
-        copyPath: 'Copy plugin path',
-        copied: 'Path copied',
         copySpec: 'Copy installable name',
         specCopied: 'Installable name copied',
         copyFail: 'Copy failed',
@@ -1185,7 +1181,7 @@ window.__ModuleLoader__.load({
     }
 
     // 通用复制按钮：hover 显示将复制的内容，点击写入剪贴板，成败各有短暂反馈。
-    // 名字后面用它复制「可直接安装的名称」，本地来源用它复制插件路径。
+    // 只用于名字后面复制「可直接安装的名称」。
     function CopyIcon({ text, tip, ariaLabel, copiedText }) {
       // 'idle' | 'ok' | 'fail'：ok 短暂打勾变绿，fail 短暂变红并提示复制失败
       const [flash, setFlash] = React.useState('idle');
@@ -1278,7 +1274,7 @@ window.__ModuleLoader__.load({
             ariaLabel: t('copySpec'),
             copiedText: t('specCopied'),
           }),
-          // 来源入口图标：npm/GitHub 点击开详情页；本地 hover 显示路径、点击复制
+          // 来源入口图标：npm/GitHub 点击开详情页（每行只保留名字后那一个复制按钮）
           openUrl
             ? h('a', {
               className: 'dpk-open',
@@ -1290,12 +1286,6 @@ window.__ModuleLoader__.load({
               onClick: (e) => e.stopPropagation(),
             }, OPEN_ICON)
             : null,
-          entry.localPath ? h(CopyIcon, {
-            text: entry.localPath,
-            tip: entry.localPath,
-            ariaLabel: t('copyPath'),
-            copiedText: t('copied'),
-          }) : null,
           entry.version ? h('span', { className: 'dpk-ver', 'data-tip': `v${entry.version}` }, highlightText(`v${entry.version}`, terms)) : null,
           badgeText ? h('span', { className: 'dpk-badge' }, badgeText) : null,
           h('div', { className: 'dpk-rowops' },
