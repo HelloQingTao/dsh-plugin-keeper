@@ -9,6 +9,7 @@
  *   engines.dsh 兼容预判，结果持久化到 $DSH_HOME/plugin-keeper.json。
  * - 代理：页签里配置 http(s) 代理后，检查更新（GitHub API + npm registry）与
  *   GitHub 安装都走它；留空则跟随系统 HTTP(S)_PROXY / NO_PROXY / git 配置。
+ *   账号/密码是独立字段，host 半区按 RFC 3986 编码组装 userinfo，密码不回浏览器。
  * - GitHub 安装地址归一化见 github-spec.js（带/不带 github: 前缀统一收敛）。
  *
  * 依赖解析：@deepseek-ai/dsh-typert-protocol 走 peerDependencies（^0.2.0-rc.2），
@@ -16,7 +17,7 @@
  * undici / semver 是本插件自己的 dependencies，装在插件目录 node_modules。
  */
 
-import { readFile, writeFile, copyFile, mkdir, readdir, rm, stat, realpath } from 'node:fs/promises';
+import { readFile, writeFile, chmod, copyFile, mkdir, readdir, rm, stat, realpath } from 'node:fs/promises';
 import { readFileSync } from 'node:fs';
 import { randomBytes } from 'node:crypto';
 import { join, dirname, basename, isAbsolute, normalize } from 'node:path';
@@ -27,6 +28,8 @@ import { TypertRemoteService } from '@deepseek-ai/dsh-typert-protocol';
 import {
   dispatcherFor,
   normalizeProxyUrl,
+  composeProxyUrl,
+  splitProxyCredentials,
   applyInstallProxy,
   releaseInstallProxy,
   setPnpmCommand,
@@ -274,16 +277,35 @@ function statePathOf() {
 
 const STATE_DEFAULT = Object.freeze({
   proxyUrl: '',
+  proxyUser: '',
+  proxyPass: '',
   // 「在设置页也显示插件运维」：默认关（插件页 Tab 常驻，设置页不重复出现）。
   showInSettings: false,
   lastCheck: null,
   lastBatch: null,
 });
 
+/** 对外可见的设置：密码永不返回浏览器，只给一个 hasProxyPass 标记。 */
+export function publicProxySettings(state) {
+  return {
+    proxyUrl: state?.proxyUrl ?? '',
+    proxyUser: state?.proxyUser ?? '',
+    hasProxyPass: Boolean(state?.proxyPass),
+    showInSettings: state?.showInSettings === true,
+  };
+}
+
 async function readState() {
   const raw = await readJsonSafe(statePathOf());
+  const user = typeof raw?.proxyUser === 'string' ? raw.proxyUser : '';
+  const pass = typeof raw?.proxyPass === 'string' ? raw.proxyPass : '';
+  // 旧配置 / 用户直接粘的带 userinfo 地址 → 就地迁移成三个字段，
+  // 下次 writeState 落盘即为拆分后的形态，凭据不再散落两处。
+  const split = splitProxyCredentials(typeof raw?.proxyUrl === 'string' ? raw.proxyUrl : '');
   return {
-    proxyUrl: typeof raw?.proxyUrl === 'string' ? raw.proxyUrl : '',
+    proxyUrl: split.proxyUrl,
+    proxyUser: user || split.proxyUser,
+    proxyPass: pass || split.proxyPass,
     // 缺字段 = 旧状态文件 → 按默认（false）处理，不当成 true
     showInSettings: raw?.showInSettings === true,
     lastCheck: raw?.lastCheck && typeof raw.lastCheck === 'object' ? raw.lastCheck : null,
@@ -292,7 +314,10 @@ async function readState() {
 }
 
 async function writeState(state) {
-  await writeFile(statePathOf(), `${JSON.stringify(state, null, 2)}\n`, 'utf8');
+  const path = statePathOf();
+  await writeFile(path, `${JSON.stringify(state, null, 2)}\n`, { encoding: 'utf8', mode: 0o600 });
+  // mode 只在新建时生效；历史文件是 644，含凭据时必须显式收紧
+  await chmod(path, 0o600).catch(() => {});
 }
 
 // 状态文件读改写互斥：所有 lastCheck/lastBatch/proxyUrl 的"读→合并→写"走同一条
@@ -384,24 +409,32 @@ function countResults(results) {
 
 // ---------- 代理策略应用（幂等，多个入口共用） ----------
 
-let lastProxyStatus = { ok: false, verified: false, reason: 'not-applied', proxyUrl: '' };
+let lastProxyStatus = { ok: false, verified: false, reason: 'not-applied', mode: 'unknown' };
+let loggedProxyMode = null;
 
-/** 按落盘的 proxyUrl 应用安装通道；检查通道由 dispatcherFor 按同值懒切换。 */
+/** 按落盘的三个字段组装代理 URL 并应用安装通道；检查通道由 dispatcherFor 按同值懒切换。 */
 async function applyProxyPolicy(stateOverride) {
-  let proxyUrl = '';
+  let state;
   try {
-    proxyUrl = (stateOverride ?? await readState()).proxyUrl || '';
+    state = stateOverride ?? await readState();
   } catch (e) {
-    lastProxyStatus = { ok: false, verified: false, reason: `state-read-failed: ${e?.message ?? e}`, proxyUrl: '' };
+    lastProxyStatus = { ok: false, verified: false, reason: `state-read-failed: ${e?.message ?? e}`, mode: 'unknown' };
     return lastProxyStatus;
   }
-  const applied = applyInstallProxy(serviceBridge?.profile, proxyUrl);
+  const effective = composeProxyUrl(state.proxyUrl, state.proxyUser, state.proxyPass);
+  const applied = applyInstallProxy(serviceBridge?.profile, effective);
+  // 不把含凭据的 URL 放进状态：它会经 snapshot 返回浏览器
   lastProxyStatus = {
     ok: applied.ok,
     verified: applied.verified ?? false,
     reason: applied.reason ?? null,
-    proxyUrl,
+    mode: effective ? (state.proxyUser ? 'proxy-with-auth' : 'proxy') : 'system-default',
   };
+  // 只在档位变化时打点：启动期一条，便于从宿主日志确认凭据是否真的被采用
+  if (loggedProxyMode !== lastProxyStatus.mode) {
+    loggedProxyMode = lastProxyStatus.mode;
+    console.log(`[dsh-plugin-keeper] proxy policy: mode=${loggedProxyMode} ok=${lastProxyStatus.ok} verified=${lastProxyStatus.verified}`);
+  }
   return lastProxyStatus;
 }
 
@@ -623,7 +656,7 @@ export class PluginKeeperService extends TypertRemoteService {
       errors,
       lastCheckAt: state.lastCheck?.at ?? null,
       lastBatch: state.lastBatch,
-      settings: { proxyUrl: state.proxyUrl, showInSettings: state.showInSettings },
+      settings: publicProxySettings(state),
       proxy: proxyStatus(),
       generatedAt: new Date().toISOString(),
     };
@@ -640,7 +673,8 @@ export class PluginKeeperService extends TypertRemoteService {
     const { plugins } = await collectInventory();
     const state = await readState();
     const dshVersion = probeDshVersion();
-    const { results, checked } = await checkGroupInternal(kind, plugins, state, dshVersion);
+    const effectiveState = { ...state, proxyUrl: composeProxyUrl(state.proxyUrl, state.proxyUser, state.proxyPass) };
+    const { results, checked } = await checkGroupInternal(kind, plugins, effectiveState, dshVersion);
     const at = new Date().toISOString();
     await withStateLock(async () => {
       const latest = await readState();
@@ -663,8 +697,9 @@ export class PluginKeeperService extends TypertRemoteService {
     const { plugins } = await collectInventory();
     const state = await readState();
     const dshVersion = probeDshVersion();
+    const effectiveState = { ...state, proxyUrl: composeProxyUrl(state.proxyUrl, state.proxyUser, state.proxyPass) };
     const groups = await Promise.all(['npm', 'github']
-      .map((kind) => checkGroupInternal(kind, plugins, state, dshVersion)));
+      .map((kind) => checkGroupInternal(kind, plugins, effectiveState, dshVersion)));
     const results = Object.assign({}, ...groups.map((g) => g.results));
     const at = new Date().toISOString();
     await withStateLock(async () => {
@@ -683,7 +718,7 @@ export class PluginKeeperService extends TypertRemoteService {
 
   async getSettings() {
     const state = await readState();
-    return { ok: true, proxyUrl: state.proxyUrl, showInSettings: state.showInSettings };
+    return { ok: true, ...publicProxySettings(state) };
   }
 
   /** GitHub 安装地址归一化的唯一入口；顺便在安装前同步一次代理策略。 */
@@ -699,24 +734,43 @@ export class PluginKeeperService extends TypertRemoteService {
   /**
    * 保存设置：
    *  - proxyUrl：'' = 跟随系统代理；填 host:port 自动补 http://
+   *  - proxyUser / proxyPass：HTTP Basic 凭据。密码传空串 = 保持原值（不回显）；
+   *    账号清空 = 取消认证，同时清掉密码。地址里直接粘 userinfo 会自动拆分。
    *  - showInSettings：是否在设置页也显示本插件
    * 只更新显式传入的字段（点开关不会清空代理）；保存后立即应用策略。
    */
   async saveSettings(input) {
-    const hasProxy = Object.hasOwn(input ?? {}, 'proxyUrl');
-    const proxyUrl = hasProxy ? normalizeProxyUrl(input.proxyUrl) : null;
+    const has = (k) => Object.hasOwn(input ?? {}, k);
+    let proxyUrl = null;
+    let proxyUser = null;
+    let proxyPass = null;
+    if (has('proxyUrl')) {
+      const split = splitProxyCredentials(normalizeProxyUrl(input.proxyUrl));
+      proxyUrl = split.proxyUrl;
+      // 用户直接粘了带 userinfo 的完整地址 → 同步拆到独立字段
+      if (split.proxyUser) { proxyUser = split.proxyUser; proxyPass = split.proxyPass; }
+    }
+    if (has('proxyUser')) proxyUser = String(input.proxyUser ?? '').trim();
+    if (has('proxyPass')) {
+      const v = String(input.proxyPass ?? '');
+      if (v !== '') proxyPass = v;
+    }
+    const clearCredentials = has('proxyUser') && proxyUser === '';
     const showInSettings = typeof input?.showInSettings === 'boolean' ? input.showInSettings : null;
     await withStateLock(async () => {
       const state = await readState();
       await writeState({
         ...state,
         ...(proxyUrl === null ? {} : { proxyUrl }),
+        ...(proxyUser === null ? {} : { proxyUser }),
+        ...(proxyPass === null ? {} : { proxyPass }),
+        ...(clearCredentials ? { proxyPass: '' } : {}),
         ...(showInSettings === null ? {} : { showInSettings }),
       });
     });
     const latest = await readState();
     await applyProxyPolicy(latest);
-    return { ok: true, proxyUrl: latest.proxyUrl, showInSettings: latest.showInSettings };
+    return { ok: true, ...publicProxySettings(latest) };
   }
 
   /**

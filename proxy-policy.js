@@ -56,6 +56,42 @@ export function normalizeProxyUrl(raw) {
   return candidate;
 }
 
+const decode = (s) => {
+  try { return decodeURIComponent(s); } catch { return s; }
+};
+
+/**
+ * 从代理 URL 拆出「无凭据地址 + 账号 + 密码」，供旧配置迁移和用户直接粘
+ * 带 userinfo 的地址时使用。返回的地址永远不含凭据。
+ */
+export function splitProxyCredentials(proxyUrl) {
+  const base = normalizeProxyUrl(proxyUrl);
+  if (!base) return { proxyUrl: '', proxyUser: '', proxyPass: '' };
+  const u = new URL(base);
+  const user = u.username ? decode(u.username) : '';
+  const pass = u.password ? decode(u.password) : '';
+  if (!user && !pass) return { proxyUrl: base, proxyUser: '', proxyPass: '' };
+  const path = u.pathname === '/' ? '' : u.pathname;
+  return {
+    proxyUrl: `${u.protocol}//${u.host}${path}${u.search}`,
+    proxyUser: user,
+    proxyPass: pass,
+  };
+}
+
+/** 把独立字段组装成带 userinfo 的代理 URL；userinfo 按 RFC 3986 百分号编码。 */
+export function composeProxyUrl(proxyUrl, user, pass) {
+  const base = normalizeProxyUrl(proxyUrl);
+  if (!base) return '';
+  const u = new URL(base);
+  // 地址里已带 userinfo（用户直接粘完整 URL）时以它为准
+  if (!user && (u.username || u.password)) return base;
+  if (!user) return base;
+  const auth = `${encodeURIComponent(user)}:${encodeURIComponent(pass ?? '')}`;
+  const path = u.pathname === '/' ? '' : u.pathname;
+  return `${u.protocol}//${auth}@${u.host}${path}${u.search}`;
+}
+
 /** 本插件注入到安装子进程 env 的键集合（未配置代理时为空）。 */
 export function proxyEnvOverlay(proxyUrl) {
   if (!proxyUrl) return {};

@@ -72,8 +72,13 @@ window.__ModuleLoader__.load({
         settingsTitle: '代理与安装设置',
         proxyLabel: 'HTTP 代理',
         proxyPlaceholder: '127.0.0.1:7890（可不带 http://）',
-        proxyHint: '留空 = 跟随系统代理（环境变量 / git 配置）；填写后检查更新与 GitHub 安装都走此代理，不带前缀会自动补齐。',
+        proxyHint: '留空 = 跟随系统代理（环境变量 / git 配置）；填写后检查更新与 GitHub 安装都走此代理，不带前缀会自动补齐。需要认证时在下方填写账号密码，不用拼进地址。',
         proxyUnsupported: '代理未能注入安装进程：{reason}。请把 HTTPS_PROXY 写进 ~/.dsh/.env 并重启 dsh web。',
+        proxyUserLabel: '代理账号',
+        proxyPassLabel: '代理密码',
+        proxyUserPlaceholder: '可选',
+        proxyPassPlaceholder: '留空 = 保持原密码',
+        proxyCredentialHint: '账号密码按 HTTP Basic 认证发送，特殊字符自动编码；密码不回显，清空账号即取消认证。',
         save: '保存',
         saving: '保存中…',
         saved: '已保存',
@@ -247,8 +252,13 @@ window.__ModuleLoader__.load({
         settingsTitle: 'Proxy & install settings',
         proxyLabel: 'HTTP proxy',
         proxyPlaceholder: '127.0.0.1:7890 (http:// is optional)',
-        proxyHint: 'Empty = follow the system proxy (env vars / git config). When set, both update checks and GitHub installs use it. A missing scheme is added automatically.',
+        proxyHint: 'Empty = follow the system proxy (env vars / git config). When set, both update checks and GitHub installs use it. A missing scheme is added automatically. Enter credentials below instead of putting them in the address.',
         proxyUnsupported: 'The proxy could not be injected into the install process: {reason}. Put HTTPS_PROXY in ~/.dsh/.env and restart dsh web.',
+        proxyUserLabel: 'Proxy username',
+        proxyPassLabel: 'Proxy password',
+        proxyUserPlaceholder: 'Optional',
+        proxyPassPlaceholder: 'Leave empty to keep current',
+        proxyCredentialHint: 'Credentials are sent as HTTP Basic auth with automatic escaping; the password is never echoed. Clear the username to disable authentication.',
         save: 'Save',
         saving: 'Saving…',
         saved: 'Saved',
@@ -1262,6 +1272,8 @@ window.__ModuleLoader__.load({
       const [showInSettings, setShowInSettings] = React.useState(false);
       const [locationFlash, setLocationFlash] = React.useState(null); // 'ok' | {err}
       const proxyRef = React.useRef(null);
+      const proxyUserRef = React.useRef(null);
+      const proxyPassRef = React.useRef(null);
       const [installing, setInstalling] = React.useState(false);
       const installRef = React.useRef(null);
       // M2 批量状态
@@ -1490,11 +1502,26 @@ window.__ModuleLoader__.load({
       const doSave = React.useCallback(async () => {
         setSaving(true);
         setSaveFlash(null);
-        const r = await callSaveSettings({ proxyUrl: proxyRef.current?.value ?? '' });
+        const r = await callSaveSettings({
+          proxyUrl: proxyRef.current?.value ?? '',
+          proxyUser: proxyUserRef.current?.value ?? '',
+          proxyPass: proxyPassRef.current?.value ?? '',
+        });
         if (r?.ok) {
           setSaveFlash('ok');
           if (proxyRef.current && typeof r.proxyUrl === 'string') proxyRef.current.value = r.proxyUrl;
-          setSnap((s) => (s ? { ...s, settings: { ...(s.settings ?? {}), proxyUrl: r.proxyUrl ?? '' } } : s));
+          if (proxyUserRef.current && typeof r.proxyUser === 'string') proxyUserRef.current.value = r.proxyUser;
+          if (proxyPassRef.current) proxyPassRef.current.value = ''; // 密码不回显
+          setSnap((s) => (s ? {
+            ...s,
+            settings: {
+              ...(s.settings ?? {}),
+              proxyUrl: r.proxyUrl ?? '',
+              proxyUser: r.proxyUser ?? '',
+              hasProxyPass: r.hasProxyPass === true,
+              showInSettings: r.showInSettings === true,
+            },
+          } : s));
         } else {
           setSaveFlash({ err: r?.error ?? t('saveFailed') });
         }
@@ -2082,6 +2109,34 @@ window.__ModuleLoader__.load({
             ? h('div', { className: 'dpk-savederr' },
                 t('proxyUnsupported', { reason: snap.proxy.reason ?? 'unknown' }))
             : null,
+          // 账号/密码独立输入：复用已按宿主对齐的 dpk-setrow / dpk-setlabel / dpk-input
+          h('div', { className: 'dpk-setrow' },
+            h('span', { className: 'dpk-setlabel' }, t('proxyUserLabel')),
+            h('input', {
+              ref: proxyUserRef,
+              className: 'dpk-input',
+              type: 'text',
+              autoComplete: 'off',
+              spellCheck: false,
+              placeholder: t('proxyUserPlaceholder'),
+              defaultValue: snap?.settings?.proxyUser ?? '',
+              key: `u:${snap?.settings?.proxyUser ?? 'init'}`,
+              onChange: () => setSaveFlash(null),
+            }),
+          ),
+          h('div', { className: 'dpk-setrow' },
+            h('span', { className: 'dpk-setlabel' }, t('proxyPassLabel')),
+            h('input', {
+              ref: proxyPassRef,
+              className: 'dpk-input',
+              type: 'password',
+              autoComplete: 'new-password',
+              spellCheck: false,
+              placeholder: t('proxyPassPlaceholder'),
+              onChange: () => setSaveFlash(null),
+            }),
+          ),
+          h('div', { className: 'dpk-hint' }, t('proxyCredentialHint')),
           h('div', { className: 'dpk-setrow' },
             h('span', { className: 'dpk-setlabel' }, t('installLabel')),
             h('input', {
