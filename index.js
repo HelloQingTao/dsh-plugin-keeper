@@ -358,12 +358,61 @@ function probeDshVersion() {
 // dispatcherFor 由 proxy-policy.js 提供并按 proxyUrl 缓存；undici v7 起
 // request 不再收 maxRedirections，重定向拦截器在策略模块里挂到 dispatcher 上。
 
+// ---- GitHub API 认证（提升限流额度 60/h → 5000/h）----
+// 优先顺序：环境变量 GITHUB_TOKEN/GH_TOKEN → `gh auth token`（本机已登录 gh 时自动取）。
+// 结果缓存（成功缓存较久，失败短缓存，避免每次检查都 spawn gh）。全部失败返回 null（匿名请求）。
+let ghTokenCache = { value: undefined, expires: 0 };
+
+function tokenFromEnv() {
+  const t = (process.env.GITHUB_TOKEN || process.env.GH_TOKEN || '').trim();
+  return t || null;
+}
+
+function tokenFromGhCli(timeoutMs = 5000) {
+  return new Promise((resolve) => {
+    let settled = false;
+    const done = (v) => { if (!settled) { settled = true; clearTimeout(timer); resolve(v); } };
+    let child;
+    try {
+      child = spawn('gh', ['auth', 'token'], { stdio: ['ignore', 'pipe', 'ignore'], env: process.env });
+    } catch { return resolve(null); }
+    let out = '';
+    child.stdout.on('data', (d) => { out += d; });
+    const timer = setTimeout(() => { try { child.kill('SIGTERM'); } catch { /* 已退出 */ } done(null); }, timeoutMs);
+    child.on('error', () => done(null));
+    child.on('close', (code) => {
+      const t = out.trim();
+      done(code === 0 && /^[A-Za-z0-9_]{20,}$/.test(t) ? t : null);
+    });
+  });
+}
+
+/** 取 GitHub token（可能为 null）。缓存：成功 10 分钟，失败 30 秒。 */
+async function resolveGithubToken() {
+  const now = Date.now();
+  if (ghTokenCache.value !== undefined && now < ghTokenCache.expires) return ghTokenCache.value;
+  let token = tokenFromEnv();
+  if (!token) token = await tokenFromGhCli();
+  ghTokenCache = { value: token, expires: now + (token ? 10 * 60 * 1000 : 30 * 1000) };
+  return token;
+}
+
+/** 清空 token 缓存（设置页改了 token 或重新探测时调用）。 */
+function resetGithubTokenCache() { ghTokenCache = { value: undefined, expires: 0 }; }
+
 /**
  * GET JSON。404 返回 {notFound:true}（调用方按降级语义处理），4xx/5xx 抛错。
  * 4xx/5xx 的响应体可能是 {"message":"Not Found"} —— 转成错误信息带上。
+ * GitHub 请求自动附加认证 token（若可得），把匿名 60 次/小时提升到 5000 次/小时。
  */
 async function fetchJson(url, { proxyUrl, headers = {}, timeoutMs = 8000 } = {}) {
-  const reqHeaders = { 'user-agent': 'dsh-plugin-keeper', accept: 'application/json', ...headers };
+  const isGithub = isGithubHost(url);
+  let authHeader = {};
+  if (isGithub) {
+    const token = await resolveGithubToken();
+    if (token) authHeader = { authorization: `Bearer ${token}` };
+  }
+  const reqHeaders = { 'user-agent': 'dsh-plugin-keeper', accept: 'application/json', ...headers, ...authHeader };
   const attempt = (dispatcher, ms) => request(url, {
     dispatcher,
     headers: reqHeaders,
@@ -376,7 +425,6 @@ async function fetchJson(url, { proxyUrl, headers = {}, timeoutMs = 8000 } = {})
     // 智能降级：GitHub 请求经面板代理失败（典型：TUN/透明代理环境下双重代理导致
     // 连接超时或 TLS 握手不稳）→ 用直连再试一次。npm registry 本就走直连，
     // 失败多半是 registry 不可达，不再重试。
-    const isGithub = isGithubHost(url);
     // 连接类 / 超时类错误 → 视为「代理不可达」，值得用直连重试一次：
     // - UND_ERR_CONNECT_TIMEOUT / UND_ERR_SOCKET：undici 连接层
     // - ECONNREFUSED / ECONNRESET / socket hang up：代理端口拒绝或重置
@@ -399,7 +447,7 @@ async function fetchJson(url, { proxyUrl, headers = {}, timeoutMs = 8000 } = {})
       const j = await res.body.json();
       if (j?.message) hint = `: ${j.message}`;
     } catch { /* 忽略响应体解析失败 */ }
-    throw new Error(`HTTP ${code}${code === 403 || code === 429 ? '（限流，可配置代理后重试）' : ''}${hint}`);
+    throw new Error(`HTTP ${code}${code === 403 || code === 429 ? '（GitHub API 限流：匿名仅 60 次/小时；已自动尝试读取本机 gh 登录 token，若未生效可先 gh auth login 或稍后重试）' : ''}${hint}`);
   }
   return { json: await res.body.json() };
 }
