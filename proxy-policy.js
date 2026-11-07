@@ -20,12 +20,36 @@ const PROXY_KEYS = ['HTTPS_PROXY', 'https_proxy', 'HTTP_PROXY', 'http_proxy', 'A
 const BYPASS_KEYS = ['NO_PROXY', 'no_proxy'];
 
 /**
+ * git 的 URL 段级代理键（`http.<url>.proxy`）优先级**高于**全局 `http.proxy`。
+ * 关键坑：~/.gitconfig 里若残留 `[http "https://github.com/"] proxy = X`，
+ * 它属于 URL 专用段，会压过我们命令行给的 `-c http.proxy=面板代理` —— 表现为
+ * 面板配了 A、git 仍连系统里的旧端口 B（实测 git 2.51/2.53）。
+ * 所以除全局 `http.proxy` 外，必须同时写 GitHub 的 URL 段级覆盖，才能压住残留。
+ */
+const GITHUB_URL_PROXY_KEY = 'http.https://github.com/.proxy';
+
+/**
+ * git 代理配置项（顺序：全局 http.proxy + GitHub URL 段级覆盖）。
+ * 供命令行 -c、git 包装器 shim、GIT_CONFIG_* env 三处复用，保证一致。
+ */
+export function gitProxyConfigPairs(proxyUrl) {
+  if (!proxyUrl) return [];
+  return [
+    ['http.proxy', proxyUrl],
+    [GITHUB_URL_PROXY_KEY, proxyUrl],
+  ];
+}
+
+/**
  * git 的 http.proxy 用命令行 -c 显式指定：优先级最高，且不依赖 GIT_CONFIG_*
  * 环境变量（git < 2.31 根本不认那套 env 写法），更不碰用户的 ~/.gitconfig。
+ * 同时写 URL 段级覆盖，压住 ~/.gitconfig 里针对 github.com 的残留代理。
  * 未配置面板代理时返回空数组 —— 此时 git 沿用系统自身配置（= 跟随系统代理）。
  */
 export function gitProxyArgs(proxyUrl) {
-  return proxyUrl ? ['-c', `http.proxy=${proxyUrl}`] : [];
+  const out = [];
+  for (const [k, v] of gitProxyConfigPairs(proxyUrl)) out.push('-c', `${k}=${v}`);
+  return out;
 }
 
 /** sh 里的单引号转义：URL 可能带凭据里的特殊字符。 */
@@ -65,9 +89,14 @@ export function ensureGitProxyShim(proxyUrl) {
   try {
     const dir = mkdtempSync(join(tmpdir(), 'dsh-git-proxy-'));
     const file = join(dir, 'git');
+    // 与 gitProxyArgs 保持一致：全局 http.proxy + GitHub URL 段级覆盖，
+    // 压住 ~/.gitconfig 里针对 github.com 的残留代理。
+    const cArgs = gitProxyConfigPairs(proxyUrl)
+      .map(([k, v]) => `-c ${shellQuote(`${k}=${v}`)}`)
+      .join(' ');
     writeFileSync(
       file,
-      `#!/bin/sh\nexec ${shellQuote(realGit)} -c ${shellQuote(`http.proxy=${proxyUrl}`)} "$@"\n`,
+      `#!/bin/sh\nexec ${shellQuote(realGit)} ${cArgs} "$@"\n`,
       { mode: 0o700 },
     );
     chmodSync(file, 0o700);
@@ -114,21 +143,28 @@ function gitConfigIndex() {
 function gitConfigParameters(proxyUrl) {
   // git 用 shell 风格解析这个变量，单引号无法转义 → URL 带单引号时改走其它三层
   if (!proxyUrl || proxyUrl.includes("'")) return null;
-  return `'http.proxy=${proxyUrl}'`;
+  // 全局 http.proxy + GitHub URL 段级覆盖，多个配置项用空格分隔（同一变量内并列）
+  return gitProxyConfigPairs(proxyUrl)
+    .map(([k, v]) => `'${k}=${v}'`)
+    .join(' ');
 }
 
 /** 本插件会改写的 env 键（含动态 GIT_CONFIG_KEY_n / VALUE_n），快照与还原都以此为准。 */
 export function managedEnvKeys() {
   const n = gitConfigIndex();
-  return [
+  // 每个代理配置对占一个 GIT_CONFIG_KEY_n / VALUE_n（全局 + GitHub URL 段级），共 2 组
+  const pairCount = gitProxyConfigPairs('x').length;
+  const keys = [
     ...PROXY_KEYS,
     ...BYPASS_KEYS,
     'GIT_CONFIG_COUNT',
-    `GIT_CONFIG_KEY_${n}`,
-    `GIT_CONFIG_VALUE_${n}`,
     'GIT_CONFIG_PARAMETERS',
     'PATH',
   ];
+  for (let i = 0; i < pairCount; i++) {
+    keys.push(`GIT_CONFIG_KEY_${n + i}`, `GIT_CONFIG_VALUE_${n + i}`);
+  }
+  return keys;
 }
 
 const ALL_KEYS = managedEnvKeys();
@@ -224,9 +260,13 @@ export function proxyEnvOverlay(proxyUrl, options = {}) {
   const bypass = [inherited, LOOPBACK_BYPASS, REGISTRY_BYPASS].filter(Boolean).join(',');
   for (const k of BYPASS_KEYS) out[k] = bypass;
   const n = gitConfigIndex();
-  out.GIT_CONFIG_COUNT = String(n + 1);
-  out[`GIT_CONFIG_KEY_${n}`] = 'http.proxy';
-  out[`GIT_CONFIG_VALUE_${n}`] = proxyUrl;
+  // 全局 http.proxy + GitHub URL 段级覆盖，各占一组 GIT_CONFIG_KEY_n / VALUE_n
+  const pairs = gitProxyConfigPairs(proxyUrl);
+  out.GIT_CONFIG_COUNT = String(n + pairs.length);
+  pairs.forEach(([k, v], i) => {
+    out[`GIT_CONFIG_KEY_${n + i}`] = k;
+    out[`GIT_CONFIG_VALUE_${n + i}`] = v;
+  });
   const params = gitConfigParameters(proxyUrl);
   if (params) out.GIT_CONFIG_PARAMETERS = params;
   const shimDir = typeof options.shimDir === 'string' ? options.shimDir : '';

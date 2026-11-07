@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.3.6 (2026-11-07)
+
+### 中文
+
+- **修复：面板代理仍会被 `~/.gitconfig` 里的 GitHub URL 段抢走** — 之前只给 git 传了全局 `http.proxy`，但 git 里 URL 段级配置（`[http "https://github.com/"] proxy = ...`）优先级高于全局项，导致机器上残留的旧代理段（如已失效的 33210 端口）仍会劫持到 GitHub 的连接，表现为"面板代理明明可用、安装链路却连不上"。现在命令行 `-c`、git 包装器 shim、`GIT_CONFIG_*` 环境变量三处都同时写全局 `http.proxy` 与 `http.https://github.com/.proxy` 的 URL 段级覆盖，彻底压住任何残留。
+
+### English
+
+- **Fix: panel proxy could still be hijacked by a GitHub URL-section entry in `~/.gitconfig`** — Previously only the global `http.proxy` was passed to git, but git's URL-section config (`[http "https://github.com/"] proxy = ...`) outranks the global setting, so a leftover stale proxy section (e.g. a dead port like 33210) kept hijacking GitHub connections — the panel proxy looked fine yet installs failed to connect. Now all three injection paths (command-line `-c`, the git shim wrapper, and `GIT_CONFIG_*` env vars) write both the global `http.proxy` and the URL-section `http.https://github.com/.proxy` override, fully suppressing any leftover config.
+
 ## 0.3.5 (2026-11-07)
 
 ### 中文
