@@ -127,7 +127,7 @@ window.__ModuleLoader__.load({
         batchDisable: '停用所选',
         batchUninstall: '卸载所选',
         dialogCancel: '取消',
-        dialogDescUpdate: '将先卸载所选插件的当前版本，再安装检查到的最新版本；操作前自动备份配置快照，可随时恢复。',
+        dialogDescUpdate: '将先卸载所选插件的当前版本，再安装检查到的最新版本；操作前自动备份配置快照，可随时恢复。插件运维自身不参与批量更新，请单独更新。',
         dialogDescEnable: '将启用所选插件：加入运行列表并生效（操作前自动备份配置快照）；若需重启会另行提示。',
         dialogDescDisable: '将停用所选插件：立即停止运行，配置保留，可随时重新启用（操作前自动备份配置快照）。',
         dialogDescUninstall: '将从本 profile 卸载所选插件；操作前自动备份配置快照，可用「恢复快照」撤销。',
@@ -338,7 +338,7 @@ window.__ModuleLoader__.load({
         batchDisable: 'Disable selected',
         batchUninstall: 'Uninstall selected',
         dialogCancel: 'Cancel',
-        dialogDescUpdate: 'Removes the current version of the selected plugins, then installs the latest checked version; a config snapshot is saved first and can be restored.',
+        dialogDescUpdate: 'Removes the current version of the selected plugins, then installs the latest checked version; a config snapshot is saved first and can be restored. The Plugin Ops console itself is excluded from batch updates; update it separately.',
         dialogDescEnable: 'Enables the selected plugins so they join the running set; a config snapshot is saved first. A restart prompt follows if needed.',
         dialogDescDisable: 'Disables the selected plugins: they stop running immediately, the configuration is kept, and they can be re-enabled anytime; a config snapshot is saved first.',
         dialogDescUninstall: 'Uninstalls the selected plugins from this profile; a config snapshot is saved first and can be restored to undo.',
@@ -1140,6 +1140,9 @@ window.__ModuleLoader__.load({
 
     // 批量更新目标 spec：npm → name@latest；github → github:repo#tag（已是最新则无目标）
     function updateSpecOf(entry) {
+      // 更新自身会先 removeBundle 再 installBundle：中途本插件被卸载，面板消失，
+      // 后续批量行也没人执行。批量/一键/行内更新一律排除自身，需单独更新。
+      if (entry?.name === SELF) return null;
       const c = normCheck(entry);
       if (!c || c.status !== 'update') return null;
       const kind = entry.source?.kind;

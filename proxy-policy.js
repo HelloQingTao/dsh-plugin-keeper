@@ -15,7 +15,25 @@ import { EnvHttpProxyAgent, ProxyAgent, interceptors } from 'undici';
 
 const PROXY_KEYS = ['HTTPS_PROXY', 'https_proxy', 'HTTP_PROXY', 'http_proxy', 'ALL_PROXY', 'all_proxy'];
 const BYPASS_KEYS = ['NO_PROXY', 'no_proxy'];
-const ALL_KEYS = [...PROXY_KEYS, ...BYPASS_KEYS];
+
+/**
+ * git 的 http.proxy（~/.gitconfig / GIT_CONFIG_*）优先级高于 HTTPS_PROXY 环境变量，
+ * 只注入环境变量压不过它 —— 表现为面板配了 A、git 仍连系统里的 B。
+ * 用环境变量级 git 配置强制指定 http.proxy，序号接在已有 GIT_CONFIG_COUNT 之后，
+ * 不覆盖宿主既有的 git 配置项。
+ */
+function gitConfigIndex() {
+  const base = Number.parseInt(process.env.GIT_CONFIG_COUNT ?? '0', 10);
+  return Number.isFinite(base) && base >= 0 ? base : 0;
+}
+
+/** 本插件会改写的 env 键（含动态 GIT_CONFIG_KEY_n / VALUE_n），快照与还原都以此为准。 */
+export function managedEnvKeys() {
+  const n = gitConfigIndex();
+  return [...PROXY_KEYS, ...BYPASS_KEYS, 'GIT_CONFIG_COUNT', `GIT_CONFIG_KEY_${n}`, `GIT_CONFIG_VALUE_${n}`];
+}
+
+const ALL_KEYS = managedEnvKeys();
 const LOOPBACK_BYPASS = 'localhost,127.0.0.1,::1';
 // 安装子进程里 git 与 pnpm 共用同一份 env，无法按进程区分代理。
 // 把 registry 域名放进 NO_PROXY：GitHub 走代理，npm 依赖下载保持直连。
@@ -103,6 +121,10 @@ export function proxyEnvOverlay(proxyUrl) {
   const inherited = [process.env.NO_PROXY, process.env.no_proxy].filter(Boolean).join(',');
   const bypass = [inherited, LOOPBACK_BYPASS, REGISTRY_BYPASS].filter(Boolean).join(',');
   for (const k of BYPASS_KEYS) out[k] = bypass;
+  const n = gitConfigIndex();
+  out.GIT_CONFIG_COUNT = String(n + 1);
+  out[`GIT_CONFIG_KEY_${n}`] = 'http.proxy';
+  out[`GIT_CONFIG_VALUE_${n}`] = proxyUrl;
   return out;
 }
 
