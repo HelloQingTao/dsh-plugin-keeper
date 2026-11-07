@@ -98,10 +98,10 @@ window.__ModuleLoader__.load({
         testProxyFail: '代理不可用',
         testInstallOk: '安装链路（git）正常',
         testInstallFail: '安装链路（git）未通过：可能超时或 TLS 握手失败，代理本身仍可用',
-        testProxyHint: '按当前输入框的值测试（不保存、不安装）：验证 GitHub 检查更新与安装链路，npm 作为直连基线一并检查。',
+        testProxyHint: '按当前输入框的值测试（不保存、不安装），只验证配置代理到 GitHub 的两条链路；npm 检查更新不走代理，不在此测试。',
         checkGithubApi: 'GitHub API',
-        checkNpmRegistry: 'npm registry（直连）',
         checkGitRemote: 'GitHub git 远程',
+        proxyVia: '代理 {host}',
         save: '保存',
         saving: '保存中…',
         saved: '已保存',
@@ -127,7 +127,8 @@ window.__ModuleLoader__.load({
         batchDisable: '停用所选',
         batchUninstall: '卸载所选',
         dialogCancel: '取消',
-        dialogDescUpdate: '将先卸载所选插件的当前版本，再安装检查到的最新版本；操作前自动备份配置快照，可随时恢复。插件运维自身不参与批量更新，请单独更新。',
+        dialogDescUpdate: '将先卸载所选插件的当前版本，再安装检查到的最新版本；操作前自动备份配置快照，可随时恢复。',
+        dialogSelfReload: '名单包含「插件运维」自身，它会排在最后执行；更新本插件后面板会重新加载，请刷新页面，其余插件不受影响。',
         dialogDescEnable: '将启用所选插件：加入运行列表并生效（操作前自动备份配置快照）；若需重启会另行提示。',
         dialogDescDisable: '将停用所选插件：立即停止运行，配置保留，可随时重新启用（操作前自动备份配置快照）。',
         dialogDescUninstall: '将从本 profile 卸载所选插件；操作前自动备份配置快照，可用「恢复快照」撤销。',
@@ -309,10 +310,10 @@ window.__ModuleLoader__.load({
         testProxyFail: 'Proxy unreachable',
         testInstallOk: 'Install path (git) OK',
         testInstallFail: 'Install path (git) failed: timeout or TLS handshake; the proxy itself still works',
-        testProxyHint: 'Tests the current input (nothing is saved or installed): verifies the GitHub update-check and install paths, with npm as a direct-connection baseline.',
+        testProxyHint: 'Tests the current input (nothing is saved or installed) against the two GitHub paths only: update checks and installs. npm update checks never use the proxy and are not tested here.',
         checkGithubApi: 'GitHub API',
-        checkNpmRegistry: 'npm registry (direct)',
         checkGitRemote: 'GitHub git remote',
+        proxyVia: 'proxy {host}',
         save: 'Save',
         saving: 'Saving…',
         saved: 'Saved',
@@ -338,7 +339,8 @@ window.__ModuleLoader__.load({
         batchDisable: 'Disable selected',
         batchUninstall: 'Uninstall selected',
         dialogCancel: 'Cancel',
-        dialogDescUpdate: 'Removes the current version of the selected plugins, then installs the latest checked version; a config snapshot is saved first and can be restored. The Plugin Ops console itself is excluded from batch updates; update it separately.',
+        dialogDescUpdate: 'Removes the current version of the selected plugins, then installs the latest checked version; a config snapshot is saved first and can be restored.',
+        dialogSelfReload: 'This list includes the Plugin Ops console itself; it runs last. Updating it reloads the panel — refresh the page afterwards. Other plugins are unaffected.',
         dialogDescEnable: 'Enables the selected plugins so they join the running set; a config snapshot is saved first. A restart prompt follows if needed.',
         dialogDescDisable: 'Disables the selected plugins: they stop running immediately, the configuration is kept, and they can be re-enabled anytime; a config snapshot is saved first.',
         dialogDescUninstall: 'Uninstalls the selected plugins from this profile; a config snapshot is saved first and can be restored to undo.',
@@ -1140,9 +1142,8 @@ window.__ModuleLoader__.load({
 
     // 批量更新目标 spec：npm → name@latest；github → github:repo#tag（已是最新则无目标）
     function updateSpecOf(entry) {
-      // 更新自身会先 removeBundle 再 installBundle：中途本插件被卸载，面板消失，
-      // 后续批量行也没人执行。批量/一键/行内更新一律排除自身，需单独更新。
-      if (entry?.name === SELF) return null;
+      // 自身允许更新，但必须排最后（runBatch / 确认弹框都按 SELF 排序），
+      // 否则中途卸载本插件会让后续批量行没人执行。重载提示由确认弹框给出。
       const c = normCheck(entry);
       if (!c || c.status !== 'update') return null;
       const kind = entry.source?.kind;
@@ -1155,7 +1156,7 @@ window.__ModuleLoader__.load({
     }
 
     const OP_LABEL_KEY = { update: 'opUpdate', enable: 'opEnable', disable: 'opDisable', uninstall: 'opUninstall' };
-    const CHECK_LABEL_KEY = { githubApi: 'checkGithubApi', npmRegistry: 'checkNpmRegistry', gitRemote: 'checkGitRemote' };
+    const CHECK_LABEL_KEY = { githubApi: 'checkGithubApi', gitRemote: 'checkGitRemote' };
 
     // ---------- 打开图标（包名后的来源入口） ----------
 
@@ -2380,7 +2381,7 @@ window.__ModuleLoader__.load({
           h('div', { className: 'dpk-hint' }, testing ? h(TestTimer) : t('testProxyHint')),
           proxyTest ? h('div', { className: 'dpk-hint' },
             h('div', { className: proxyTest.ok ? 'dpk-savedok' : 'dpk-savederr' },
-              `${proxyTest.ok ? t('testProxyOk') : t('testProxyFail')} · ${proxyTest.mode ?? ''} · ${proxyTest.elapsedMs ?? 0}ms${proxyTest.error ? ` — ${proxyTest.error}` : ''}`),
+              `${proxyTest.ok ? t('testProxyOk') : t('testProxyFail')} · ${proxyTest.mode ?? ''}${proxyTest.proxyHost ? ` · ${t('proxyVia', { host: proxyTest.proxyHost })}` : ''} · ${proxyTest.elapsedMs ?? 0}ms${proxyTest.error ? ` — ${proxyTest.error}` : ''}`),
             ...(Array.isArray(proxyTest.checks) ? [h('div', {
               className: proxyTest.installOk ? 'dpk-savedok' : 'dpk-savederr',
             }, proxyTest.installOk ? t('testInstallOk') : t('testInstallFail'))] : []),
@@ -2494,6 +2495,9 @@ window.__ModuleLoader__.load({
         return h('div', { className: 'dpk-modal' },
           h('div', { className: 'dpk-mtitle' }, `${opLabel} (${names.length})`),
           DESC_KEY[confirmOp] ? h('div', { className: 'dpk-hint' }, t(DESC_KEY[confirmOp])) : null,
+          confirmOp === 'update' && names.includes(SELF)
+            ? h('div', { className: 'dpk-hint' }, t('dialogSelfReload'))
+            : null,
           h('div', { className: 'dpk-mlist' }, names.map((n) => h('div', { key: n }, n))),
           h('div', { className: 'dpk-mfoot' },
             h('button', { className: 'dpk-btn', type: 'button', autoFocus: true, onClick: () => setConfirmOp(null) }, t('dialogCancel')),

@@ -843,29 +843,27 @@ export class PluginKeeperService extends TypertRemoteService {
     if (typeof input?.proxyPass === 'string' && input.proxyPass !== '') candidate.proxyPass = input.proxyPass;
     if (!candidate.proxyUser) candidate.proxyPass = '';
     const effective = composeProxyUrl(candidate.proxyUrl, candidate.proxyUser, candidate.proxyPass);
-    // GitHub 走配置的代理；npm registry 是直连基线，不经过配置的代理
-    const githubDispatcher = probeDispatcher(effective);
-    const directDispatcher = probeDispatcher('');
+    // 只测「配置代理 → GitHub」的两条链路：检查更新走 GitHub API，安装走 git 远程。
+    // 代理只对 GitHub 生效，npm registry 不参与本测试。
+    const proxyDispatcher = probeDispatcher(effective);
     const t0 = Date.now();
-    const [api, registry, gitCheck] = await Promise.all([
-      probeHttp('https://api.github.com/rate_limit', githubDispatcher),
-      probeHttp('https://registry.npmjs.org/-/ping', directDispatcher),
+    const [api, gitCheck] = await Promise.all([
+      probeHttp('https://api.github.com/rate_limit', proxyDispatcher),
       probeGit(effective),
     ]);
-    try {
-      await Promise.resolve(githubDispatcher.close?.());
-      await Promise.resolve(directDispatcher.close?.());
-    } catch { /* 关闭失败不影响结果 */ }
+    try { await Promise.resolve(proxyDispatcher.close?.()); } catch { /* 关闭失败不影响结果 */ }
     const checks = [
       { id: 'githubApi', ...api },
-      { id: 'npmRegistry', ...registry },
       { id: 'gitRemote', ...gitCheck },
     ];
+    // 只回显 host:port，绝不带 userinfo
+    let proxyHost = '';
+    try { proxyHost = effective ? new URL(effective).host : ''; } catch { /* 保持空 */ }
     return done({
-      // 代理通道只看 GitHub API；npm 是直连基线，不参与「代理是否可用」的判定
       ok: checks[0].ok === true,
-      installOk: checks[2].ok === true,
+      installOk: checks[1].ok === true,
       mode: effective ? (candidate.proxyUser ? 'proxy-with-auth' : 'proxy') : 'system-default',
+      proxyHost,
       elapsedMs: Date.now() - t0,
       checks,
     });
