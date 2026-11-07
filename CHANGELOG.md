@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.3.3 (2026-11-07)
+
+### 中文
+
+- **代理只服务 GitHub** — 配置后，仅 GitHub 检查更新与从 GitHub 安装走该代理；npm 检查更新与依赖下载保持直连。留空则跟随系统代理，地址不带前缀会自动补齐。
+- **支持需要账号密码的代理** — 账号与密码单独填写，密码不回显、不出现在面板数据中，配置文件仅本人可读写。
+- **一键测试连通性** — 验证 GitHub 检查更新与安装链路并逐条给出结果，npm 作为直连基线一并检查；显示真实等待时长，重复点击不会重复发起检查。
+- **安装过程可见** — 从 GitHub 安装时显示当前阶段与安装输出，可中途取消；成功或失败结果直接显示在按钮旁。
+- **安装地址更宽容** — 支持带或不带 github: 前缀、完整链接、版本标签与提交号；列表中可复制可直接安装的名称，也能打开仓库页面。
+- **高级配置** — 设置改为二级弹框并按功能分区；新增一键折叠或展开全部插件分组，批量结果可一键清空。
+- **慢代理下更稳定** — 改善代理较慢时 GitHub 安装的成功率，以及等待期间的反馈。
+
+### English
+
+- **Proxy for GitHub only** — When configured, the proxy is used only for GitHub update checks and GitHub installs; npm update checks and dependency downloads stay direct. Leave it empty to follow the system proxy; a missing scheme is added automatically.
+- **Authenticated proxies** — Username and password have their own fields; the password is never echoed or sent back to the panel, and the config file is owner-only.
+- **One-click connectivity check** — Verifies the GitHub update-check and install paths with per-target results, with npm as a direct-connection baseline; shows the real elapsed time and ignores repeated clicks while a check is running.
+- **Visible install progress** — GitHub installs show the current stage and live install output, can be cancelled, and report success or failure right next to the button.
+- **More flexible install addresses** — Accepts addresses with or without the github: prefix, full URLs, tags and commit SHAs; each plugin can copy an installable name and open its repository page.
+- **Advanced settings** — Settings moved into a dialog with clearly separated sections, plus one-click collapse/expand for all plugin groups and a clear button for batch results.
+- **Better behaviour on slow proxies** — GitHub installs are more reliable through slow proxies, with clearer feedback while waiting.
+
 ## 0.3.2 (2026-11-05)
 
 ### 中文
