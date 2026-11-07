@@ -504,7 +504,7 @@ async function gitDiagnostics() {
     runGit(['config', '--get', 'http.proxy']),
   ]);
   const version = (ver.stdout || '').trim();
-  const systemProxy = (proxy.stdout || '').trim();
+  const systemProxy = redactProxyText((proxy.stdout || '').trim());
   return {
     version: version || null,
     systemProxy: systemProxy || null,

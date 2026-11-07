@@ -101,6 +101,7 @@ window.__ModuleLoader__.load({
         testProxyHint: '按当前输入框的值测试（不保存、不安装），只验证配置代理到 GitHub 的两条链路；npm 检查更新不走代理，不在此测试。',
         checkGithubApi: 'GitHub API',
         checkGitRemote: 'GitHub git 远程',
+        gitDiag: 'git {version} · 机器上配置的代理：{proxy}（请求已按面板代理发出）',
         proxyVia: '代理 {host}',
         save: '保存',
         saving: '保存中…',
@@ -313,6 +314,7 @@ window.__ModuleLoader__.load({
         testProxyHint: 'Tests the current input (nothing is saved or installed) against the two GitHub paths only: update checks and installs. npm update checks never use the proxy and are not tested here.',
         checkGithubApi: 'GitHub API',
         checkGitRemote: 'GitHub git remote',
+        gitDiag: 'git {version} · proxy configured on the machine: {proxy} (requests already carry the panel proxy)',
         proxyVia: 'proxy {host}',
         save: 'Save',
         saving: 'Saving…',
@@ -2389,6 +2391,10 @@ window.__ModuleLoader__.load({
               key: c.id,
               className: c.ok ? 'dpk-savedok' : 'dpk-savederr',
             }, `${t(CHECK_LABEL_KEY[c.id] ?? c.id)}: ${c.ok ? 'OK' : 'FAIL'}${c.status ? ` ${c.status}` : ''} · ${c.ms ?? 0}ms${c.error ? ` — ${c.error}` : ''}`)) : []),
+            ...(proxyTest.git && (proxyTest.git.version || proxyTest.git.systemProxy) ? [h('div', {
+              key: 'gitDiag',
+              className: 'dpk-hint',
+            }, t('gitDiag', { version: proxyTest.git.version ?? '?', proxy: proxyTest.git.systemProxy ?? '—' }))] : []),
           ) : null,
           ),
           // ---- 分区 2：从 GitHub 安装 ----
