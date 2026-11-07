@@ -1,5 +1,21 @@
 # Changelog
 
+## 0.3.4 (2026-11-07)
+
+### 中文
+
+- **修复检查更新失败** — npm 插件的检查更新改为直连，不再受系统或面板中的代理设置影响；GitHub 检查更新与安装仍使用面板配置的代理。
+- **代理设置更可靠** — 修复部分环境下 GitHub 安装未使用面板所配代理、仍连接旧代理地址的问题。
+- **连通性测试聚焦 GitHub** — 只验证所配代理到 GitHub 检查更新与安装这两条链路，并在结果中显示当前使用的代理地址。
+- **本插件可随批量更新升级** — 插件运维自身重新参与批量更新，且始终排在最后执行；更新前明确提示面板会重新加载，其余插件不受影响。
+
+### English
+
+- **Fixed update checks** — npm plugin checks now use a direct connection and are no longer affected by system or panel proxy settings; GitHub checks and installs still use the configured proxy.
+- **More reliable proxy settings** — GitHub installs now honour the proxy configured in the panel even when another proxy is preset on the machine.
+- **Connectivity test focused on GitHub** — checks only the two GitHub paths through the configured proxy and shows the proxy address in use.
+- **Self-update in batch operations** — the Plugin Ops console can be updated together with other plugins, always last; a clear notice explains that its panel will reload while other plugins are unaffected.
+
 ## 0.3.3 (2026-11-07)
 
 ### 中文

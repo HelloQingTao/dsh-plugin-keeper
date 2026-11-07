@@ -259,7 +259,7 @@ export function dispatcherFor(url, proxyUrl) {
     return envDispatcher;
   }
   // npm registry 等：纯直连。不跟随系统 env，启动环境里残留的失效代理
-  // （如 127.0.0.1:33210）不会再让 npm 检查更新超时。
+  // 不会再让 npm 检查更新超时。
   if (!directDispatcher) {
     directDispatcher = new Agent().compose(interceptors.redirect({ maxRedirections: 3 }));
   }
