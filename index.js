@@ -35,6 +35,7 @@ import {
   probeDispatcher,
   applyInstallProxy,
   releaseInstallProxy,
+  gitProxyArgs,
   setPnpmCommand,
   setContextVerified,
 } from './proxy-policy.js';
@@ -474,6 +475,42 @@ async function probeHttp(url, dispatcher, timeoutMs = 8000) {
 // 窗口自过期（30s），即使某次调用异常没清理也不会永久锁住。
 let activeTestProxy = 0;
 
+/** 跑一条 git 命令并收集输出（诊断用，不改任何配置）。 */
+function runGit(args, timeoutMs = 5000) {
+  return new Promise((resolve) => {
+    let stdout = '';
+    let stderr = '';
+    let settled = false;
+    const child = spawn('git', args, {
+      env: { ...process.env, GIT_TERMINAL_PROMPT: '0', LC_ALL: 'C' },
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+    const done = (v) => { if (!settled) { settled = true; clearTimeout(timer); resolve(v); } };
+    const timer = setTimeout(() => { child.kill('SIGTERM'); done({ code: null, stdout, stderr: 'timeout' }); }, timeoutMs);
+    child.stdout.on('data', (d) => { stdout += d; });
+    child.stderr.on('data', (d) => { stderr += d; });
+    child.on('error', (e) => done({ code: null, stdout, stderr: String(e?.message ?? e) }));
+    child.on('close', (code) => done({ code, stdout, stderr }));
+  });
+}
+
+/**
+ * 诊断：git 版本 + 系统 git 配置里遗留的 http.proxy。
+ * 用户看到的「连到 33210」通常就是这里的值 —— 面板会显示它，并说明已被面板代理覆盖。
+ */
+async function gitDiagnostics() {
+  const [ver, proxy] = await Promise.all([
+    runGit(['--version']),
+    runGit(['config', '--get', 'http.proxy']),
+  ]);
+  const version = (ver.stdout || '').trim();
+  const systemProxy = (proxy.stdout || '').trim();
+  return {
+    version: version || null,
+    systemProxy: systemProxy || null,
+  };
+}
+
 function probeGit(proxyUrl, timeoutMs = 20000) {
   const env = {
     ...process.env,
@@ -482,12 +519,15 @@ function probeGit(proxyUrl, timeoutMs = 20000) {
     LC_ALL: 'C',
     ...(proxyUrl ? proxyEnvOverlay(proxyUrl) : {}),
   };
+  // 代理地址直接写进命令行参数：优先级最高，不看 ~/.gitconfig，也不看 GIT_CONFIG_* env
+  // （老 git 不认那套 env 写法）。不改用户任何全局配置。
+  const args = [...gitProxyArgs(proxyUrl), '-c', 'credential.helper=', 'ls-remote', '--',
+    'https://github.com/octocat/Hello-World', 'HEAD'];
   const runOnce = (ms) => new Promise((resolve) => {
     const t0 = Date.now();
     let timedOut = false;
     let settled = false;
-    const child = spawn('git', ['-c', 'credential.helper=', 'ls-remote', '--',
-      'https://github.com/octocat/Hello-World', 'HEAD'], { env, stdio: ['ignore', 'pipe', 'pipe'] });
+    const child = spawn('git', args, { env, stdio: ['ignore', 'pipe', 'pipe'] });
     let stdout = '';
     let stderr = '';
     child.stdout.on('data', (d) => { stdout += d; });
@@ -847,9 +887,10 @@ export class PluginKeeperService extends TypertRemoteService {
     // 代理只对 GitHub 生效，npm registry 不参与本测试。
     const proxyDispatcher = probeDispatcher(effective);
     const t0 = Date.now();
-    const [api, gitCheck] = await Promise.all([
+    const [api, gitCheck, gitInfo] = await Promise.all([
       probeHttp('https://api.github.com/rate_limit', proxyDispatcher),
       probeGit(effective),
+      gitDiagnostics(),
     ]);
     try { await Promise.resolve(proxyDispatcher.close?.()); } catch { /* 关闭失败不影响结果 */ }
     const checks = [
@@ -866,6 +907,7 @@ export class PluginKeeperService extends TypertRemoteService {
       proxyHost,
       elapsedMs: Date.now() - t0,
       checks,
+      git: gitInfo,
     });
   }
 

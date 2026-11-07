@@ -12,25 +12,123 @@
  */
 
 import { Agent, EnvHttpProxyAgent, ProxyAgent, interceptors } from 'undici';
+import { chmodSync, mkdtempSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { delimiter, join } from 'node:path';
 
 const PROXY_KEYS = ['HTTPS_PROXY', 'https_proxy', 'HTTP_PROXY', 'http_proxy', 'ALL_PROXY', 'all_proxy'];
 const BYPASS_KEYS = ['NO_PROXY', 'no_proxy'];
+
+/**
+ * git 的 http.proxy 用命令行 -c 显式指定：优先级最高，且不依赖 GIT_CONFIG_*
+ * 环境变量（git < 2.31 根本不认那套 env 写法），更不碰用户的 ~/.gitconfig。
+ * 未配置面板代理时返回空数组 —— 此时 git 沿用系统自身配置（= 跟随系统代理）。
+ */
+export function gitProxyArgs(proxyUrl) {
+  return proxyUrl ? ['-c', `http.proxy=${proxyUrl}`] : [];
+}
+
+/** sh 里的单引号转义：URL 可能带凭据里的特殊字符。 */
+function shellQuote(value) {
+  return `'${String(value).replace(/'/g, `'\\''`)}'`;
+}
+
+/** 在 PATH 里找真实 git（跳过本插件造的 shim，避免自我递归）。 */
+function findRealGit() {
+  const pathEnv = process.env.PATH ?? '';
+  for (const dir of pathEnv.split(delimiter)) {
+    if (!dir) continue;
+    const candidate = join(dir, 'git');
+    try {
+      const st = statSync(candidate);
+      if (st.isFile() && (st.mode & 0o111) !== 0) return candidate;
+    } catch { /* 目录不可读就跳过 */ }
+  }
+  return null;
+}
+
+let shimState = { url: '', dir: '' };
+
+/**
+ * 给安装子进程准备一个 git 包装器：把面板代理写进命令行参数。
+ * 宿主 spawn 的 git（ls-remote 预检、pnpm 里的 clone）由此也一定走面板代理，
+ * 不受系统 ~/.gitconfig 里遗留的 http.proxy 干扰，也不修改任何全局配置。
+ * 返回 shim 目录（需要前置到 PATH）；不可用时返回 null（降级到 env 注入）。
+ */
+export function ensureGitProxyShim(proxyUrl) {
+  if (!proxyUrl) return null;
+  if (process.platform === 'win32') return null;
+  if (shimState.url === proxyUrl && shimState.dir) return shimState.dir;
+  removeGitProxyShim();
+  const realGit = findRealGit();
+  if (!realGit) return null;
+  try {
+    const dir = mkdtempSync(join(tmpdir(), 'dsh-git-proxy-'));
+    const file = join(dir, 'git');
+    writeFileSync(
+      file,
+      `#!/bin/sh\nexec ${shellQuote(realGit)} -c ${shellQuote(`http.proxy=${proxyUrl}`)} "$@"\n`,
+      { mode: 0o700 },
+    );
+    chmodSync(file, 0o700);
+    shimState = { url: proxyUrl, dir };
+    return dir;
+  } catch {
+    removeGitProxyShim();
+    return null;
+  }
+}
+
+/** 卸载/切回直连时清掉 shim，不留残留。 */
+export function removeGitProxyShim() {
+  const dir = shimState.dir;
+  shimState = { url: '', dir: '' };
+  if (!dir) return;
+  try { rmSync(dir, { recursive: true, force: true }); } catch { /* 清理失败不影响主流程 */ }
+}
 
 /**
  * git 的 http.proxy（~/.gitconfig / GIT_CONFIG_*）优先级高于 HTTPS_PROXY 环境变量，
  * 只注入环境变量压不过它 —— 表现为面板配了 A、git 仍连系统里的 B。
  * 用环境变量级 git 配置强制指定 http.proxy，序号接在已有 GIT_CONFIG_COUNT 之后，
  * 不覆盖宿主既有的 git 配置项。
+ *
+ * 但这套 env 写法只有 git ≥ 2.31 认，老 git 会直接忽略 —— 所以安装链路另有
+ * git 包装器（ensureGitProxyShim）把 -c http.proxy= 直接写进命令行，
+ * 两层一起上，任何 git 版本都以面板代理为准。
  */
 function gitConfigIndex() {
   const base = Number.parseInt(process.env.GIT_CONFIG_COUNT ?? '0', 10);
   return Number.isFinite(base) && base >= 0 ? base : 0;
 }
 
+/**
+ * git 的 http.proxy 优先级链（实测，git 2.51/2.53）：
+ *   命令行 -c  >  GIT_CONFIG_PARAMETERS（env）  >  GIT_CONFIG_COUNT（env）
+ *   >  ~/.gitconfig / XDG 配置
+ * GIT_CONFIG_PARAMETERS 是老机制但仍生效，且**压过** GIT_CONFIG_COUNT ——
+ * 机器上残留它时，只注入 GIT_CONFIG_COUNT 会失效（git 仍连旧端口）。
+ * 所以三层一起写：命令行 -c（自己能发的）、GIT_CONFIG_PARAMETERS（压旧值）、
+ * GIT_CONFIG_COUNT（兼容），外加 PATH 上的 git 包装器（压得住一切）。
+ */
+function gitConfigParameters(proxyUrl) {
+  // git 用 shell 风格解析这个变量，单引号无法转义 → URL 带单引号时改走其它三层
+  if (!proxyUrl || proxyUrl.includes("'")) return null;
+  return `'http.proxy=${proxyUrl}'`;
+}
+
 /** 本插件会改写的 env 键（含动态 GIT_CONFIG_KEY_n / VALUE_n），快照与还原都以此为准。 */
 export function managedEnvKeys() {
   const n = gitConfigIndex();
-  return [...PROXY_KEYS, ...BYPASS_KEYS, 'GIT_CONFIG_COUNT', `GIT_CONFIG_KEY_${n}`, `GIT_CONFIG_VALUE_${n}`];
+  return [
+    ...PROXY_KEYS,
+    ...BYPASS_KEYS,
+    'GIT_CONFIG_COUNT',
+    `GIT_CONFIG_KEY_${n}`,
+    `GIT_CONFIG_VALUE_${n}`,
+    'GIT_CONFIG_PARAMETERS',
+    'PATH',
+  ];
 }
 
 const ALL_KEYS = managedEnvKeys();
@@ -113,8 +211,12 @@ export function composeProxyUrl(proxyUrl, user, pass) {
   return `${u.protocol}//${auth}@${u.host}${path}${u.search}`;
 }
 
-/** 本插件注入到安装子进程 env 的键集合（未配置代理时为空）。 */
-export function proxyEnvOverlay(proxyUrl) {
+/**
+ * 本插件注入到安装子进程 env 的键集合（未配置代理时为空）。
+ * options.shimDir：git 包装器目录，前置到 PATH —— 宿主 spawn 的 git
+ * （ls-remote 预检、pnpm 里的 clone）由此也带上 -c http.proxy=面板代理。
+ */
+export function proxyEnvOverlay(proxyUrl, options = {}) {
   if (!proxyUrl) return {};
   const out = {};
   for (const k of PROXY_KEYS) out[k] = proxyUrl;
@@ -125,6 +227,13 @@ export function proxyEnvOverlay(proxyUrl) {
   out.GIT_CONFIG_COUNT = String(n + 1);
   out[`GIT_CONFIG_KEY_${n}`] = 'http.proxy';
   out[`GIT_CONFIG_VALUE_${n}`] = proxyUrl;
+  const params = gitConfigParameters(proxyUrl);
+  if (params) out.GIT_CONFIG_PARAMETERS = params;
+  const shimDir = typeof options.shimDir === 'string' ? options.shimDir : '';
+  if (shimDir) {
+    const basePath = typeof options.basePath === 'string' ? options.basePath : (process.env.PATH ?? '');
+    if (basePath) out.PATH = `${shimDir}${delimiter}${basePath}`;
+  }
   return out;
 }
 
@@ -161,7 +270,12 @@ export function applyInstallProxy(profile, proxyUrl) {
     else delete env[k];
   }
 
-  const overlay = proxyEnvOverlay(proxyUrl);
+  const shimDir = proxyUrl ? ensureGitProxyShim(proxyUrl) : '';
+  if (!proxyUrl) removeGitProxyShim();
+  const overlay = proxyEnvOverlay(proxyUrl, {
+    shimDir,
+    basePath: typeof env.PATH === 'string' ? env.PATH : (process.env.PATH ?? ''),
+  });
   for (const [k, v] of Object.entries(overlay)) {
     env[k] = v;
     if (!Object.hasOwn(state.original, k)) state.added.push(k);
@@ -179,6 +293,7 @@ export function applyInstallProxy(profile, proxyUrl) {
     reason: contextVerified ? null : 'host-context-not-verified',
     proxyUrl,
     keys: Object.keys(overlay),
+    gitShim: Boolean(shimDir),
   };
 }
 
@@ -186,7 +301,10 @@ export function applyInstallProxy(profile, proxyUrl) {
 export function releaseInstallProxy(profile) {
   const env = profile?.packageManager?.env;
   const state = env && snapshots.get(env);
-  if (!state) return;
+  if (!state) {
+    removeGitProxyShim();
+    return;
+  }
   for (const k of state.added) if (!Object.hasOwn(state.original, k)) delete env[k];
   for (const k of ALL_KEYS) {
     if (Object.hasOwn(state.original, k)) env[k] = state.original[k];
@@ -194,6 +312,7 @@ export function releaseInstallProxy(profile) {
   }
   state.added = [];
   snapshots.delete(env);
+  removeGitProxyShim();
 }
 
 let proxyDispatcherKey = null;

@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.3.5 (2026-11-07)
+
+### 中文
+
+- **面板代理不再被系统配置抢走** — 配了代理后，GitHub 检查更新与从 GitHub 安装的每一条 git 命令（远程探测、拉取代码）都显式带上这个代理地址，机器上残留的旧代理配置不会再把请求带走；全程不修改你的任何全局配置。
+- **连通性测试显示 git 实际用的信息** — 结果里附带本机 git 版本与系统里配置的代理地址，方便核对请求到底走了哪条路。
+
+### English
+
+- **The panel proxy is now authoritative** — Once a proxy is configured, every git command behind GitHub update checks and GitHub installs (remote probes, clones) explicitly carries that proxy address, so leftover proxy settings on the machine can no longer hijack the connection; no global configuration is modified.
+- **The connectivity test reports what git actually uses** — The result also shows the local git version and the proxy configured on the machine, so it is easy to verify which route a request took.
+
 ## 0.3.4 (2026-11-07)
 
 ### 中文
