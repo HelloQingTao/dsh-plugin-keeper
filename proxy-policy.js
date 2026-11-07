@@ -432,6 +432,15 @@ export function probeDispatcher(proxyUrl) {
   return base.compose(interceptors.redirect({ maxRedirections: 3 }));
 }
 
+/**
+ * 直连兜底用的一次性 dispatcher：纯 Agent 直连，不读任何代理。
+ * TUN/透明代理环境里，显式 HTTP 代理会与系统代理叠加成双重代理而不稳，
+ * 此时回退直连（由系统透明代理接管）反而稳。仅在面板代理探测失败后使用。
+ */
+export function probeDispatcherDirect() {
+  return new Agent().compose(interceptors.redirect({ maxRedirections: 3 }));
+}
+
 /** 自检用：当前 dispatcher 档位。 */
 export function dispatcherStatus() {
   return {

@@ -33,6 +33,7 @@ import {
   splitProxyCredentials,
   proxyEnvOverlay,
   probeDispatcher,
+  probeDispatcherDirect,
   applyInstallProxy,
   releaseInstallProxy,
   gitProxyArgs,
@@ -511,19 +512,25 @@ async function gitDiagnostics() {
   };
 }
 
-function probeGit(proxyUrl, timeoutMs = 20000) {
-  const env = {
+function probeGit(proxyUrl, timeoutMs = 12000) {
+  const baseEnv = {
     ...process.env,
     PATH: process.env.PATH,
     GIT_TERMINAL_PROMPT: '0', GIT_ASKPASS: '', SSH_ASKPASS: '', SSH_ASKPASS_REQUIRE: 'never',
     LC_ALL: 'C',
-    ...(proxyUrl ? proxyEnvOverlay(proxyUrl) : {}),
   };
+  const repoUrl = 'https://github.com/octocat/Hello-World';
   // 代理地址直接写进命令行参数：优先级最高，不看 ~/.gitconfig，也不看 GIT_CONFIG_* env
   // （老 git 不认那套 env 写法）。不改用户任何全局配置。
-  const args = [...gitProxyArgs(proxyUrl), '-c', 'credential.helper=', 'ls-remote', '--',
-    'https://github.com/octocat/Hello-World', 'HEAD'];
-  const runOnce = (ms) => new Promise((resolve) => {
+  const proxyArgs = [...gitProxyArgs(proxyUrl), '-c', 'credential.helper=', 'ls-remote', '--', repoUrl, 'HEAD'];
+  // 直连兜底：TUN/系统级透明代理环境里，再做一层显式 HTTP 代理是「双重代理」，
+  // TLS 握手极不稳定。此时显式清空代理（空值覆盖 ~/.gitconfig 残留的陈旧代理，
+  // 如已失效的 33210 端口），让 git 走系统透明代理直连，反而稳。
+  const directArgs = ['-c', 'http.proxy=', '-c', 'http.https://github.com/.proxy=', '-c', 'credential.helper=', 'ls-remote', '--', repoUrl, 'HEAD'];
+  const proxyEnv = proxyUrl ? { ...baseEnv, ...proxyEnvOverlay(proxyUrl) } : baseEnv;
+  const directEnv = { ...baseEnv, ...proxyEnvOverlay('', {}) };
+
+  const runOnce = (args, env, ms) => new Promise((resolve) => {
     const t0 = Date.now();
     let timedOut = false;
     let settled = false;
@@ -536,23 +543,58 @@ function probeGit(proxyUrl, timeoutMs = 20000) {
       if (settled) return;
       settled = true;
       clearTimeout(timer);
+      if (killTimer) clearTimeout(killFallback);
       resolve({ ms: Date.now() - t0, ...extra });
     };
-    // 超时会 SIGTERM 掉 git，此时 code=null；必须明确写成「超时」，别再显示 git exit null
-    const timer = setTimeout(() => { timedOut = true; child.kill('SIGTERM'); }, ms);
+    // 超时后必须立即 resolve，不能干等 close：git kill 后其 remote-https helper 子进程
+    // 仍继承着 stdout/stderr 管道，Node 的 'close' 事件要等所有 stdio 关闭才触发 ——
+    // 某些网络卡死场景下会拖到几十秒甚至一直不来（这就是「测试卡一分钟」的真因）。
+    // 所以超时 → SIGTERM，1.5s 后再 SIGKILL，并**在 SIGKILL 时兜底 resolve**，
+    // 保证最坏耗时 = ms + 1.5s，绝不无限等待。
+    let killTimer = null;
+    let killFallback = null;
+    const timer = setTimeout(() => {
+      timedOut = true;
+      try { child.kill('SIGTERM'); } catch { /* 已退出 */ }
+      killFallback = setTimeout(() => {
+        try { child.kill('SIGKILL'); } catch { /* 已退出 */ }
+        // 兜底：不再等 close，直接报告超时
+        done({ ok: false, timedOut: true, error: `git 检查超时（${ms}ms），网络或代理较慢` });
+      }, 1500);
+      killTimer = killFallback;
+    }, ms);
     child.on('error', (e) => done({ ok: false, error: redactProxyText(e?.message ?? e) }));
     child.on('close', (code) => {
       if (code === 0 && /^[0-9a-f]{40}\s+HEAD/.test(stdout.trim())) done({ ok: true });
-      else if (timedOut) done({ ok: false, timedOut: true, error: `git 检查超时（${ms}ms），代理可能较慢` });
+      else if (timedOut) done({ ok: false, timedOut: true, error: `git 检查超时（${ms}ms），网络或代理较慢` });
       else done({ ok: false, error: redactProxyText(stderr.trim() || stdout.trim() || `git exit ${code}`) });
     });
   });
   return (async () => {
-    const first = await runOnce(timeoutMs);
-    // 代理侧偶发 GnuTLS 握手失败 → 快速失败时重试一次；若已超时就不再重试，避免久等
-    if (first.ok || first.timedOut) return first;
-    const second = await runOnce(timeoutMs);
-    return { ...second, ms: first.ms + second.ms, retried: true };
+    // 0) 未配置面板代理（跟随系统）：直接用「清残留直连」测。裸 git 会撞 ~/.gitconfig
+    //    里残留的旧代理段（如失效端口）而必然失败，无谓等待，直接走清残留的直连。
+    if (!proxyUrl) {
+      const d = await runOnce(directArgs, directEnv, Math.max(timeoutMs, 30000));
+      return { ...d, systemDefault: true };
+    }
+    // 1) 先按面板代理测
+    const first = await runOnce(proxyArgs, proxyEnv, timeoutMs);
+    if (first.ok) return first;
+    // 2) 代理未超时的「快速失败」（如 TLS 握手立刻报错）→ 重试一次代理，偶发握手失败重试常能过。
+    //    若已超时则不再重试：直接进直连兜底，避免久等（这是「卡一分钟」的主因）。
+    let last = first;
+    if (!first.timedOut) {
+      const second = await runOnce(proxyArgs, proxyEnv, timeoutMs);
+      last = { ...second, ms: first.ms + second.ms, retried: true };
+      if (second.ok) return last;
+    }
+    // 3) 智能降级：代理不通 → 回退「直连覆盖残留」再测一次。
+    //    适配 TUN/透明代理环境（面板代理会与系统代理叠加成双重代理而失败）。
+    //    直连经系统透明代理实测 8~18s，给更宽的超时，避免把慢但可用的直连误杀。
+    const direct = await runOnce(directArgs, directEnv, Math.max(timeoutMs, 30000));
+    if (direct.ok) return { ...direct, ms: last.ms + direct.ms, viaDirect: true };
+    // 两种都失败：优先回报直连结果（更接近真实网络状态），并保留代理侧错误
+    return { ...direct, ms: last.ms + direct.ms, attemptedProxy: true, proxyError: last.error };
   })();
 }
 
@@ -933,8 +975,20 @@ export class PluginKeeperService extends TypertRemoteService {
     // 代理只对 GitHub 生效，npm registry 不参与本测试。
     const proxyDispatcher = probeDispatcher(effective);
     const t0 = Date.now();
+    // API 检查：先按面板代理测，失败则回退直连兜底（同 git 的智能降级策略）。
+    const apiCheck = (async () => {
+      const viaProxy = await probeHttp('https://api.github.com/rate_limit', proxyDispatcher);
+      if (viaProxy.ok) return viaProxy;
+      const directDispatcher = probeDispatcherDirect();
+      try {
+        const viaDirect = await probeHttp('https://api.github.com/rate_limit', directDispatcher);
+        return viaDirect.ok ? { ...viaDirect, viaDirect: true, ms: viaProxy.ms + viaDirect.ms } : viaProxy;
+      } finally {
+        try { await Promise.resolve(directDispatcher.close?.()); } catch { /* 关闭失败不影响结果 */ }
+      }
+    })();
     const [api, gitCheck, gitInfo] = await Promise.all([
-      probeHttp('https://api.github.com/rate_limit', proxyDispatcher),
+      apiCheck,
       probeGit(effective),
       gitDiagnostics(),
     ]);
