@@ -34,6 +34,8 @@ import {
   proxyEnvOverlay,
   probeDispatcher,
   probeDispatcherDirect,
+  directDispatcherFor,
+  isGithubHost,
   applyInstallProxy,
   releaseInstallProxy,
   gitProxyArgs,
@@ -361,11 +363,31 @@ function probeDshVersion() {
  * 4xx/5xx 的响应体可能是 {"message":"Not Found"} —— 转成错误信息带上。
  */
 async function fetchJson(url, { proxyUrl, headers = {}, timeoutMs = 8000 } = {}) {
-  const res = await request(url, {
-    dispatcher: dispatcherFor(url, proxyUrl),
-    headers: { 'user-agent': 'dsh-plugin-keeper', accept: 'application/json', ...headers },
-    signal: AbortSignal.timeout(timeoutMs),
+  const reqHeaders = { 'user-agent': 'dsh-plugin-keeper', accept: 'application/json', ...headers };
+  const attempt = (dispatcher, ms) => request(url, {
+    dispatcher,
+    headers: reqHeaders,
+    signal: AbortSignal.timeout(ms),
   });
+  let res;
+  try {
+    res = await attempt(dispatcherFor(url, proxyUrl), timeoutMs);
+  } catch (e) {
+    // 智能降级：GitHub 请求经面板代理失败（典型：TUN/透明代理环境下双重代理导致
+    // 连接超时或 TLS 握手不稳）→ 用直连再试一次。npm registry 本就走直连，
+    // 失败多半是 registry 不可达，不再重试。
+    const isGithub = isGithubHost(url);
+    // 连接类 / 超时类错误 → 视为「代理不可达」，值得用直连重试一次：
+    // - UND_ERR_CONNECT_TIMEOUT / UND_ERR_SOCKET：undici 连接层
+    // - ECONNREFUSED / ECONNRESET / socket hang up：代理端口拒绝或重置
+    // - AbortSignal.timeout 触发的 DOMException（name=TimeoutError/AbortError，code=23，
+    //   消息常为 "The operation was aborted due to timeout"）：连接挂了把整次请求拖到超时
+    const isConnErr = e?.code === 'UND_ERR_CONNECT_TIMEOUT' || e?.code === 'UND_ERR_SOCKET'
+      || e?.code === 23 || e?.name === 'TimeoutError' || e?.name === 'AbortError'
+      || /UND_ERR_CONNECT_TIMEOUT|Connect Timeout|TLS|ECONNREFU|ECONNRESET|socket hang up|aborted due to timeout|timed out/i.test(String(e?.message ?? e));
+    if (!isGithub || !isConnErr) throw e;
+    res = await attempt(directDispatcherFor(url), Math.max(timeoutMs, 15000));
+  }
   const code = res.statusCode;
   if (code === 404) {
     res.body.dump().catch(() => {});

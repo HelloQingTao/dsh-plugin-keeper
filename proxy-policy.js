@@ -379,6 +379,19 @@ function isGithubHost(url) {
     return false;
   }
 }
+export { isGithubHost };
+
+/**
+ * 更新检查降级用：纯直连 Agent（不读任何代理），供 GitHub 请求经面板代理失败后兜底重试。
+ * 与 probeDispatcherDirect 同源，但复用单例避免频繁 new。
+ */
+let checkDirectDispatcher = null;
+export function directDispatcherFor() {
+  if (!checkDirectDispatcher) {
+    checkDirectDispatcher = new Agent().compose(interceptors.redirect({ maxRedirections: 3 }));
+  }
+  return checkDirectDispatcher;
+}
 
 /** 配置的代理只服务 GitHub 目标；npm registry 永远不碰它。 */
 function usesConfiguredProxy(url, proxyUrl) {
