@@ -5,12 +5,14 @@
 ### 中文
 
 - **面板代理不再被系统配置抢走** — 配了代理后，GitHub 检查更新与从 GitHub 安装的每一条 git 命令（远程探测、拉取代码）都显式带上这个代理地址，机器上残留的旧代理配置不会再把请求带走；全程不修改你的任何全局配置。
-- **连通性测试显示 git 实际用的信息** — 结果里附带本机 git 版本与系统里配置的代理地址，方便核对请求到底走了哪条路。
+- **高级配置更清爽** — 去掉三段说明文字，代理区只保留结果本身。
+- **新增从本地安装** — 直接把开发中的插件目录装进当前环境试用，不必先发版；目录以软链方式安装（改完源码重启 dsh web 即生效），本地 .tgz / .tar.gz 也能装。
 
 ### English
 
 - **The panel proxy is now authoritative** — Once a proxy is configured, every git command behind GitHub update checks and GitHub installs (remote probes, clones) explicitly carries that proxy address, so leftover proxy settings on the machine can no longer hijack the connection; no global configuration is modified.
-- **The connectivity test reports what git actually uses** — The result also shows the local git version and the proxy configured on the machine, so it is easy to verify which route a request took.
+- **Cleaner advanced settings** — Three explanatory paragraphs are gone; the proxy section now shows results only.
+- **Install from a local path** — Try a plugin straight from its working directory before publishing; directories are linked (edit the source, restart dsh web, it takes effect), and local .tgz / .tar.gz files work too.
 
 ## 0.3.4 (2026-11-07)
 

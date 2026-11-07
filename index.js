@@ -18,7 +18,7 @@
  */
 
 import { readFile, writeFile, chmod, copyFile, mkdir, readdir, rm, stat, realpath } from 'node:fs/promises';
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import { spawn } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
 import { join, dirname, basename, isAbsolute, normalize } from 'node:path';
@@ -846,6 +846,52 @@ export class PluginKeeperService extends TypertRemoteService {
   }
 
   /**
+   * 本地安装地址归一化：把用户输入的路径变成宿主 installBundle 认的 spec。
+   * - 目录 → link:<绝对路径>（软链，改完源码重启 dsh web 即生效）
+   * - 压缩包 → file:<绝对路径>
+   * - 显式写了 file:/link: 前缀就照用
+   * 同时做两道体检：目录里得有 package.json，main 指向的文件得存在（否则装完也不能用）。
+   */
+  async normalizeLocalSpec(input) {
+    await applyProxyPolicy();
+    const raw = String(input?.raw ?? '').trim();
+    if (!raw) return { ok: false, error: '请填写本地路径' };
+    const matched = /^(file|link):(.*)$/i.exec(raw);
+    const typed = matched ? matched[1].toLowerCase() : '';
+    const rawPath = (matched ? matched[2] : raw).trim();
+    if (!rawPath) return { ok: false, error: '请填写本地路径' };
+    if (!isAbsolute(rawPath)) return { ok: false, error: '必须是绝对路径' };
+    const path = rawPath.length > 1 ? rawPath.replace(/[\\/]+$/, '') : rawPath;
+    let info = null;
+    try {
+      info = await stat(path);
+    } catch {
+      return { ok: false, error: `路径不存在：${path}` };
+    }
+    if (!info.isDirectory() && !/\.(tgz|tar\.gz)$/i.test(path)) {
+      return { ok: false, error: '只支持目录或 .tgz / .tar.gz 压缩包' };
+    }
+    const spec = info.isDirectory()
+      ? `${typed || 'link'}:${path}`
+      : `${typed || 'file'}:${path}`;
+    const result = { ok: true, spec, kind: info.isDirectory() ? 'dir' : 'tarball', name: null, warning: null };
+    if (!info.isDirectory()) return result;
+    let pkg = null;
+    try {
+      pkg = JSON.parse(await readFile(join(path, 'package.json'), 'utf8'));
+    } catch {
+      return { ok: false, error: '该目录没有 package.json，不是一个 npm 包' };
+    }
+    result.name = typeof pkg.name === 'string' ? pkg.name : null;
+    const main = typeof pkg.main === 'string' && pkg.main ? pkg.main : 'index.js';
+    const mainPath = join(path, main);
+    if (!existsSync(mainPath)) {
+      result.warning = `package.json 的 main 指向 ${main}，但文件不存在（可能还没构建）`;
+    }
+    return result;
+  }
+
+  /**
    * 测试代理连通性：按输入框里的即时值（不保存、不落盘）验证三条真实链路。
    * 密码为空 = 沿用落盘密码；返回值不含任何凭据。
    */
@@ -1336,6 +1382,7 @@ markRemoteMethods(PluginKeeperService.prototype, [
   'getSettings',
   'saveSettings',
   'normalizeGithubSpec',
+  'normalizeLocalSpec',
   'testProxy',
   'prepareBatch',
   'restoreBatch',

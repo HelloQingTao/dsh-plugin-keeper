@@ -74,6 +74,7 @@ window.__ModuleLoader__.load({
         settingsBtn: '高级配置',
         sectionProxy: '网络代理',
         sectionInstall: '从 GitHub 安装',
+        sectionLocal: '从本地安装',
         sectionDisplay: '显示位置',
         collapseAllGroups: '一键折叠全部分组',
         expandAllGroups: '一键展开全部分组',
@@ -101,7 +102,8 @@ window.__ModuleLoader__.load({
         testProxyHint: '按当前输入框的值测试（不保存、不安装），只验证配置代理到 GitHub 的两条链路；npm 检查更新不走代理，不在此测试。',
         checkGithubApi: 'GitHub API',
         checkGitRemote: 'GitHub git 远程',
-        gitDiag: 'git {version} · 机器上配置的代理：{proxy}（请求已按面板代理发出）',
+        gitDiag: 'git {version}{proxy}',
+        gitDiagProxy: ' · 机器代理 {proxy}',
         proxyVia: '代理 {host}',
         save: '保存',
         saving: '保存中…',
@@ -109,6 +111,13 @@ window.__ModuleLoader__.load({
         saveFailed: '保存失败',
         installBtn: '安装',
         installing: '安装中…',
+        localInstallLabel: '本地路径',
+        localInstallPlaceholder: '/绝对路径/插件目录 或 .tgz',
+        localInstallBtn: '安装',
+        localInstalling: '安装中…',
+        localInstallOk: '已安装 {name}，重启 dsh web 后生效',
+        localInstallFail: '本地安装失败',
+        localInstallWarn: '注意：{warning}',
         installDone: '已安装 {name}，刷新列表可见',
         installRestart: '已安装 {name}，重启后生效',
         installStage: '安装进度',
@@ -287,6 +296,7 @@ window.__ModuleLoader__.load({
         settingsBtn: 'Advanced',
         sectionProxy: 'Network proxy',
         sectionInstall: 'Install from GitHub',
+        sectionLocal: 'Install from local',
         sectionDisplay: 'Display',
         collapseAllGroups: 'Collapse all groups',
         expandAllGroups: 'Expand all groups',
@@ -314,7 +324,8 @@ window.__ModuleLoader__.load({
         testProxyHint: 'Tests the current input (nothing is saved or installed) against the two GitHub paths only: update checks and installs. npm update checks never use the proxy and are not tested here.',
         checkGithubApi: 'GitHub API',
         checkGitRemote: 'GitHub git remote',
-        gitDiag: 'git {version} · proxy configured on the machine: {proxy} (requests already carry the panel proxy)',
+        gitDiag: 'git {version}{proxy}',
+        gitDiagProxy: ' · machine proxy {proxy}',
         proxyVia: 'proxy {host}',
         save: 'Save',
         saving: 'Saving…',
@@ -322,6 +333,13 @@ window.__ModuleLoader__.load({
         saveFailed: 'Save failed',
         installBtn: 'Install',
         installing: 'Installing…',
+        localInstallLabel: 'Local path',
+        localInstallPlaceholder: '/absolute/path/to/plugin or .tgz',
+        localInstallBtn: 'Install',
+        localInstalling: 'Installing…',
+        localInstallOk: 'Installed {name}; restart dsh web to apply',
+        localInstallFail: 'Local install failed',
+        localInstallWarn: 'Note: {warning}',
         installDone: 'Installed {name}, refresh the list to see it',
         installRestart: 'Installed {name}, takes effect after restart',
         installStage: 'Install progress',
@@ -1434,6 +1452,9 @@ window.__ModuleLoader__.load({
       // 台账清空后连跨会话残留提示一起隐藏，直到下一次批量重新置位
       const [ledgerDismissed, setLedgerDismissed] = React.useState(false);
       const installRef = React.useRef(null);
+      const localInstallRef = React.useRef(null);
+      const [localInstalling, setLocalInstalling] = React.useState(false);
+      const [localFlash, setLocalFlash] = React.useState(null);
       // M2 批量状态
       const [selected, setSelected] = React.useState(() => new Set());
       const [confirmOp, setConfirmOp] = React.useState(null); // 待二次确认的批量操作
@@ -1771,6 +1792,49 @@ window.__ModuleLoader__.load({
           updateProgress({ status: 'failed' });
         } finally {
           setInstalling(false);
+        }
+      }, [load]);
+
+      // ---------- 本地安装（开发中的插件：目录软链 / 本地压缩包） ----------
+      const doInstallLocal = React.useCallback(async () => {
+        const raw = localInstallRef.current?.value ?? '';
+        const normalized = unwrapEnvelope(await rpcFace?.normalizeLocalSpec?.({ raw }));
+        if (!normalized?.ok) {
+          setLocalFlash({ ok: false, text: normalized?.error || t('localInstallFail') });
+          return;
+        }
+        const requestId = `dpk-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+        updateProgress({ requestId, phase: 'starting', attempt: null, lines: [], status: 'running' });
+        setLocalInstalling(true);
+        setLocalFlash(null);
+        try {
+          const r = unwrapEnvelope(await pmFace?.installBundle?.(normalized.spec, { enabled: true, requestId }));
+          const errText = r?.error?.diagnostic || r?.error?.code || (r?.status === 'refused' ? r?.reason : null);
+          let ok = false;
+          if (!r) {
+            setLocalFlash({ ok: false, text: t('installNoResponse') });
+          } else if (r.application === 'applied' || r.application === 'overridden' || r.application === 'restart-required') {
+            setLocalFlash({
+              ok: true,
+              text: t('localInstallOk', { name: r.target ?? normalized.name ?? normalized.spec }),
+            });
+            ok = true;
+          } else {
+            setLocalFlash({ ok: false, text: `${t('localInstallFail')}${errText ? `：${errText}` : ''}` });
+          }
+          if (normalized.warning) {
+            setLocalFlash((prev) => (prev?.ok
+              ? { ok: true, text: `${prev.text} · ${t('localInstallWarn', { warning: normalized.warning })}` }
+              : prev));
+          }
+          if (r) updateProgress({ status: ok ? 'done' : 'failed' });
+          if (localInstallRef.current) localInstallRef.current.value = '';
+          await load();
+        } catch (e) {
+          setLocalFlash({ ok: false, text: `${t('localInstallFail')}：${e?.message ?? e}` });
+          updateProgress({ status: 'failed' });
+        } finally {
+          setLocalInstalling(false);
         }
       }, [load]);
 
@@ -2347,7 +2411,6 @@ window.__ModuleLoader__.load({
             saveFlash === 'ok' ? h('span', { className: 'dpk-savedok' }, t('saved')) : null,
             saveFlash && saveFlash.err ? h('span', { className: 'dpk-savederr' }, saveFlash.err) : null,
           ),
-          h('div', { className: 'dpk-hint' }, t('proxyHint')),
           snap?.proxy && (!snap.proxy.ok || !snap.proxy.verified)
             ? h('div', { className: 'dpk-savederr' },
                 t('proxyUnsupported', { reason: snap.proxy.reason ?? 'unknown' }))
@@ -2379,8 +2442,7 @@ window.__ModuleLoader__.load({
               onChange: () => setSaveFlash(null),
             }),
           ),
-          h('div', { className: 'dpk-hint' }, t('proxyCredentialHint')),
-          h('div', { className: 'dpk-hint' }, testing ? h(TestTimer) : t('testProxyHint')),
+          testing ? h('div', { className: 'dpk-hint' }, h(TestTimer)) : null,
           proxyTest ? h('div', { className: 'dpk-hint' },
             h('div', { className: proxyTest.ok ? 'dpk-savedok' : 'dpk-savederr' },
               `${proxyTest.ok ? t('testProxyOk') : t('testProxyFail')} · ${proxyTest.mode ?? ''}${proxyTest.proxyHost ? ` · ${t('proxyVia', { host: proxyTest.proxyHost })}` : ''} · ${proxyTest.elapsedMs ?? 0}ms${proxyTest.error ? ` — ${proxyTest.error}` : ''}`),
@@ -2394,7 +2456,10 @@ window.__ModuleLoader__.load({
             ...(proxyTest.git && (proxyTest.git.version || proxyTest.git.systemProxy) ? [h('div', {
               key: 'gitDiag',
               className: 'dpk-hint',
-            }, t('gitDiag', { version: proxyTest.git.version ?? '?', proxy: proxyTest.git.systemProxy ?? '—' }))] : []),
+            }, t('gitDiag', {
+              version: String(proxyTest.git.version ?? '').replace(/^git\s+version\s+/i, '') || '?',
+              proxy: proxyTest.git.systemProxy ? t('gitDiagProxy', { proxy: proxyTest.git.systemProxy }) : '',
+            }))] : []),
           ) : null,
           ),
           // ---- 分区 2：从 GitHub 安装 ----
@@ -2421,6 +2486,31 @@ window.__ModuleLoader__.load({
           installFlash
             ? h('div', { className: `dpk-banner${installFlash.ok ? ' is-ok' : ''}` }, installFlash.text)
             : null,
+          // ---- 分区 3：从本地安装（开发中的插件：目录软链 / 本地压缩包） ----
+          h('div', { className: 'dpk-setsec' },
+            h('div', { className: 'dpk-gtitle' }, t('sectionLocal')),
+            h('div', { className: 'dpk-setrow' },
+              h('span', { className: 'dpk-setlabel' }, t('localInstallLabel')),
+              h('input', {
+                ref: localInstallRef,
+                className: 'dpk-input',
+                type: 'text',
+                spellCheck: false,
+                placeholder: t('localInstallPlaceholder'),
+                disabled: localInstalling,
+                onKeyDown: (e) => { if (e.key === 'Enter' && !localInstalling) { void doInstallLocal(); } },
+              }),
+              h('button', {
+                className: 'dpk-btn',
+                type: 'button',
+                disabled: localInstalling || installing || loading,
+                onClick: () => { void doInstallLocal(); },
+              }, localInstalling ? t('localInstalling') : t('localInstallBtn')),
+            ),
+            localFlash
+              ? h('div', { className: `dpk-banner${localFlash.ok ? ' is-ok' : ''}` }, localFlash.text)
+              : null,
+          ),
           // 实时进度：阶段来自 install-state，日志行来自宿主转发的 pnpm 输出（非模拟）
           progress.status !== 'idle'
             ? h('div', { className: 'dpk-instprog' },
@@ -2958,6 +3048,15 @@ window.__ModuleLoader__.load({
           service: 'PluginKeeperService',
           namespace: 'dsh-plugin-keeper',
           method: 'normalizeGithubSpec',
+          invocation: { kind: 'direct' },
+          parameters: [INPUT_PARAM],
+          result: { mode: 'src-json' },
+        },
+        {
+          id: 'dsh-plugin-keeper#dsh-plugin-keeper/normalizeLocalSpec',
+          service: 'PluginKeeperService',
+          namespace: 'dsh-plugin-keeper',
+          method: 'normalizeLocalSpec',
           invocation: { kind: 'direct' },
           parameters: [INPUT_PARAM],
           result: { mode: 'src-json' },
