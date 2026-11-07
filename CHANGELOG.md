@@ -1,34 +1,24 @@
 # Changelog
 
-## 0.3.6 (2026-11-07)
-
-### 中文
-
-- **修复：面板代理仍会被 `~/.gitconfig` 里的 GitHub URL 段抢走** — 之前只给 git 传了全局 `http.proxy`，但 git 里 URL 段级配置（`[http "https://github.com/"] proxy = ...`）优先级高于全局项，导致机器上残留的旧代理段（如已失效的 33210 端口）仍会劫持到 GitHub 的连接，表现为"面板代理明明可用、安装链路却连不上"。现在命令行 `-c`、git 包装器 shim、`GIT_CONFIG_*` 环境变量三处都同时写全局 `http.proxy` 与 `http.https://github.com/.proxy` 的 URL 段级覆盖，彻底压住任何残留。
-- **新增：连通性测试智能降级直连兜底** — 当面板代理探测失败时（典型场景：机器已启用 TUN/透明代理，面板 HTTP 代理会与系统代理叠加成「双重代理」导致 TLS 握手不稳），自动回退到「清空残留代理的直连」再测一次，任一链路通即判通过。未配置面板代理（跟随系统）时直接用清残留的直连测。彻底告别"第一次点全红"。
-- **修复：测试卡一分钟** — git 超时后其 helper 子进程仍持有管道、Node 的 close 事件迟迟不触发，导致测试挂起。现在超时后立即 SIGTERM + 1.5s 后 SIGKILL 并兜底 resolve，最坏耗时封顶，不会无限等待。
-- **新增：检查更新自动带上 GitHub 认证，破解匿名限流 403** — 之前所有 GitHub API 请求都是匿名的（每小时仅 60 次），出口 IP 一用满就 `HTTP 403 API rate limit exceeded`。现在会自动读取本机 `gh auth token`（或 env `GITHUB_TOKEN`/`GH_TOKEN`）作为 Bearer 认证，额度提升到 **5000 次/小时**。取不到 token 时才退回匿名。
-
-### English
-
-- **Fix: panel proxy could still be hijacked by a GitHub URL-section entry in `~/.gitconfig`** — Previously only the global `http.proxy` was passed to git, but git's URL-section config (`[http "https://github.com/"] proxy = ...`) outranks the global setting, so a leftover stale proxy section (e.g. a dead port like 33210) kept hijacking GitHub connections — the panel proxy looked fine yet installs failed to connect. Now all three injection paths (command-line `-c`, the git shim wrapper, and `GIT_CONFIG_*` env vars) write both the global `http.proxy` and the URL-section `http.https://github.com/.proxy` override, fully suppressing any leftover config.
-- **New: connectivity test falls back to a direct connection** — When probing the panel proxy fails (typical case: the machine already runs a TUN/transparent proxy, so adding the panel HTTP proxy creates a "double proxy" that destabilizes TLS handshakes), the test now retries with a direct connection that clears any leftover proxy; passing either path counts as OK. With no panel proxy configured (follow system), the direct path is used directly. No more "all red on the first click".
-- **Fix: test hanging for a minute** — After a git timeout, its helper subprocess keeps the pipes open so Node's close event fires very late, hanging the test. Now on timeout we SIGTERM immediately, SIGKILL after 1.5s, and resolve as a fallback so the worst case is bounded and never hangs indefinitely.
-- **New: update checks now authenticate to GitHub, avoiding anonymous 403 rate limits** — Previously every GitHub API request was anonymous (only 60 requests/hour), so once the egress IP hit the cap you'd get `HTTP 403 API rate limit exceeded`. Now it automatically reads the local `gh auth token` (or env `GITHUB_TOKEN`/`GH_TOKEN`) as a Bearer credential, raising the limit to **5000/hour**. Falls back to anonymous only when no token is available.
-
 ## 0.3.5 (2026-11-07)
 
 ### 中文
 
-- **面板代理不再被系统配置抢走** — 配了代理后，GitHub 检查更新与从 GitHub 安装的每一条 git 命令（远程探测、拉取代码）都显式带上这个代理地址，机器上残留的旧代理配置不会再把请求带走；全程不修改你的任何全局配置。
-- **高级配置更清爽** — 去掉三段说明文字，代理区只保留结果本身。
 - **新增从本地安装** — 直接把开发中的插件目录装进当前环境试用，不必先发版；目录以软链方式安装（改完源码重启 dsh web 即生效），本地 .tgz / .tar.gz 也能装。
+- **检查更新自动带上 GitHub 认证** — 之前所有 GitHub API 请求都是匿名的（每小时仅 60 次），出口 IP 一用满就 `HTTP 403 API rate limit exceeded`。现在会自动读取本机 `gh auth token`（或 env `GITHUB_TOKEN`/`GH_TOKEN`）作为 Bearer 认证，额度提升到 5000 次/小时；取不到 token 时才退回匿名。
+- **面板代理不再被系统配置抢走** — 配了代理后，GitHub 检查更新与从 GitHub 安装的每一条 git 命令都显式带上这个代理地址；机器上残留的旧代理配置（全局 `http.proxy`，以及针对 GitHub 的 URL 段级 `http.https://github.com/.proxy`）都不会再劫持到请求；全程不修改你的任何全局配置。
+- **连通性测试智能降级直连兜底** — 面板代理探测失败时（典型场景：机器已启用 TUN/透明代理，面板 HTTP 代理会与系统代理叠加成「双重代理」导致 TLS 握手不稳），自动回退到「清空残留代理的直连」再测一次，任一链路通即判通过；未配置面板代理时直接用清残留的直连测。
+- **修复测试卡一分钟** — git 超时后其 helper 子进程仍持有管道、Node 的 close 事件迟迟不触发，导致测试挂起；现在超时后立即 SIGTERM、1.5s 后 SIGKILL 并兜底返回，最坏耗时封顶。
+- **高级配置更清爽** — 去掉几段说明文字，代理区只保留结果本身。
 
 ### English
 
-- **The panel proxy is now authoritative** — Once a proxy is configured, every git command behind GitHub update checks and GitHub installs (remote probes, clones) explicitly carries that proxy address, so leftover proxy settings on the machine can no longer hijack the connection; no global configuration is modified.
-- **Cleaner advanced settings** — Three explanatory paragraphs are gone; the proxy section now shows results only.
-- **Install from a local path** — Try a plugin straight from its working directory before publishing; directories are linked (edit the source, restart dsh web, it takes effect), and local .tgz / .tar.gz files work too.
+- **New: install from a local path** — Try a plugin straight from its working directory before publishing; a directory is linked (edit the source, restart dsh web, it takes effect), and local .tgz / .tar.gz files work too.
+- **New: update checks authenticate to GitHub** — Previously every GitHub API request was anonymous (only 60 requests/hour), so once the egress IP hit the cap you would get `HTTP 403 API rate limit exceeded`. It now automatically reads the local `gh auth token` (or env `GITHUB_TOKEN`/`GH_TOKEN`) as a Bearer credential, raising the limit to 5000/hour, and only falls back to anonymous when no token is available.
+- **The panel proxy now wins** — Once a proxy is configured, every git command behind GitHub update checks and installs explicitly carries that proxy address; leftover proxy settings on the machine (both the global `http.proxy` and the GitHub URL-section `http.https://github.com/.proxy`) can no longer hijack the request, and no global configuration is modified.
+- **New: the connectivity test falls back to a direct connection** — When probing the panel proxy fails (typical case: the machine already runs a TUN/transparent proxy, so adding the panel HTTP proxy creates a double proxy that destabilises TLS handshakes), the test retries with a direct connection that clears any leftover proxy; passing either path counts as OK.
+- **Fix: the test no longer hangs** — After a git timeout its helper subprocess keeps the pipes open so Node's close event fires very late, hanging the test; the test now SIGTERMs immediately, SIGKILLs after 1.5s and resolves as a fallback, so the worst case is bounded.
+- **Cleaner advanced settings** — A few explanatory paragraphs are gone; the proxy section now shows results only.
 
 ## 0.3.4 (2026-11-07)
 

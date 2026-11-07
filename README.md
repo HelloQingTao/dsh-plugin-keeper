@@ -18,7 +18,7 @@ It only manages plugins you already have. No marketplace, no hot restart — the
 - Find out which ones have a newer version and update them in bulk
 - Enable, disable or remove plugins in bulk
 - Export selected plugins (with their config) into a zip, and import that zip on another machine
-- Install a plugin straight from GitHub
+- Install a plugin straight from GitHub, or from a local directory or .tgz while you are still developing it
 - Search the list by package name, description or version
 
 ### How to use it
@@ -34,6 +34,7 @@ It only manages plugins you already have. No marketplace, no hot restart — the
 - Moving to a new machine: export the plugins you use and import them there
 - Cleaning up after a burst of installs: review, then disable or remove in bulk
 - Routine upkeep: one click to see what is outdated, then update in bulk
+- Trying out a plugin you are still developing: install it from its local folder, no release needed
 
 ### Install
 
@@ -81,7 +82,7 @@ DeepSeek Harness (DSH 0.2.x) 的插件运维台：盘点已装插件、批量更
 - 查哪些插件有新版本，然后批量更新
 - 批量启用、停用、卸载
 - 把选中的插件（连同配置）导出成 zip，在另一台机器导入
-- 直接从 GitHub 装插件
+- 直接从 GitHub 装插件；开发中的插件也可以直接用本地目录或 .tgz 装进来试
 - 按包名、简述或版本搜插件
 
 ### 怎么用
@@ -97,6 +98,7 @@ DeepSeek Harness (DSH 0.2.x) 的插件运维台：盘点已装插件、批量更
 - 换机器：把在用的插件导出，到新机器导入
 - 装了一堆想清理：统一勾选后批量停用或卸载
 - 日常维护：点一次看清哪些过期，再批量更新
+- 试用还在开发中的插件：填它的本地目录装进来，不用先发版
 
 ### 安装
 
