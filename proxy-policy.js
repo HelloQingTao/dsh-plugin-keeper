@@ -11,7 +11,7 @@
  * 不改 process.env、不写 ~/.dsh/.env、不碰宿主全局 dispatcher。
  */
 
-import { EnvHttpProxyAgent, ProxyAgent, interceptors } from 'undici';
+import { Agent, EnvHttpProxyAgent, ProxyAgent, interceptors } from 'undici';
 
 const PROXY_KEYS = ['HTTPS_PROXY', 'https_proxy', 'HTTP_PROXY', 'http_proxy', 'ALL_PROXY', 'all_proxy'];
 const BYPASS_KEYS = ['NO_PROXY', 'no_proxy'];
@@ -200,7 +200,9 @@ let proxyDispatcherKey = null;
 let proxyDispatcher = null;
 let envDispatcherKey = null;
 let envDispatcher = null;
+let directDispatcher = null;
 let lastDispatcherKey = null;
+const DIRECT_MARKER = '\u0000direct';
 
 /** 系统代理环境变量的指纹：变化后重建 EnvHttpProxyAgent（它在构造时读一次 env）。 */
 function systemProxyFingerprint() {
@@ -210,9 +212,7 @@ function systemProxyFingerprint() {
   ].join('|');
 }
 
-/** 配置的代理只服务 GitHub 目标；npm registry 等一律走系统默认（直连）。 */
-function usesConfiguredProxy(url, proxyUrl) {
-  if (!proxyUrl) return false;
+function isGithubHost(url) {
   try {
     const host = new URL(url).hostname.toLowerCase();
     return host === 'github.com' || host.endsWith('.github.com');
@@ -221,7 +221,17 @@ function usesConfiguredProxy(url, proxyUrl) {
   }
 }
 
-/** 检查更新用的 dispatcher：GitHub 目标走配置的代理，其余目标跟随系统环境。 */
+/** 配置的代理只服务 GitHub 目标；npm registry 永远不碰它。 */
+function usesConfiguredProxy(url, proxyUrl) {
+  return Boolean(proxyUrl) && isGithubHost(url);
+}
+
+/**
+ * 检查更新用的 dispatcher，三档：
+ *  - GitHub + 配了代理 → ProxyAgent(配置代理)
+ *  - GitHub + 没配代理 → EnvHttpProxyAgent（跟随系统默认）
+ *  - 非 GitHub（npm registry）→ Agent 纯直连，不读任何代理环境变量
+ */
 export function dispatcherFor(url, proxyUrl) {
   if (usesConfiguredProxy(url, proxyUrl)) {
     if (proxyDispatcherKey !== proxyUrl || !proxyDispatcher) {
@@ -235,17 +245,26 @@ export function dispatcherFor(url, proxyUrl) {
     lastDispatcherKey = proxyUrl;
     return proxyDispatcher;
   }
-  const fingerprint = systemProxyFingerprint();
-  if (!envDispatcher || envDispatcherKey !== fingerprint) {
-    const previous = envDispatcher;
-    envDispatcher = new EnvHttpProxyAgent().compose(interceptors.redirect({ maxRedirections: 3 }));
-    envDispatcherKey = fingerprint;
-    if (previous) {
-      try { Promise.resolve(previous.close?.()).catch(() => {}); } catch { /* 关闭失败不影响新请求 */ }
+  if (isGithubHost(url)) {
+    const fingerprint = systemProxyFingerprint();
+    if (!envDispatcher || envDispatcherKey !== fingerprint) {
+      const previous = envDispatcher;
+      envDispatcher = new EnvHttpProxyAgent().compose(interceptors.redirect({ maxRedirections: 3 }));
+      envDispatcherKey = fingerprint;
+      if (previous) {
+        try { Promise.resolve(previous.close?.()).catch(() => {}); } catch { /* 关闭失败不影响新请求 */ }
+      }
     }
+    lastDispatcherKey = ENV_MARKER;
+    return envDispatcher;
   }
-  lastDispatcherKey = ENV_MARKER;
-  return envDispatcher;
+  // npm registry 等：纯直连。不跟随系统 env，启动环境里残留的失效代理
+  // （如 127.0.0.1:33210）不会再让 npm 检查更新超时。
+  if (!directDispatcher) {
+    directDispatcher = new Agent().compose(interceptors.redirect({ maxRedirections: 3 }));
+  }
+  lastDispatcherKey = DIRECT_MARKER;
+  return directDispatcher;
 }
 
 /** 连通性测试用的一次性 dispatcher：不复用全局缓存，未保存的配置不会影响当前策略。 */
@@ -256,5 +275,8 @@ export function probeDispatcher(proxyUrl) {
 
 /** 自检用：当前 dispatcher 档位。 */
 export function dispatcherStatus() {
-  return { key: lastDispatcherKey === ENV_MARKER ? 'system-env' : lastDispatcherKey };
+  return {
+    key: lastDispatcherKey === ENV_MARKER ? 'system-env'
+      : lastDispatcherKey === DIRECT_MARKER ? 'direct' : lastDispatcherKey,
+  };
 }
