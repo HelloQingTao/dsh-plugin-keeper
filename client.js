@@ -2403,7 +2403,7 @@ window.__ModuleLoader__.load({
         ? h('div', { className: 'dpk-batchbar' },
           h('span', { className: 'dpk-selhint' }, t('selHint', { sel: selCount, upd: updatableCount })),
           h('button', {
-            className: 'dpk-btn',
+            className: 'dpk-btn is-success',
             type: 'button',
             disabled: busy || updatableCount === 0,
             onClick: () => onBatchBtn('update'),
