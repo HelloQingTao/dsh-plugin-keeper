@@ -275,6 +275,17 @@ function readProfileExemptions(profileDir) {
 
 // ---------- 状态文件（$DSH_HOME/plugin-keeper.json）----------
 
+// 宿主进程/插件宿主半的启动时刻：用于判断「需重启」是否已被真实的整机重启满足。
+// process.uptime() 是进程存活秒数，反推得到本进程启动时间点（每次整机重启都会前移），
+// 拿不到时返回 null（前端据此退回旧行为）。
+function hostBootTimeOf() {
+  try {
+    const up = typeof process.uptime === 'function' ? process.uptime() : null;
+    if (typeof up === 'number' && Number.isFinite(up)) return Date.now() - up * 1000;
+  } catch { /* 忽略 */ }
+  return null;
+}
+
 function statePathOf() {
   const home = serviceBridge?.profile?.home
     || process.env.DSH_HOME
@@ -288,6 +299,8 @@ const STATE_DEFAULT = Object.freeze({
   proxyPass: '',
   // 「在设置页也显示插件运维」：默认关（插件页 Tab 常驻，设置页不重复出现）。
   showInSettings: false,
+  // 「进入时默认折叠分组」：默认关（分组默认展开）。
+  collapseGroupsByDefault: false,
   lastCheck: null,
   lastBatch: null,
 });
@@ -299,6 +312,7 @@ export function publicProxySettings(state) {
     proxyUser: state?.proxyUser ?? '',
     hasProxyPass: Boolean(state?.proxyPass),
     showInSettings: state?.showInSettings === true,
+    collapseGroupsByDefault: state?.collapseGroupsByDefault === true,
   };
 }
 
@@ -315,6 +329,7 @@ async function readState() {
     proxyPass: pass || split.proxyPass,
     // 缺字段 = 旧状态文件 → 按默认（false）处理，不当成 true
     showInSettings: raw?.showInSettings === true,
+    collapseGroupsByDefault: raw?.collapseGroupsByDefault === true,
     lastCheck: raw?.lastCheck && typeof raw.lastCheck === 'object' ? raw.lastCheck : null,
     lastBatch: raw?.lastBatch && typeof raw.lastBatch === 'object' ? raw.lastBatch : null,
   };
@@ -882,6 +897,7 @@ export class PluginKeeperService extends TypertRemoteService {
       errors,
       lastCheckAt: state.lastCheck?.at ?? null,
       lastBatch: state.lastBatch,
+      hostBootAt: hostBootTimeOf(),
       settings: publicProxySettings(state),
       proxy: proxyStatus(),
       generatedAt: new Date().toISOString(),
@@ -1087,6 +1103,7 @@ export class PluginKeeperService extends TypertRemoteService {
    *  - proxyUser / proxyPass：HTTP Basic 凭据。密码传空串 = 保持原值（不回显）；
    *    账号清空 = 取消认证，同时清掉密码。地址里直接粘 userinfo 会自动拆分。
    *  - showInSettings：是否在设置页也显示本插件
+   *  - collapseGroupsByDefault：进入时是否默认折叠所有分组
    * 只更新显式传入的字段（点开关不会清空代理）；保存后立即应用策略。
    */
   async saveSettings(input) {
@@ -1107,6 +1124,7 @@ export class PluginKeeperService extends TypertRemoteService {
     }
     const clearCredentials = has('proxyUser') && proxyUser === '';
     const showInSettings = typeof input?.showInSettings === 'boolean' ? input.showInSettings : null;
+    const collapseGroupsByDefault = typeof input?.collapseGroupsByDefault === 'boolean' ? input.collapseGroupsByDefault : null;
     await withStateLock(async () => {
       const state = await readState();
       await writeState({
@@ -1116,6 +1134,7 @@ export class PluginKeeperService extends TypertRemoteService {
         ...(proxyPass === null ? {} : { proxyPass }),
         ...(clearCredentials ? { proxyPass: '' } : {}),
         ...(showInSettings === null ? {} : { showInSettings }),
+        ...(collapseGroupsByDefault === null ? {} : { collapseGroupsByDefault }),
       });
     });
     const latest = await readState();

@@ -75,7 +75,7 @@ window.__ModuleLoader__.load({
         sectionProxy: '网络代理',
         sectionInstall: '从 GitHub 安装',
         sectionLocal: '从本地安装',
-        sectionDisplay: '显示位置',
+        sectionDisplay: '显示与交互',
         collapseAllGroups: '一键折叠全部分组',
         expandAllGroups: '一键展开全部分组',
         dialogClose: '关闭',
@@ -165,6 +165,8 @@ window.__ModuleLoader__.load({
         restoredLedger: '（上次会话的记录）',
         snapshotDone: '已备份配置快照 {id}',
         restartBanner: '{n} 项变更需重启后生效',
+        restartBannerFull: '{n} 项变更需重启后生效（含不受热更新管理的插件，需整机重启 dsh）',
+        restartSatisfied: '上次批量需重启的变更已随重启生效，无需再处理',
         restoreBtn: '恢复快照',
         restoring: '恢复中…',
         restoreDone: '快照已恢复，重启后生效',
@@ -197,6 +199,9 @@ window.__ModuleLoader__.load({
         showInSettings: '在设置页也显示「插件运维」',
         showInSettingsHint: '关闭时仅在「插件」面板的页签中显示；改动在重新进入页面后生效。',
         showInSettingsSaved: '显示位置已更新，重新进入页面后生效',
+        collapseGroupsByDefault: '进入时默认折叠分组',
+        collapseGroupsByDefaultHint: '打开「插件运维」时自动折叠所有来源分组；改动在重新进入页面后生效。',
+        collapseGroupsByDefaultSaved: '默认折叠设置已更新，重新进入页面后生效',
         // ---- 分组折叠 ----
         groupCollapse: '折叠分组',
         groupExpand: '展开分组',
@@ -299,7 +304,7 @@ window.__ModuleLoader__.load({
         sectionProxy: 'Network proxy',
         sectionInstall: 'Install from GitHub',
         sectionLocal: 'Install from local',
-        sectionDisplay: 'Display',
+        sectionDisplay: 'Display & interaction',
         collapseAllGroups: 'Collapse all groups',
         expandAllGroups: 'Expand all groups',
         dialogClose: 'Close',
@@ -389,6 +394,8 @@ window.__ModuleLoader__.load({
         restoredLedger: '(from a previous session)',
         snapshotDone: 'Config snapshot saved: {id}',
         restartBanner: '{n} change(s) take effect after restart',
+        restartBannerFull: '{n} change(s) take effect after restart (includes plugins outside hot-reload management — restart dsh entirely)',
+        restartSatisfied: 'The changes from the last batch have taken effect after restart; nothing left to do',
         restoreBtn: 'Restore snapshot',
         restoring: 'Restoring…',
         restoreDone: 'Snapshot restored, takes effect after restart',
@@ -421,6 +428,9 @@ window.__ModuleLoader__.load({
         showInSettings: 'Also show "Plugin Ops" in Settings',
         showInSettingsHint: 'When off, the panel only appears as a tab under Plugins; the change applies after re-entering the page.',
         showInSettingsSaved: 'Display location updated; applies after re-entering the page',
+        collapseGroupsByDefault: 'Collapse groups by default on entry',
+        collapseGroupsByDefaultHint: 'When on, the "Plugin Ops" panel opens with all source groups collapsed; the change applies after re-entering the page.',
+        collapseGroupsByDefaultSaved: 'Default-collapse setting updated; applies after re-entering the page',
         // ---- 分组折叠 ----
         groupCollapse: 'Collapse group',
         groupExpand: 'Expand group',
@@ -509,10 +519,15 @@ window.__ModuleLoader__.load({
 .dpk-btn.is-primary:hover{background:var(--dsw-alias-interactive-bg-hover);}
 .dpk-btn.is-danger{border-color:var(--dsw-alias-state-error-primary);color:var(--dsw-alias-state-error-primary);}
 .dpk-btn.is-danger:hover{background:var(--dsw-alias-interactive-bg-hover);}
-/* 确认浮层视口居中的前提：宿主 settings.section/plugins.tab 祖先链上无 transform/filter/
-   contain 等会改写 fixed 包含块的属性（插件侧已排查干净）。若实测命中（浮层漂移/被裁），
-   回退方案：absolute 居中于 dpk-root 顶部。 */
-.dpk-modal{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:9999;background:var(--dsw-alias-bg-layer-1);border:1px solid var(--dsw-alias-border-l2);border-radius:var(--dsw-radius-lg,10px);padding:14px 16px;width:360px;max-width:calc(100vw - 48px);display:flex;flex-direction:column;gap:10px;box-shadow:0 8px 32px rgba(0,0,0,.25);}
+/* 行内「更新」按钮：绿色（成功主题色），与检查更新的品牌色区分，一眼识别「有更新可点」 */
+.dpk-btn.is-success{border-color:var(--dsw-alias-state-success-primary);color:var(--dsw-alias-state-success-primary);}
+.dpk-btn.is-success:hover{background:var(--dsw-alias-interactive-bg-hover);}
+/* 弹框外层遮罩：全屏半透明底 + 弹性居中，拦截背景交互；点遮罩（自身）关闭。 */
+.dpk-modalwrap{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:24px;background:var(--dsw-alias-bg-mask-1);animation:dpk-fade .12s ease-out;backdrop-filter:var(--dsw-mask-blur,none);}
+@keyframes dpk-fade{from{opacity:0;}to{opacity:1;}}
+@media (prefers-reduced-motion:reduce){.dpk-modalwrap{animation:none;}}
+/* 弹框内容盒：不再自己 fixed 定位，由 wrap 居中；z-index/层叠交给 wrap。 */
+.dpk-modal{position:relative;background:var(--dsw-alias-bg-layer-1);border:1px solid var(--dsw-alias-border-l2);border-radius:var(--dsw-radius-lg,10px);padding:14px 16px;width:360px;max-width:calc(100vw - 48px);max-height:calc(100vh - 48px);overflow:auto;display:flex;flex-direction:column;gap:10px;box-shadow:0 8px 32px rgba(0,0,0,.25);}
 .dpk-mtitle{font-size:13px;font-weight:600;color:var(--dsw-alias-label-primary);}
 .dpk-mlist{max-height:200px;overflow:auto;font-size:11px;color:var(--dsw-alias-label-secondary);line-height:22px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;padding:6px 10px;background:var(--dsw-alias-bg-layer-2);border-radius:var(--dsw-radius-md,8px);}
 .dpk-mfoot{display:flex;justify-content:flex-end;gap:8px;}
@@ -598,6 +613,12 @@ window.__ModuleLoader__.load({
 .dpk-op.is-failed{color:var(--dsw-alias-state-error-primary);}
 .dpk-op.is-skipped{color:var(--dsw-alias-label-tertiary);}
 .dpk-batchbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+/* 批量进度文字：主题蓝（business 主题色） + 呼吸动效（原为弱化 hint 色，不显眼） */
+.dpk-progress{font-size:12px;line-height:18px;font-weight:600;color:var(--dsw-alias-state-business-primary,var(--dsw-alias-brand-primary));display:inline-flex;align-items:center;gap:6px;animation:dpk-pulse 1.3s ease-in-out infinite;}
+.dpk-progress::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--dsw-alias-state-business-primary,var(--dsw-alias-brand-primary));flex:none;animation:dpk-dot 1.1s ease-in-out infinite;}
+@keyframes dpk-pulse{0%,100%{opacity:1;}50%{opacity:.45;}}
+@keyframes dpk-dot{0%,100%{transform:scale(1);opacity:1;}50%{transform:scale(.5);opacity:.4;}}
+@media (prefers-reduced-motion:reduce){.dpk-progress,.dpk-progress::before{animation:none;}}
 .dpk-selhint{font-size:11px;color:var(--dsw-alias-label-tertiary);white-space:nowrap;margin-right:2px;}
 .dpk-ledger{display:flex;flex-direction:column;gap:4px;border:1px solid var(--dsw-alias-border-l1);border-radius:var(--dsw-radius-md,8px);padding:8px 12px;}
 .dpk-ledrow{display:flex;align-items:center;gap:8px;min-width:0;font-size:11px;color:var(--dsw-alias-label-secondary);}
@@ -764,6 +785,20 @@ window.__ModuleLoader__.load({
       } catch {
         // 配额满 / 隐私模式：缓存失败不影响主流程
       }
+    }
+
+    // 台账「清空」的持久化标记：记住被清空的 lastBatch id（localStorage）。
+    // 宿主 lastBatch 是唯一真值、清空动作不改它，所以要用这份浏览器侧标记跨刷新/重开
+    // 屏蔽同一条历史台账，避免「清空了下次又自动弹回来」。
+    const DISMISSED_BATCH_KEY = 'dsh-plugin-keeper:dismissedBatch:v1';
+    function loadDismissedBatchId() {
+      try { return window.localStorage?.getItem(DISMISSED_BATCH_KEY) || null; } catch { return null; }
+    }
+    function saveDismissedBatchId(id) {
+      try {
+        if (id) window.localStorage?.setItem(DISMISSED_BATCH_KEY, String(id));
+        else window.localStorage?.removeItem(DISMISSED_BATCH_KEY);
+      } catch { /* 隐私模式等：忽略 */ }
     }
 
     // 超时包装：RPC 迟迟不返回时不转圈，转成可见的降级提示
@@ -1010,6 +1045,24 @@ window.__ModuleLoader__.load({
           return { status: 'failed', note: r.error?.code ?? r.error?.diagnostic ?? r.error?.message ?? '' };
         default: return { status: 'failed', note: r.error?.message ?? 'unknown application' };
       }
+    }
+
+    // 「需重启」提示的语义化与去重：
+    // - 若批次里 restart 的原因是无法热更的插件（unmanaged-plugin / host-module / package-moved），
+    //   明确告知需「整机重启」而不是简单刷新；
+    // - 若宿主进程在批次之后已经重启（snap.hostBootAt > batch.at），说明重启已被满足，
+    //   不再重复弹这条提示（解决「明明重启了还提示需重启」）。
+    function restartBannerFor(results, n) {
+      const reasons = new Set((Array.isArray(results) ? results : [])
+        .filter((r) => r && r.status === 'restart').map((r) => r.note || ''));
+      const needsFull = ['unmanaged-plugin', 'host-module', 'package-moved'].some((x) => reasons.has(x));
+      return { text: t(needsFull ? 'restartBannerFull' : 'restartBanner', { n }), ok: false };
+    }
+    function isBatchRestartSatisfied(lb, snap) {
+      const boot = snap?.hostBootAt;
+      const at = lb?.at ? Date.parse(lb.at) : NaN;
+      if (typeof boot !== 'number' || !Number.isFinite(boot) || !Number.isFinite(at)) return false;
+      return boot > at;
     }
 
     // 检查结果归一化：更新后 check 可能滞后（latest===当前版本），此时按最新渲染
@@ -1402,7 +1455,7 @@ window.__ModuleLoader__.load({
             checkBadgeOf(entry),
             spec && onUpdate
               ? h('button', {
-                className: 'dpk-btn is-mini',
+                className: 'dpk-btn is-mini is-success',
                 type: 'button',
                 disabled: Boolean(busy),
                 onClick: (e) => { e.stopPropagation(); onUpdate(entry); },
@@ -1417,6 +1470,72 @@ window.__ModuleLoader__.load({
     }
 
     // ---------- 组件 ----------
+
+    // 统一弹框外壳：遮罩 + 居中 + 系统弹框行为（点遮罩关闭 / Esc 关闭 / Tab 焦点锁在框内 /
+    // aria-modal 语义 / 打开时锁定背景滚动 / 焦点移入与还原）。
+    // 所有二级弹框（确认 / 导出 / 导入 / 高级配置）都经它渲染，外观与交互一致。
+    function Modal({ onClose, className, ariaLabel, children }) {
+      const dialogRef = React.useRef(null);
+      // 打开期间：焦点移入弹框首元素；背景根节点（其余节点）设为 inert，拦住键盘/点击穿透。
+      React.useEffect(() => {
+        const prevActive = document.activeElement;
+        const dialog = dialogRef.current;
+        // 打开期间锁定背景滚动：弹框渲染在应用根内部，遮罩已挡住指针穿透，
+        // 这里再冻结 body 滚动，避免滚轮/空格把背景页面滚走（即「背景还能操作」）。
+        const scrollLocks = [];
+        try {
+          for (const el of [document.documentElement, document.body]) {
+            if (!el) continue;
+            const prevOverflow = el.style.overflow;
+            el.style.overflow = 'hidden';
+            scrollLocks.push([el, prevOverflow]);
+          }
+        } catch { /* 忽略 */ }
+        // 焦点移入：优先首个可聚焦元素，否则弹框自身
+        try {
+          const focusable = dialog?.querySelector('button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])');
+          (focusable || dialog)?.focus?.();
+        } catch { /* 忽略 */ }
+        return () => {
+          for (const [el, prev] of scrollLocks) { try { el.style.overflow = prev; } catch { /* 忽略 */ } }
+          try { prevActive?.focus?.(); } catch { /* 忽略 */ }
+        };
+      }, []);
+      // Esc 关闭 + Tab 焦点陷阱（系统弹框标准行为；背景应用无法用 inert 完全隔离，
+      // 因为弹框渲染在应用根内部，故用 Tab 循环把焦点锁在弹框内）。
+      React.useEffect(() => {
+        const onKey = (e) => {
+          if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); onClose?.(); return; }
+          if (e.key !== 'Tab') return;
+          const dialog = dialogRef.current;
+          if (!dialog) return;
+          const focusables = Array.from(dialog.querySelectorAll(
+            'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])',
+          )).filter((el) => el.offsetParent !== null || el === document.activeElement);
+          if (!focusables.length) return;
+          const first = focusables[0];
+          const last = focusables[focusables.length - 1];
+          if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+          else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+        };
+        window.addEventListener('keydown', onKey, true);
+        return () => window.removeEventListener('keydown', onKey, true);
+      }, [onClose]);
+      return h('div', {
+        className: 'dpk-modalwrap',
+        // 只有点中遮罩本身（不是冒泡自内容）才关闭
+        onMouseDown: (e) => { if (e.target === e.currentTarget) onClose?.(); },
+      },
+        h('div', {
+          ref: dialogRef,
+          className: `dpk-modal${className ? ` ${className}` : ''}`,
+          role: 'dialog',
+          'aria-modal': 'true',
+          'aria-label': ariaLabel,
+          tabIndex: -1,
+        }, children),
+      );
+    }
 
     function PluginKeeperSection() {
       // 首屏缓存：挂载即用上次结果渲染（0 等待），随后 RPC 覆盖。
@@ -1440,6 +1559,9 @@ window.__ModuleLoader__.load({
       // 显示位置开关（设置页是否也显示本插件）：默认关；改动在重新进入页面后生效
       const [showInSettings, setShowInSettings] = React.useState(false);
       const [locationFlash, setLocationFlash] = React.useState(null); // 'ok' | {err}
+      // 进入时默认折叠分组：默认关；改动在重新进入页面后生效
+      const [collapseByDefault, setCollapseByDefault] = React.useState(false);
+      const [collapseFlash, setCollapseFlash] = React.useState(null); // 'ok' | {err}
       const proxyRef = React.useRef(null);
       const proxyUserRef = React.useRef(null);
       const proxyPassRef = React.useRef(null);
@@ -1455,6 +1577,8 @@ window.__ModuleLoader__.load({
       const [settingsOpen, setSettingsOpen] = React.useState(false);
       // 台账清空后连跨会话残留提示一起隐藏，直到下一次批量重新置位
       const [ledgerDismissed, setLedgerDismissed] = React.useState(false);
+      // 被「清空」屏蔽的 lastBatch id（持久化在 localStorage，跨刷新/重开有效）
+      const [dismissedBatchId, setDismissedBatchId] = React.useState(() => loadDismissedBatchId());
       const installRef = React.useRef(null);
       const localInstallRef = React.useRef(null);
       const [localInstalling, setLocalInstalling] = React.useState(false);
@@ -1475,19 +1599,7 @@ window.__ModuleLoader__.load({
       const [importConfigStrategies, setImportConfigStrategies] = React.useState(() => new Map());
       const [importOnlyConfig, setImportOnlyConfig] = React.useState(false);
       const importFileRef = React.useRef(null);
-      // 确认浮层无遮罩：Esc 关闭补偿（原先"点遮罩关闭"已随遮罩移除）
-      React.useEffect(() => {
-        if (!confirmOp) return;
-        const onKey = (e) => { if (e.key === 'Escape') setConfirmOp(null); };
-        window.addEventListener('keydown', onKey);
-        return () => window.removeEventListener('keydown', onKey);
-      }, [confirmOp]);
-      React.useEffect(() => {
-        if (!settingsOpen) return;
-        const onKey = (e) => { if (e.key === 'Escape') setSettingsOpen(false); };
-        window.addEventListener('keydown', onKey);
-        return () => window.removeEventListener('keydown', onKey);
-      }, [settingsOpen]);
+      // （弹框的 Esc 关闭 + 遮罩点击关闭已由统一 Modal 组件处理，不再各自注册）
       const [restoring, setRestoring] = React.useState(false);
       // 批量/横幅状态在模块级 batchStore（切页签存活）；订阅变更触发重渲染
       const [, bump] = React.useReducer((x) => x + 1, 0);
@@ -1517,6 +1629,8 @@ window.__ModuleLoader__.load({
         return () => clearTimeout(timer);
       }, [query]);
       const [collapsedGroups, setCollapsedGroups] = React.useState(() => new Set());
+      // 「默认折叠分组」只在首次拿到快照时套用一次，避免手动展开后被 load() 反复覆盖
+      const collapseInitRef = React.useRef(false);
       const toggleGroupCollapse = React.useCallback((key) => {
         setCollapsedGroups((prev) => {
           const next = new Set(prev);
@@ -1541,6 +1655,17 @@ window.__ModuleLoader__.load({
             // 显示位置开关跟随快照（宿主半是唯一真值来源）
             if (data.settings && typeof data.settings.showInSettings === 'boolean') {
               setShowInSettings(data.settings.showInSettings);
+            }
+            // 默认折叠分组：跟随即时真值；仅在「首次拿到快照」时按它初始化分组折叠态，
+            // 之后用户的展开/折叠手动操作不被后续 load() 覆盖。
+            if (data.settings && typeof data.settings.collapseGroupsByDefault === 'boolean') {
+              setCollapseByDefault(data.settings.collapseGroupsByDefault);
+              if (!collapseInitRef.current) {
+                collapseInitRef.current = true;
+                if (data.settings.collapseGroupsByDefault) {
+                  setCollapsedGroups(new Set(GROUP_ORDER));
+                }
+              }
             }
           } else {
             setErr(t('loadFailed'));
@@ -1583,6 +1708,8 @@ window.__ModuleLoader__.load({
         if (batchStore.batch) return;
         const lb = snap?.lastBatch;
         if (!lb || !Array.isArray(lb.results) || !lb.results.length) return;
+        // 用户已「清空」过这条台账 → 跨刷新/重开不再自动弹回
+        if (dismissedBatchId && lb.id === dismissedBatchId) return;
         const counts = { ok: 0, restart: 0, fail: 0, skip: 0 };
         for (const r of lb.results) {
           if (r.status === 'ok') counts.ok += 1;
@@ -1600,11 +1727,18 @@ window.__ModuleLoader__.load({
           snapshotId: lb.id ?? null,
           counts,
         });
-        if (counts.restart > 0 && !(batchStore.banner && batchStore.banner.ok)) {
-          // 不覆盖正在展示的"恢复成功"类正向横幅
-          storeBanner({ text: t('restartBanner', { n: counts.restart }), ok: false });
+        // 重启提示：若宿主在批次之后已整机重启过，则不再提示「需重启」，
+        // 改为告知「已随重启生效」（解决「明明重启了还提示需重启」）。
+        const satisfied = isBatchRestartSatisfied(lb, snap);
+        if (counts.restart > 0) {
+          if (satisfied) {
+            if (!batchStore.banner) storeBanner({ text: t('restartSatisfied'), ok: true });
+          } else if (!(batchStore.banner && batchStore.banner.ok)) {
+            // 不覆盖正在展示的"恢复成功"类正向横幅
+            storeBanner(restartBannerFor(lb.results, counts.restart));
+          }
         }
-      }, [snap]);
+      }, [snap, dismissedBatchId]);
 
       // 分组独立检查：npm / github 两组各自发起、互不阻塞（一组慢不影响另一组）。
       // 结果就地并入 entries —— 不再像旧实现那样检查完再跑一次全量盘点。
@@ -1751,6 +1885,21 @@ window.__ModuleLoader__.load({
           setSnap((s) => (s ? { ...s, settings: { ...(s.settings ?? {}), showInSettings: r.showInSettings === true } } : s));
         } else {
           setLocationFlash({ err: r?.error ?? t('saveFailed') });
+        }
+        setSaving(false);
+      }, []);
+
+      const doSaveCollapseByDefault = React.useCallback(async (value) => {
+        setSaving(true);
+        setCollapseFlash(null);
+        const r = await callSaveSettings({ collapseGroupsByDefault: value });
+        if (r?.ok) {
+          const next = r.collapseGroupsByDefault === true;
+          setCollapseByDefault(next);
+          setCollapseFlash('ok');
+          setSnap((s) => (s ? { ...s, settings: { ...(s.settings ?? {}), collapseGroupsByDefault: next } } : s));
+        } else {
+          setCollapseFlash({ err: r?.error ?? t('saveFailed') });
         }
         setSaving(false);
       }, []);
@@ -2100,6 +2249,9 @@ window.__ModuleLoader__.load({
         });
         if (!names.length) return;
         setLedgerDismissed(false); // 新一轮批量重新展示台账
+        // 新一轮批量：清掉旧的「已清空」屏蔽标记，让本次结果正常显示
+        saveDismissedBatchId(null);
+        setDismissedBatchId(null);
         names.sort((a, b) => (a === SELF) - (b === SELF)); // self last
 
         const results = []; // 执行循环持有：组件卸载后循环仍推进并写 store
@@ -2183,7 +2335,7 @@ window.__ModuleLoader__.load({
           counts,
         });
         if (counts.restart > 0) {
-          storeBanner({ text: t('restartBanner', { n: counts.restart }), ok: false });
+          storeBanner(restartBannerFor(finalResults, counts.restart));
         }
         // 结果上报宿主落盘（切页签/重开后可恢复台账与「需重启」提醒）；
         // 组件已卸载时本循环仍会跑到这里（模块级调用不受影响）
@@ -2308,7 +2460,7 @@ window.__ModuleLoader__.load({
 
       const batchProgress = batchRunning
         ? h('div', { className: 'dpk-batchbar' },
-          h('span', { className: 'dpk-hint' }, t('batchRunning', {
+          h('span', { className: 'dpk-progress', role: 'status', 'aria-live': 'polite' }, t('batchRunning', {
             op: t(OP_LABEL_KEY[batch.op] ?? 'opUpdate'),
             done: batch.done,
             total: batch.total,
@@ -2333,6 +2485,9 @@ window.__ModuleLoader__.load({
               'aria-label': t('clearLedgerAria'),
               'data-tip': t('clearLedgerAria'),
               onClick: () => {
+                // 记住被清空的台账 id：宿主 lastBatch 不会被清，靠这份标记跨刷新屏蔽
+                const id = batch.snapshotId ?? null;
+                if (id) { saveDismissedBatchId(id); setDismissedBatchId(id); }
                 storeBatch(null);
                 storeBanner(null);
                 setLedgerDismissed(true);
@@ -2360,7 +2515,7 @@ window.__ModuleLoader__.load({
         : null;
 
       // 跨会话残留的批量快照（状态文件 lastBatch）——只提示存在与恢复入口
-      const lastBatchLine = !batch && !ledgerDismissed && snap?.lastBatch?.id
+      const lastBatchLine = !batch && !ledgerDismissed && snap?.lastBatch?.id && snap.lastBatch.id !== dismissedBatchId
         ? h('div', { className: 'dpk-ledrow' },
           h('span', { className: 'dpk-hint' }, t('lastBatchLine', {
             op: t(OP_LABEL_KEY[snap.lastBatch.op] ?? snap.lastBatch.op ?? ''),
@@ -2378,10 +2533,10 @@ window.__ModuleLoader__.load({
       // 设置二级弹框：复用已有的 dpk-modal 体系（确认/导出/导入弹框同款），
       // 内容仍是原来的 dpk-setbody，避免在列表里长期占一大块空间。
       const settingsModal = !settingsOpen ? null
-        : h('div', {
-          className: 'dpk-modal is-wide is-settings',
-          role: 'dialog',
-          'aria-label': t('settingsTitle'),
+        : h(Modal, {
+          className: 'is-wide is-settings',
+          ariaLabel: t('settingsTitle'),
+          onClose: () => setSettingsOpen(false),
         },
           h('div', { className: 'dpk-mtitle' }, t('settingsTitle')),
           h('div', { className: 'dpk-setbody' },
@@ -2558,6 +2713,21 @@ window.__ModuleLoader__.load({
           h('div', { className: 'dpk-hint' }, t('showInSettingsHint')),
           locationFlash === 'ok' ? h('div', { className: 'dpk-savedok' }, t('showInSettingsSaved')) : null,
           locationFlash && locationFlash.err ? h('div', { className: 'dpk-savederr' }, locationFlash.err) : null,
+          // 进入时默认折叠分组：默认不勾选
+          h('div', { className: 'dpk-setrow' },
+            h('label', { className: 'dpk-switch' },
+              h('input', {
+                type: 'checkbox',
+                checked: collapseByDefault,
+                disabled: saving,
+                onChange: (e) => { void doSaveCollapseByDefault(e.target.checked); },
+              }),
+              t('collapseGroupsByDefault'),
+            ),
+          ),
+          h('div', { className: 'dpk-hint' }, t('collapseGroupsByDefaultHint')),
+          collapseFlash === 'ok' ? h('div', { className: 'dpk-savedok' }, t('collapseGroupsByDefaultSaved')) : null,
+          collapseFlash && collapseFlash.err ? h('div', { className: 'dpk-savederr' }, collapseFlash.err) : null,
           ),
           ),
           h('div', { className: 'dpk-mfoot' },
@@ -2588,13 +2758,12 @@ window.__ModuleLoader__.load({
         });
         const names = eligible.sort((a, b) => (a === SELF) - (b === SELF));
         if (!names.length) return null;
-        // 无遮罩浮层：不挡底下列表，观感不随列表内容变化；关闭走"取消"按钮
         const opLabel = t(OP_LABEL_KEY[confirmOp] ?? 'opUpdate');
         const DESC_KEY = {
           update: 'dialogDescUpdate', enable: 'dialogDescEnable',
           disable: 'dialogDescDisable', uninstall: 'dialogDescUninstall',
         };
-        return h('div', { className: 'dpk-modal' },
+        return h(Modal, { ariaLabel: `${opLabel}`, onClose: () => setConfirmOp(null) },
           h('div', { className: 'dpk-mtitle' }, `${opLabel} (${names.length})`),
           DESC_KEY[confirmOp] ? h('div', { className: 'dpk-hint' }, t(DESC_KEY[confirmOp])) : null,
           confirmOp === 'update' && names.includes(SELF)
@@ -2628,7 +2797,11 @@ window.__ModuleLoader__.load({
             return next;
           });
         };
-        return h('div', { className: 'dpk-modal is-wide' },
+        return h(Modal, {
+          className: 'is-wide',
+          ariaLabel: `${t('exportDialogTitle')}`,
+          onClose: () => { if (exportState !== 'running') { setExportState(null); setExportPlan(null); } },
+        },
           h('div', { className: 'dpk-mtitle' }, `${t('exportDialogTitle')} (${exportPlan.plugins?.length ?? 0})`),
           h('div', { className: 'dpk-hint' }, t('exportWithConfigHint')),
           h('div', { className: 'dpk-mlist' },
@@ -2708,7 +2881,11 @@ window.__ModuleLoader__.load({
           if (c.status === 'incompatible') return h('span', { className: 'dpk-op is-failed' }, t('importCompatBad'));
           return h('span', { className: 'dpk-op is-skipped' }, t('importCompatUnknown'));
         };
-        return h('div', { className: 'dpk-modal is-wide' },
+        return h(Modal, {
+          className: 'is-wide',
+          ariaLabel: `${t('importAnalyzeTitle')}`,
+          onClose: () => { if (importState !== 'running') { setImportState(null); setImportPlan(null); setImportId(null); } },
+        },
           h('div', { className: 'dpk-mtitle' }, t('importAnalyzeTitle')),
           importPlan.sourceDshVersion
             ? h('div', { className: 'dpk-hint' }, t('importSourceDsh', {
