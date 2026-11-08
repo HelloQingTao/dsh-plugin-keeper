@@ -1476,7 +1476,7 @@ window.__ModuleLoader__.load({
     // 所有二级弹框（确认 / 导出 / 导入 / 高级配置）都经它渲染，外观与交互一致。
     function Modal({ onClose, className, ariaLabel, children }) {
       const dialogRef = React.useRef(null);
-      // 打开期间：焦点移入弹框首元素；背景根节点（其余节点）设为 inert，拦住键盘/点击穿透。
+      // 打开期间：锁定背景滚动、焦点移入弹框首元素，关闭时还原焦点。
       React.useEffect(() => {
         const prevActive = document.activeElement;
         const dialog = dialogRef.current;
