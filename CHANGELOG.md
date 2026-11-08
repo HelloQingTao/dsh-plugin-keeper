@@ -1,5 +1,25 @@
 # Changelog
 
+## 0.3.6 (2026-11-08)
+
+### 中文
+
+- **高级配置新增「默认折叠分组」** — 打开插件运维面板时可按开关自动折叠所有来源分组，默认关闭。
+- **弹框行为与系统一致** — 高级配置、确认、导出、导入弹框现在都带遮罩，点空白处或按 Esc 自动关闭，键盘焦点锁在弹框内，打开时背景页面不可操作。
+- **更新按钮改为绿色** — 行内「更新」与批量「更新所选」按钮改为绿色，和检查更新等操作一眼区分。
+- **进度更醒目** — 批量更新等操作进行中的进度改用主题色并带动效，更显眼。
+- **修复：清空结果台账后会复活** — 点「清空」后，刷新或重新打开面板都不会再把旧台账弹回来。
+- **修复：「需重启」提示更准确** — 对不受热更新管理的插件明确提示需整机重启；重启之后提示「已随重启生效」，不再反复要求重启。
+
+### English
+
+- **New: collapse groups by default** — An option in advanced settings collapses every source group automatically when the plugin ops panel opens; off by default.
+- **Dialogs behave like native modals** — The advanced settings, confirm, export and import dialogs now use a dimmed backdrop, close on an outside click or Esc, keep keyboard focus inside the dialog, and block interaction with the page behind.
+- **Green update buttons** — The per-row "Update" button and the batch "Update selected" button are now green, easy to tell apart from check-for-updates and other actions.
+- **More visible progress** — In-progress batch updates now show the progress in the theme color with an animation, so it stands out.
+- **Fix: clearing the result list now sticks** — After clearing the batch result ledger, it no longer reappears when you refresh or reopen the panel.
+- **Fix: accurate "restart required" hint** — Plugins that are not hot-reloadable are clearly flagged as needing a full restart; once restarted, the panel says the changes have taken effect instead of asking to restart again.
+
 ## 0.3.5 (2026-11-07)
 
 ### 中文
