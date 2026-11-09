@@ -7,6 +7,8 @@
  * - 官方包（dsh / @deepseek-ai/*）只标记，不做任何写操作。
  * - M1：一键检查更新——npm registry /latest 与 GitHub releases→tags 双通道，
  *   engines.dsh 兼容预判，结果持久化到 $DSH_HOME/plugin-keeper.json。
+ * - 忽略更新：双粒度（本次版本 / 整个插件），清单单独落在
+ *   $DSH_HOME/plugin-keeper-ignored.json（不进导出、不进 settings）。
  * - 代理：页签里配置 http(s) 代理后，检查更新（GitHub API + npm registry）与
  *   GitHub 安装都走它；留空则跟随系统 HTTP(S)_PROXY / NO_PROXY / git 配置。
  *   账号/密码是独立字段，host 半区按 RFC 3986 编码组装 userinfo，密码不回浏览器。
@@ -340,6 +342,63 @@ async function writeState(state) {
   await writeFile(path, `${JSON.stringify(state, null, 2)}\n`, { encoding: 'utf8', mode: 0o600 });
   // mode 只在新建时生效；历史文件是 644，含凭据时必须显式收紧
   await chmod(path, 0o600).catch(() => {});
+}
+
+// ---------- 忽略更新清单（独立状态文件） ----------
+
+const IGNORED_FILE = 'plugin-keeper-ignored.json';
+
+function ignoredPathOf() {
+  const home = serviceBridge?.profile?.home
+    || process.env.DSH_HOME
+    || join(homedir(), '.dsh');
+  return join(home, IGNORED_FILE);
+}
+
+/** 读清单：坏文件 / 缺字段 / 非法条目一律按空处理，逐条校验后才信任。 */
+async function readIgnored() {
+  const raw = await readJsonSafe(ignoredPathOf());
+  const src = raw?.items && typeof raw.items === 'object' && !Array.isArray(raw.items) ? raw.items : {};
+  const items = {};
+  for (const [name, v] of Object.entries(src)) {
+    if (!name || !v || typeof v !== 'object') continue;
+    const mode = v.mode === 'plugin' ? 'plugin' : v.mode === 'version' ? 'version' : null;
+    if (!mode) continue;
+    items[name] = {
+      mode,
+      version: mode === 'version' && typeof v.version === 'string' && v.version ? v.version : null,
+      at: typeof v.at === 'string' ? v.at : new Date(0).toISOString(),
+    };
+  }
+  return { version: 1, items };
+}
+
+async function writeIgnored(data) {
+  const path = ignoredPathOf();
+  await writeFile(path, `${JSON.stringify(data, null, 2)}\n`, { encoding: 'utf8', mode: 0o600 });
+  await chmod(path, 0o600).catch(() => {});
+}
+
+/**
+ * 惰性清理，返回「本次真正生效」的映射（不写盘，删除留到下次写操作顺带落盘）：
+ * - 已卸载插件的孤儿条目；
+ * - 按版本忽略、但远端锚点已变成别的版本（或已装到该版本）的条目 —— 自动恢复提醒。
+ * 检查失败 / 无锚点时不清理，避免一次网络抖动把用户的忽略决定抹掉。
+ */
+function effectiveIgnored(ignored, plugins, checks) {
+  const names = new Set(plugins.map((p) => p.name));
+  const out = {};
+  for (const [name, item] of Object.entries(ignored?.items ?? {})) {
+    if (!names.has(name)) continue;
+    const c = checks?.[name];
+    if (item.mode === 'version' && c && c.status !== 'error'
+      && c.status !== 'unknown-version' && c.status !== 'no-release') {
+      if (c.status === 'latest') continue;
+      if (c.latest && String(c.latest) !== String(item.version)) continue;
+    }
+    out[name] = item;
+  }
+  return out;
 }
 
 // 状态文件读改写互斥：所有 lastCheck/lastBatch/proxyUrl 的"读→合并→写"走同一条
@@ -881,10 +940,15 @@ export class PluginKeeperService extends TypertRemoteService {
     const { errors, profileName, plugins, started } = await collectInventory();
     const t1 = Date.now();
     const state = await readState();
+    const ignoredRaw = await readIgnored();
     await applyProxyPolicy(state);
     const t2 = Date.now();
+    const checks = state.lastCheck?.results ?? {};
+    // 惰性 GC 只作用于本次返回给浏览器的映射：孤儿 / 失效条目不额外写盘
+    const ignored = effectiveIgnored(ignoredRaw, plugins, checks);
     for (const p of plugins) {
-      p.check = state.lastCheck?.results?.[p.name] ?? null;
+      p.check = checks[p.name] ?? null;
+      p.ignored = ignored[p.name] ? { ...ignored[p.name] } : null;
     }
     // 打点：区分「读盘慢」与「状态文件慢」，用于定位开页签的等待来源
     console.debug(`[dsh-plugin-keeper] snapshot inventory=${t1 - t0}ms state=${t2 - t1}ms plugins=${plugins.length}`);
@@ -895,6 +959,7 @@ export class PluginKeeperService extends TypertRemoteService {
       startedBundles: [...started],
       plugins,
       errors,
+      ignored,
       lastCheckAt: state.lastCheck?.at ?? null,
       lastBatch: state.lastBatch,
       hostBootAt: hostBootTimeOf(),
@@ -961,6 +1026,65 @@ export class PluginKeeperService extends TypertRemoteService {
   async getSettings() {
     const state = await readState();
     return { ok: true, ...publicProxySettings(state) };
+  }
+
+  /**
+   * 设置 / 恢复「忽略更新」。mode:
+   *   'version' = 只忽略本次检查到的新版本（远端换版本自动恢复提醒）
+   *   'plugin'  = 忽略整个插件，直到手动恢复
+   *    null     = 恢复（删除条目）
+   * name / names 二选一；names 供「忽略所选 / 恢复全部」批量用。
+   * version 只从宿主 lastCheck 取，不接受前端传值（防伪造 / 防过期锚点）。
+   * 与 lastCheck 共用 withStateLock：并发检查更新与忽略设置不会互相抹写。
+   */
+  async setIgnoredUpdates(input) {
+    const mode = input?.mode ?? null;
+    if (mode !== null && mode !== 'version' && mode !== 'plugin') {
+      throw new Error(`不支持的忽略粒度：${String(mode)}`);
+    }
+    const names = Array.isArray(input?.names)
+      ? [...new Set(input.names.filter((n) => typeof n === 'string' && n))]
+      : (typeof input?.name === 'string' && input.name ? [input.name] : []);
+    if (!names.length) throw new Error('没有指定插件');
+
+    const { plugins } = await collectInventory();
+    // 只有 npm / GitHub 来源的非官方插件可忽略（官方只读、本地无远端版本锚点）
+    const ignorable = new Set(plugins
+      .filter((p) => !p.official && (p.source?.kind === 'npm' || p.source?.kind === 'github'))
+      .map((p) => p.name));
+
+    return withStateLock(async () => {
+      const state = await readState();
+      const checks = state.lastCheck?.results ?? {};
+      const current = await readIgnored();
+      // 写入前先做一次惰性 GC：失效条目与孤儿条目随本次写盘一起清掉
+      const items = effectiveIgnored(current, plugins, checks);
+      const changed = [];
+      const skipped = [];
+      const at = new Date().toISOString();
+      for (const name of names) {
+        if (!ignorable.has(name)) { skipped.push(name); continue; }
+        if (mode === null) {
+          if (!items[name]) continue;
+          delete items[name];
+          changed.push(name);
+          continue;
+        }
+        const c = checks[name];
+        const version = mode === 'version' && c?.status === 'update' && typeof c.latest === 'string'
+          ? c.latest : null;
+        if (mode === 'version' && !version) { skipped.push(name); continue; }
+        const prev = items[name];
+        if (prev && prev.mode === mode && String(prev.version ?? '') === String(version ?? '')) continue;
+        items[name] = { mode, version, at };
+        changed.push(name);
+      }
+      const next = { version: 1, items };
+      const gcCount = Object.keys(current.items ?? {}).length;
+      if (changed.length || gcCount !== Object.keys(items).length) await writeIgnored(next);
+      // 返回平铺映射（与 snapshot().ignored 同形），前端直接按包名覆盖每行
+      return { ok: true, ignored: items, changed, skipped };
+    });
   }
 
   /** GitHub 安装地址归一化的唯一入口；顺便在安装前同步一次代理策略。 */
@@ -1524,6 +1648,7 @@ markRemoteMethods(PluginKeeperService.prototype, [
   'checkGroup',
   'getSettings',
   'saveSettings',
+  'setIgnoredUpdates',
   'normalizeGithubSpec',
   'normalizeLocalSpec',
   'testProxy',

@@ -1,6 +1,6 @@
 {
   "name": "dsh-plugin-keeper",
-  "version": "0.3.6",
+  "version": "0.3.7",
   "description": "插件运维台：按来源分组盘点插件、检查更新、多选批量更新/停用/卸载 | Plugin ops console for DeepSeek Harness: source-grouped plugin inventory, update checks, batch update/disable/uninstall",
   "type": "module",
   "main": "./index.js",

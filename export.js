@@ -267,6 +267,9 @@ function unquote(value) {
 const NEVER_EXPORT = new Set([
   '.credentials.yaml',
   '.anonymous-user-id',
+  // 忽略更新清单是本机偏好，且本插件的启发式导出没有内容脱敏：整份排除，
+  // 免得换机器后「莫名不提醒更新」，也避免与 proxyPass 一起被带出去。
+  'plugin-keeper-ignored.json',
   'AGENTS.md',
   'profiles',
   'sessions',

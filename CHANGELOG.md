@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.3.7 (2026-11-09)
+
+### 中文
+
+- **新增「忽略更新」** — 行内新增「忽略」按钮，点击后选择「仅忽略此版本」或「忽略此插件」，选完立即生效；npm 与 GitHub 来源的插件可用。
+- **单独「已忽略」分组** — 被忽略的插件集中到新分组，行内可单独「恢复」，组头可一键「恢复全部」；分组为空时自动隐藏。
+- **批量忽略所选** — 勾选多个插件后点「忽略所选」，同样选择按版本或按插件忽略。
+- **忽略当前版本不耽误后续新版本** — 只忽略本次发现的新版本，之后出现更新的版本时会重新提醒。
+- **忽略后统计与筛选同步** — 被忽略的插件不再计入「可更新」数量，也不会出现在「只看可更新」里，各来源分组数量与总数保持一致。
+
+### English
+
+- **Ignore updates** — A new per-row 'Ignore' button offers 'Ignore this version only' or 'Ignore this plugin'; the choice takes effect immediately. Available for npm- and GitHub-sourced plugins.
+- **Dedicated 'Ignored' group** — Ignored plugins gather in their own group; restore one from its row or all at once from the group header, and the group hides itself when empty.
+- **Batch ignore** — Select multiple plugins and click 'Ignore selected', with the same version-or-plugin choice.
+- **Later releases still reach you** — Ignoring a version only suppresses that release; a newer release brings the plugin back to the updatable list.
+- **Counts and filters stay in sync** — Ignored plugins no longer count as updatable or appear under 'Only updatable', and the source-group counts match the total.
+
 ## 0.3.6 (2026-11-08)
 
 ### 中文

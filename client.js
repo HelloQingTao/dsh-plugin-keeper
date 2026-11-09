@@ -260,6 +260,23 @@ window.__ModuleLoader__.load({
         importPackageValue: '导出包中的值',
         importOnlyConfig: '仅导入配置（不装插件）',
         importNoConfig: '导出包内没有配置',
+        // 忽略更新（双粒度）
+        groupIgnored: '已忽略',
+        ignoreBtn: '忽略',
+        ignoreSelected: '忽略所选',
+        restoreBtn: '恢复',
+        restoreAll: '恢复全部',
+        ignorePopTitle: '选择忽略粒度',
+        ignoreVersion: '仅忽略此版本',
+        ignoreVersionHint: '忽略本次检查到的新版本；远端出现不同版本时自动恢复提醒',
+        ignorePlugin: '忽略此插件',
+        ignorePluginHint: '不再提醒该插件更新，直到手动恢复',
+        ignoreDisabledVersion: '需先检查更新',
+        ignoreBatchHint: '其中 {n} 项暂无检查结果，选版本时会被跳过',
+        badgeIgnoredVersion: '已忽略此版本',
+        badgeIgnoredPlugin: '已忽略此插件',
+        ignoredGroupStat: '按版本 {version} · 按插件 {plugin}',
+        ignoreFailed: '忽略设置失败：{err}',
       },
       en: {
         sectionTitle: 'Plugin Ops',
@@ -489,6 +506,23 @@ window.__ModuleLoader__.load({
         importPackageValue: 'Value in the package',
         importOnlyConfig: 'Import configuration only (do not install plugins)',
         importNoConfig: 'The package carries no configuration',
+        // Ignore updates (two granularities)
+        groupIgnored: 'Ignored',
+        ignoreBtn: 'Ignore',
+        ignoreSelected: 'Ignore selected',
+        restoreBtn: 'Restore',
+        restoreAll: 'Restore all',
+        ignorePopTitle: 'Choose what to ignore',
+        ignoreVersion: 'This version only',
+        ignoreVersionHint: 'Ignore the newly detected version; a different version resumes alerts',
+        ignorePlugin: 'This plugin',
+        ignorePluginHint: 'Stop alerting updates for this plugin until you restore it',
+        ignoreDisabledVersion: 'Run an update check first',
+        ignoreBatchHint: '{n} selected items have no check result and will be skipped for this version',
+        badgeIgnoredVersion: 'Version ignored',
+        badgeIgnoredPlugin: 'Plugin ignored',
+        ignoredGroupStat: 'By version {version} · By plugin {plugin}',
+        ignoreFailed: 'Failed to update ignore list: {err}',
       },
     };
 
@@ -626,6 +660,21 @@ window.__ModuleLoader__.load({
 .dpk-empty{color:var(--dsw-alias-label-tertiary);font-size:12px;}
 /* 主题化悬浮提示浮层（body 直挂单例，替代不随主题的原生 title） */
 .dpk-tip{position:fixed;z-index:10000;max-width:400px;background:var(--dsw-alias-bg-layer-1);border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-primary);font-size:11px;line-height:18px;padding:3px 9px;border-radius:var(--dsw-radius-md,8px);box-shadow:0 4px 16px rgba(0,0,0,.2);pointer-events:none;display:none;white-space:pre-wrap;overflow-wrap:anywhere;}
+/* 忽略粒度气泡：可点选项，对齐宿主菜单三层表面（backing→material→menu），根不写背景 */
+.dpk-ignorepop{position:fixed;z-index:90;min-width:220px;max-width:min(360px,calc(100vw - 16px));border-radius:var(--dsw-radius-lg,16px);box-shadow:var(--dsw-elevation-prominent);isolation:isolate;overflow:hidden;}
+.dpk-ignorepop-layer{position:absolute;inset:0;z-index:-1;border-radius:inherit;pointer-events:none;}
+.dpk-ignorepop-backing{background:transparent;}
+html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-bg-base);}
+.dpk-ignorepop-material{background:var(--dsw-menu-surface-fill,var(--dsw-alias-bg-layer-2,Canvas));backdrop-filter:var(--dsw-menu-backdrop-filter,blur(40px) saturate(150%));}
+.dpk-ignorepop-list{position:relative;box-sizing:border-box;display:flex;flex-direction:column;gap:0;padding:4px;max-height:min(420px,calc(100vh - 16px));overflow:auto;--dsw-elevation-stroke-color:var(--dsw-alias-border-l3);}
+.dpk-ignorepop-title{font-size:11px;line-height:18px;color:var(--dsw-alias-label-tertiary);padding:4px 8px;}
+.dpk-ignorepop-item{display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-height:34px;padding:6px 8px;border:0;border-radius:var(--dsw-radius-md,8px);background:0 0;color:var(--dsw-alias-label-primary);font:inherit;font-size:13px;line-height:20px;text-align:left;cursor:pointer;}
+.dpk-ignorepop-item:hover{background:var(--dsw-alias-interactive-bg-hover);}
+.dpk-ignorepop-item:focus-visible{outline:1px solid var(--dsw-alias-brand-primary);outline-offset:-1px;}
+.dpk-ignorepop-item:disabled{opacity:.4;cursor:default;}
+.dpk-ignorepop-item:disabled:hover{background:0 0;}
+.dpk-ignorepop-item small{font-size:11px;line-height:16px;color:var(--dsw-alias-label-tertiary);}
+.dpk-check.is-ignored{color:var(--dsw-alias-label-tertiary);border-color:var(--dsw-alias-border-l1);}
 /* 显示位置开关（与「只看可更新」同一形态） */
 .dpk-switch{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--dsw-alias-label-secondary);cursor:pointer;white-space:nowrap;}
 .dpk-switch input{accent-color:var(--dsw-alias-brand-primary);margin:0;width:13px;height:13px;}
@@ -779,6 +828,7 @@ window.__ModuleLoader__.load({
           lastCheckAt: data.lastCheckAt ?? null,
           lastBatch: data.lastBatch ?? null,
           settings: data.settings ?? {},
+          ignored: data.ignored ?? {},
           generatedAt: data.generatedAt ?? new Date().toISOString(),
         };
         window.localStorage?.setItem(CACHE_KEY, JSON.stringify(payload));
@@ -902,6 +952,16 @@ window.__ModuleLoader__.load({
     async function callSaveSettings(payload) {
       try {
         const v = unwrapEnvelope(await rpcFace?.saveSettings?.(payload));
+        return v ?? { ok: false, error: 'no response' };
+      } catch (e) {
+        return { ok: false, error: String(e?.message ?? e) };
+      }
+    }
+
+    // 设置 / 恢复忽略更新清单：host 返回 GC 后的全量映射，前端直接覆盖本地快照
+    async function callSetIgnoredUpdates(payload) {
+      try {
+        const v = unwrapEnvelope(await rpcFace?.setIgnoredUpdates?.(payload));
         return v ?? { ok: false, error: 'no response' };
       } catch (e) {
         return { ok: false, error: String(e?.message ?? e) };
@@ -1088,6 +1148,14 @@ window.__ModuleLoader__.load({
 
     // 行内检查徽标：entry.check = {status, latest, note}
     function checkBadgeOf(entry) {
+      // 已忽略：不再显示绿色「可更新」，改成中性徽标说明按哪种粒度忽略
+      if (entry?.ignored?.mode) {
+        const byPlugin = entry.ignored.mode === 'plugin';
+        return h('span', {
+          className: 'dpk-check is-ignored',
+          ...checkTip(byPlugin ? t('ignorePluginHint') : t('ignoreVersionHint')),
+        }, byPlugin ? t('badgeIgnoredPlugin') : t('badgeIgnoredVersion'));
+      }
       const c = normCheck(entry);
       if (!c) return null;
       switch (c.status) {
@@ -1118,6 +1186,8 @@ window.__ModuleLoader__.load({
 
     // 分组键：官方 > GitHub（github:/http 链接）> 本地（file:/link:/workspace:）> npm > 其他
     function groupKeyOf(entry) {
+      // 忽略清单优先：被忽略的插件统一进末尾的「已忽略」组，不再混在来源组里
+      if (entry.ignored?.mode) return 'ignored';
       if (entry.official) return 'official';
       const k = entry.source?.kind;
       if (k === 'github') return 'github';
@@ -1125,7 +1195,7 @@ window.__ModuleLoader__.load({
       if (k === 'npm') return 'npm';
       return 'unknown';
     }
-    const GROUP_ORDER = ['official', 'npm', 'github', 'local', 'unknown'];
+    const GROUP_ORDER = ['official', 'npm', 'github', 'local', 'unknown', 'ignored'];
     // 可检查更新的分组（官方随 dsh 分发、本地为源码目录，都无远端版本锚点）
     const CHECKABLE_GROUPS = ['npm', 'github'];
     const GROUP_TITLE_KEY = {
@@ -1134,6 +1204,7 @@ window.__ModuleLoader__.load({
       github: 'groupGithub',
       local: 'groupLocal',
       unknown: 'groupUnknown',
+      ignored: 'groupIgnored',
     };
 
     // ---------- 搜索 ----------
@@ -1217,8 +1288,27 @@ window.__ModuleLoader__.load({
       return String(entry?.source?.repo ?? '');
     }
 
+    // 检查结果展示口径：与 host countResults 一致，但已忽略的插件不计入可更新/最新/失败。
+    // 用当前清单实时算：忽略决定、或远端换版本导致忽略失效，数字都立刻跟着变。
+    function countChecks(plugins, kinds) {
+      let update = 0;
+      let latest = 0;
+      let error = 0;
+      for (const p of plugins ?? []) {
+        if (p.ignored?.mode) continue;
+        if (kinds && !kinds.includes(p.source?.kind)) continue;
+        const st = p.check?.status;
+        if (st === 'update') update += 1;
+        else if (st === 'latest') latest += 1;
+        else if (st === 'error') error += 1;
+      }
+      return { update, latest, error };
+    }
+
     // 批量更新目标 spec：npm → name@latest；github → github:repo#tag（已是最新则无目标）
     function updateSpecOf(entry) {
+      // 忽略更新：行内按钮 / 批量 / 计数 / 只看可更新 / 确认弹框统一从这里收口
+      if (entry?.ignored?.mode) return null;
       // 自身允许更新，但必须排最后（runBatch / 确认弹框都按 SELF 排序），
       // 否则中途卸载本插件会让后续批量行没人执行。重载提示由确认弹框给出。
       const c = normCheck(entry);
@@ -1379,8 +1469,12 @@ window.__ModuleLoader__.load({
       }, flash === 'ok' ? CHECK_ICON : COPY_ICON);
     }
 
-    function Row({ entry, checked, disabled, onToggle, opStatus, onUpdate, busy, terms }) {
+    function Row({ entry, checked, disabled, onToggle, opStatus, onUpdate, onIgnore, onRestore, busy, terms }) {
       const gk = groupKeyOf(entry);
+      const srcKind = entry.source?.kind;
+      const ignored = Boolean(entry.ignored?.mode);
+      // 忽略入口只给有远端版本锚点的非官方插件；官方只读、本地/未知来源不显示
+      const canIgnore = !entry.official && (srcKind === 'npm' || srcKind === 'github');
       // GitHub 行不显示 repo 徽标：与包名重复且挤占行内更新按钮位置
       const badgeText = gk === 'official' ? t('badgeOfficial')
         : gk === 'local' ? t('badgeLocal') : null;
@@ -1461,6 +1555,24 @@ window.__ModuleLoader__.load({
                 onClick: (e) => { e.stopPropagation(); onUpdate(entry); },
               }, t('rowUpdate'))
               : null,
+            ignored
+              ? h('button', {
+                  className: 'dpk-btn is-mini',
+                  type: 'button',
+                  disabled: Boolean(busy),
+                  'aria-label': t('restoreBtn'),
+                  'data-tip': entry.ignored?.mode === 'plugin' ? t('ignorePluginHint') : t('ignoreVersionHint'),
+                  onClick: (e) => { e.stopPropagation(); onRestore?.(entry); },
+                }, t('restoreBtn'))
+              : (canIgnore
+                  ? h('button', {
+                      className: 'dpk-btn is-mini',
+                      type: 'button',
+                      disabled: Boolean(busy),
+                      'aria-label': t('ignoreBtn'),
+                      onClick: (e) => { e.stopPropagation(); onIgnore?.(entry, e.currentTarget); },
+                    }, t('ignoreBtn'))
+                  : null),
             chip,
             h('span', { className: 'dpk-state' }, enabled === false ? t('stateDisabled') : entry.started ? t('stateOn') : t('stateOff')),
           ),
@@ -1537,6 +1649,70 @@ window.__ModuleLoader__.load({
       );
     }
 
+    /**
+     * 忽略粒度气泡：可点选项，对齐宿主菜单三层表面（backing / material / menu）。
+     * 与 .dpk-tip 分开：后者是 pointer-events:none 的纯展示浮层，承载不了点击。
+     * 挂在应用根内、position:fixed 定位到触发按钮旁；点外部 / Esc / 滚动自动关闭。
+     */
+    function IgnorePop({ pop, onPick, onClose }) {
+      const ref = React.useRef(null);
+      const pickRef = React.useRef(onPick);
+      pickRef.current = onPick;
+      React.useEffect(() => {
+        if (!pop) return undefined;
+        const onKey = (e) => {
+          if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); onClose?.(); }
+        };
+        const onDown = (e) => {
+          if (ref.current && !ref.current.contains(e.target)) onClose?.();
+        };
+        window.addEventListener('keydown', onKey, true);
+        document.addEventListener('mousedown', onDown, true);
+        window.addEventListener('scroll', onClose, true);
+        window.addEventListener('blur', onClose);
+        try { ref.current?.querySelector('.dpk-ignorepop-item:not(:disabled)')?.focus?.(); } catch { /* 忽略 */ }
+        return () => {
+          window.removeEventListener('keydown', onKey, true);
+          document.removeEventListener('mousedown', onDown, true);
+          window.removeEventListener('scroll', onClose, true);
+          window.removeEventListener('blur', onClose);
+          try { pop.anchor?.focus?.(); } catch { /* 忽略 */ }
+        };
+      }, [pop, onClose]);
+      if (!pop) return null;
+      return h('div', {
+        ref,
+        className: 'dpk-ignorepop',
+        role: 'menu',
+        'aria-label': t('ignorePopTitle'),
+        style: { left: pop.left, top: pop.top },
+      },
+        // 两个装饰层必须在内容层之前，都靠 z-index:-1 与根的 isolation 兜住
+        h('div', { className: 'dpk-ignorepop-layer dpk-ignorepop-backing' }),
+        h('div', { className: 'dpk-ignorepop-layer dpk-ignorepop-material' }),
+        h('div', { className: 'dpk-ignorepop-list' },
+          h('div', { className: 'dpk-ignorepop-title' }, t('ignorePopTitle')),
+          pop.hint ? h('div', { className: 'dpk-ignorepop-title' }, pop.hint) : null,
+          h('button', {
+            className: 'dpk-ignorepop-item',
+            type: 'button',
+            role: 'menuitem',
+            disabled: pop.versionDisabled,
+            'aria-label': t('ignoreVersion'),
+            onClick: (e) => { e.stopPropagation(); pickRef.current?.('version'); },
+          }, t('ignoreVersion'),
+            h('small', null, pop.versionDisabled ? t('ignoreDisabledVersion') : t('ignoreVersionHint'))),
+          h('button', {
+            className: 'dpk-ignorepop-item',
+            type: 'button',
+            role: 'menuitem',
+            'aria-label': t('ignorePlugin'),
+            onClick: (e) => { e.stopPropagation(); pickRef.current?.('plugin'); },
+          }, t('ignorePlugin'), h('small', null, t('ignorePluginHint'))),
+        ),
+      );
+    }
+
     function PluginKeeperSection() {
       // 首屏缓存：挂载即用上次结果渲染（0 等待），随后 RPC 覆盖。
       // cacheRef 让 loading 初值知道「有没有缓存可用」。
@@ -1586,6 +1762,8 @@ window.__ModuleLoader__.load({
       // M2 批量状态
       const [selected, setSelected] = React.useState(() => new Set());
       const [confirmOp, setConfirmOp] = React.useState(null); // 待二次确认的批量操作
+      // 忽略粒度气泡：{ left, top, names, versionDisabled, hint, anchor }；null = 关闭
+      const [ignorePop, setIgnorePop] = React.useState(null);
       // 导出：弹框状态（null = 未打开）+ 预演结果 + 已勾选配置项 + 运行中标记
       const [exportState, setExportState] = React.useState(null);
       const [exportPlan, setExportPlan] = React.useState(null);
@@ -1792,12 +1970,11 @@ window.__ModuleLoader__.load({
         await Promise.all(CHECKABLE_GROUPS.map((kind) => doCheckGroup(kind)));
       }, [doCheckGroup]);
 
-      // 检查汇总：由各组 checkState 聚合（不再单独维护一份全局状态）
+      // 检查汇总：checking / 组级失败 / 连接判定来自 checkState；
+      // 可更新·最新·失败改为按当前清单实时聚合（排除已忽略插件），不直接用 host counts 快照。
       const checkInfo = React.useMemo(() => {
         const kinds = Object.keys(checkState);
         if (!kinds.length) return null;
-        let update = 0;
-        let latest = 0;
         let error = 0;
         let checking = false;
         let firstErrorNote = '';
@@ -1810,16 +1987,20 @@ window.__ModuleLoader__.load({
             error += 1;
             if (!firstErrorNote) firstErrorNote = st.error || '';
           }
-          if (st.counts) {
-            update += st.counts.update ?? 0;
-            latest += st.counts.latest ?? 0;
-            error += st.counts.error ?? 0;
-          }
           if (st.connErr) connErr = true;
           if (!firstErrorNote && st.firstErrorNote) firstErrorNote = st.firstErrorNote;
         }
-        return { update, latest, error, checking, firstErrorNote, connErr };
-      }, [checkState]);
+          // 只汇总本次已完成的组：组级失败/检查中的组没有有效 counts，别把旧缓存结果算进来
+        const tally = countChecks(snap?.plugins, kinds.filter((k) => checkState[k]?.status === 'done'));
+        return {
+          update: tally.update,
+          latest: tally.latest,
+          error: error + tally.error,
+          checking,
+          firstErrorNote,
+          connErr,
+        };
+      }, [checkState, snap]);
 
       // 保存 GitHub API 代理设置
       const doSave = React.useCallback(async () => {
@@ -2001,6 +2182,7 @@ window.__ModuleLoader__.load({
       // 可见行 = 搜索过滤 ∧ 「只看可更新」过滤（两个筛选控件叠加生效）
       const visiblePlugins = React.useMemo(() => {
         let list = plugins;
+        // 已忽略行不计入可更新：勾选时隐藏，取消勾选后在「已忽略」组点「恢复」
         if (onlyUpdatable) list = list.filter((p) => !p.official && updateSpecOf(p));
         if (terms.length) list = list.filter((p) => matchesSearch(p, terms));
         return list;
@@ -2053,6 +2235,84 @@ window.__ModuleLoader__.load({
         }
         return n;
       }, [selected, byName]);
+
+      // ---------- 忽略更新（双粒度） ----------
+
+      // 勾选集里可忽略的行：非官方 + npm/github 来源 + 当前未被忽略
+      const ignorableNames = React.useMemo(() => {
+        const out = [];
+        for (const name of selected) {
+          const p = byName.get(name);
+          if (!p || p.official || p.ignored?.mode) continue;
+          const k = p.source?.kind;
+          if (k === 'npm' || k === 'github') out.push(name);
+        }
+        return out;
+      }, [selected, byName]);
+      const ignorableCount = ignorableNames.length;
+
+      // host 是忽略清单的唯一真值来源：RPC 返回 GC 后的全量映射，覆盖本地快照
+      const applyIgnored = React.useCallback((map) => {
+        const nextMap = map && typeof map === 'object' ? map : {};
+        setSnap((s) => {
+          if (!s) return s;
+          const next = {
+            ...s,
+            ignored: nextMap,
+            plugins: (s.plugins ?? []).map((p) => ({
+              ...p,
+              ignored: nextMap[p.name] ? { ...nextMap[p.name] } : null,
+            })),
+          };
+          saveCachedSnapshot(next);
+          return next;
+        });
+      }, []);
+
+      const closeIgnorePop = React.useCallback(() => setIgnorePop(null), []);
+
+      // 气泡贴着触发按钮定位；批量时若部分行没有检查结果，版本粒度给出跳过提示
+      const openIgnorePop = React.useCallback((names, anchor) => {
+        if (!names?.length) return;
+        const rect = anchor?.getBoundingClientRect?.() ?? null;
+        const w = 260;
+        const hh = 150;
+        const left = rect ? Math.max(8, Math.min(rect.left, window.innerWidth - w - 8)) : 8;
+        const below = rect ? rect.bottom + 6 : 8;
+        const top = rect && below + hh > window.innerHeight - 8
+          ? Math.max(8, rect.top - hh - 6) : below;
+        const withVersion = names.filter((n) => {
+          const c = byName.get(n)?.check;
+          return c?.status === 'update' && c.latest;
+        }).length;
+        setIgnorePop({
+          left,
+          top,
+          names,
+          anchor,
+          versionDisabled: withVersion === 0,
+          hint: names.length > 1 && withVersion > 0 && withVersion < names.length
+            ? t('ignoreBatchHint', { n: names.length - withVersion }) : '',
+        });
+      }, [byName]);
+
+      const doPickIgnore = async (mode) => {
+        const pop = ignorePop;
+        setIgnorePop(null);
+        if (!pop?.names?.length) return;
+        const r = await callSetIgnoredUpdates({ names: pop.names, mode });
+        if (r?.ok) applyIgnored(r.ignored);
+        else setErr(t('ignoreFailed', { err: String(r?.error ?? '') }));
+      };
+
+      // 恢复更新提醒（与已有的「恢复批量快照 doRestore(id)」不是一回事，故独立命名）
+      const doRestoreIgnored = async (names) => {
+        if (!names?.length) return;
+        setIgnorePop(null);
+        const r = await callSetIgnoredUpdates({ names, mode: null });
+        if (r?.ok) applyIgnored(r.ignored);
+        else setErr(t('ignoreFailed', { err: String(r?.error ?? '') }));
+      };
 
       const onBatchBtn = (op) => {
         // 四个批量按钮统一走二次确认弹框
@@ -2379,9 +2639,25 @@ window.__ModuleLoader__.load({
       }, [visiblePlugins]);
 
       const counts = React.useMemo(() => {
+        // 顶部汇总按「来源」统计：显示分组会把已忽略插件挪到 ignored 组，这里仍算回原来源，
+        // 否则「共 N 个插件」与明细对不上。
         const c = { official: 0, npm: 0, github: 0, local: 0, unknown: 0 };
-        for (const p of plugins) c[groupKeyOf(p)] += 1;
+        for (const p of plugins) {
+          const k = p.official ? 'official' : (p.source?.kind ?? 'unknown');
+          if (k in c) c[k] += 1;
+          else c.unknown += 1;
+        }
         return c;
+      }, [plugins]);
+
+      // 「检查更新」按真实来源统计：已忽略的插件仍要检查，不能按显示分组算
+      const checkableCount = React.useMemo(() => {
+        let n = 0;
+        for (const p of plugins) {
+          const k = p.source?.kind;
+          if (!p.official && (k === 'npm' || k === 'github')) n += 1;
+        }
+        return n;
       }, [plugins]);
 
       const lastCheckText = snap?.lastCheckAt
@@ -2408,6 +2684,13 @@ window.__ModuleLoader__.load({
             disabled: busy || updatableCount === 0,
             onClick: () => onBatchBtn('update'),
           }, `${t('batchUpdate')} (${updatableCount})`),
+          // 忽略所选：与行内按钮共用同一个气泡，目标换成 names 数组
+          h('button', {
+            className: 'dpk-btn',
+            type: 'button',
+            disabled: busy || ignorableCount === 0,
+            onClick: (e) => openIgnorePop(ignorableNames, e.currentTarget),
+          }, `${t('ignoreSelected')} (${ignorableCount})`),
           h('button', {
             className: 'dpk-btn',
             type: 'button',
@@ -2985,6 +3268,7 @@ window.__ModuleLoader__.load({
         exportModal,
         importModal,
         settingsModal,
+        h(IgnorePop, { pop: ignorePop, onPick: doPickIgnore, onClose: closeIgnorePop }),
         // 隐藏的文件选择器（导入入口）
         h('input', {
           ref: importFileRef,
@@ -3058,7 +3342,7 @@ window.__ModuleLoader__.load({
             h('button', {
               className: 'dpk-btn is-primary',
               type: 'button',
-              disabled: checking || loading || counts.npm + counts.github === 0,
+              disabled: checking || loading || checkableCount === 0,
               onClick: () => { void doCheck(); },
             }, checking ? t('checking') : t('checkBtn')),
             h('button', {
@@ -3105,6 +3389,7 @@ window.__ModuleLoader__.load({
             const collapsed = collapsedGroups.has(key);
             // 分组级检查状态：npm / github 两组各自独立，互不阻塞
             const gState = checkState[key] ?? null;
+            const gTally = gState?.status === 'done' ? countChecks(plugins, [key]) : null;
             const gChecking = gState?.status === 'checking';
             const checkable = CHECKABLE_GROUPS.includes(key);
             return h('div', { className: 'dpk-group', key },
@@ -3135,10 +3420,24 @@ window.__ModuleLoader__.load({
                     onClick: (e) => { e.stopPropagation(); void doCheckGroup(key); },
                   }, gChecking ? t('groupChecking') : t('groupCheckBtn'))
                   : null,
-                gState?.status === 'done' && gState.counts
+                key === 'ignored'
+                  ? h('span', { className: 'dpk-gcount' }, t('ignoredGroupStat', {
+                    version: list.filter((p) => p.ignored?.mode === 'version').length,
+                    plugin: list.filter((p) => p.ignored?.mode === 'plugin').length,
+                  }))
+                  : null,
+                key === 'ignored'
+                  ? h('button', {
+                    className: 'dpk-btn is-mini',
+                    type: 'button',
+                    disabled: batchRunning || loading,
+                    onClick: (e) => { e.stopPropagation(); void doRestoreIgnored(list.map((p) => p.name)); },
+                  }, t('restoreAll'))
+                  : null,
+                gState?.status === 'done' && gTally
                   ? h('span', { className: 'dpk-gcount' }, t('groupCheckDone', {
-                    u: gState.counts.update ?? 0,
-                    l: gState.counts.latest ?? 0,
+                    u: gTally?.update ?? 0,
+                    l: gTally?.latest ?? 0,
                   }))
                   : null,
                 gState?.status === 'error'
@@ -3154,6 +3453,8 @@ window.__ModuleLoader__.load({
                     disabled: entry.official || batchRunning,
                     onToggle: toggleOne,
                     onUpdate: onRowUpdate,
+                    onIgnore: (entry, anchor) => openIgnorePop([entry.name], anchor),
+                    onRestore: (entry) => { void doRestoreIgnored([entry.name]); },
                     busy: batchRunning,
                     terms, // 检索词：命中文本用主题色高亮
                     opStatus: batch && !batch.running
@@ -3222,6 +3523,15 @@ window.__ModuleLoader__.load({
           service: 'PluginKeeperService',
           namespace: 'dsh-plugin-keeper',
           method: 'saveSettings',
+          invocation: { kind: 'direct' },
+          parameters: [INPUT_PARAM],
+          result: { mode: 'src-json' },
+        },
+        {
+          id: 'dsh-plugin-keeper#dsh-plugin-keeper/setIgnoredUpdates',
+          service: 'PluginKeeperService',
+          namespace: 'dsh-plugin-keeper',
+          method: 'setIgnoredUpdates',
           invocation: { kind: 'direct' },
           parameters: [INPUT_PARAM],
           result: { mode: 'src-json' },
