@@ -90,7 +90,7 @@ window.__ModuleLoader__.load({
         proxyUserPlaceholder: '可选',
         proxyPassPlaceholder: '留空 = 保持原密码',
         proxyCredentialHint: '账号密码按 HTTP Basic 认证发送，特殊字符自动编码；密码不回显，清空账号即取消认证。',
-        testProxyBtn: '测试连通性',
+        testProxyBtn: '测试代理',
         testProxyNoFace: '宿主半区未就绪（远程方法不可用），请刷新页面或重启 dsh web',
         testProxyEmpty: '宿主无返回（RPC 被拒绝或超时），请刷新页面后重试',
         testProxyTesting: '测试中…',
@@ -175,16 +175,18 @@ window.__ModuleLoader__.load({
         restoreDone: '快照已恢复，重启后生效',
         restoreFail: '恢复失败',
         lastBatchLine: '上次批量：{op} · {time}——批量前的配置备份，点「恢复快照」可撤销该次批量；若批量中途关闭页面，此记录可能未完成',
-        autoDismissFoldShow: '▸ 恢复上次批量的配置快照',
+        autoDismissFoldShow: '▸ 其他',
         autoDismissFoldHide: '▾ 收起',
         autoDismissHint: '上次批量的通知已自动清除（宿主重启或超过 {hours} 小时）；如需撤销该次批量，可恢复批量前的配置快照',
         updateNone: '所选中没有可更新的插件（先检查更新）',
         rowUpdate: '更新',
         queueAdded: '已加入更新队列（第 {n} 项）',
         queueDuplicate: '该插件已在本轮更新队列中',
+        queueCancel: '取消更新',
+        queueCanceled: '已取消该项更新',
         queueSelfTail: '「插件运维」自身已排到队尾，队列封闭：本轮不再接受其它更新；它更新后面板会重新加载，请刷新页面',
         queueSealed: '本轮含「插件运维」自身的更新且已封队，请等本轮完成后再发起其它更新',
-        queueProgress: '更新队列进行中… {done}/{total}（可继续点其它行追加）',
+        queueProgress: '安装中 {done}/{total}',
         onlyUpdatable: '只看可更新',
         // ---- 搜索 ----
         searchPlaceholder: '搜索插件名 / 描述 / 版本',
@@ -209,16 +211,17 @@ window.__ModuleLoader__.load({
         // ---- 显示位置 ----
         showInSettings: '在设置页也显示「插件运维」',
         showInSettingsHint: '关闭时仅在「插件」面板的页签中显示；改动在重新进入页面后生效。',
-        showInSettingsSaved: '显示位置已更新，重新进入页面后生效',
+        showInSettingsSaved: '已保存',
         collapseGroupsByDefault: '进入时默认折叠分组',
         collapseGroupsByDefaultHint: '打开「插件运维」时自动折叠所有来源分组；改动在重新进入页面后生效。',
-        collapseGroupsByDefaultSaved: '默认折叠设置已更新，重新进入页面后生效',
+        collapseGroupsByDefaultSaved: '已保存',
         onlyUpdatableByDefault: '进入时默认勾选「只看可更新」',
         onlyUpdatableByDefaultHint: '打开「插件运维」时自动勾选「只看可更新」；改动在重新进入页面后生效。',
-        onlyUpdatableByDefaultSaved: '默认勾选设置已更新，重新进入页面后生效',
+        onlyUpdatableByDefaultSaved: '已保存',
         checkOnEnter: '进入时默认检查更新',
         checkOnEnterHint: '打开「插件运维」时自动检查一次更新；距上次检查不足 {min} 分钟则跳过，避免反复请求。改动在重新进入页面后生效。',
-        checkOnEnterSaved: '默认检查设置已更新，重新进入页面后生效',
+        checkOnEnterSaved: '已保存',
+        settingsReenterNote: '改动在重新进入页面后生效；「进入时默认检查更新」距上次不足 {min} 分钟会跳过。',
         // ---- 分组折叠 ----
         groupCollapse: '折叠分组',
         groupExpand: '展开分组',
@@ -353,7 +356,7 @@ window.__ModuleLoader__.load({
         proxyUserPlaceholder: 'Optional',
         proxyPassPlaceholder: 'Leave empty to keep current',
         proxyCredentialHint: 'Credentials are sent as HTTP Basic auth with automatic escaping; the password is never echoed. Clear the username to disable authentication.',
-        testProxyBtn: 'Test connectivity',
+        testProxyBtn: 'Test proxy',
         testProxyNoFace: 'Host half is not ready (remote method unavailable). Refresh the page or restart dsh web.',
         testProxyEmpty: 'No response from host (RPC rejected or timed out). Refresh the page and retry.',
         testProxyTesting: 'Testing…',
@@ -438,16 +441,18 @@ window.__ModuleLoader__.load({
         restoreDone: 'Snapshot restored, takes effect after restart',
         restoreFail: 'Restore failed',
         lastBatchLine: 'Last batch: {op} · {time} — config backup taken before the batch; "Restore snapshot" undoes it. If the page was closed mid-run, this record may be incomplete',
-        autoDismissFoldShow: '▸ Restore last batch snapshot',
+        autoDismissFoldShow: '▸ Others',
         autoDismissFoldHide: '▾ Collapse',
         autoDismissHint: 'Notices from the last batch were cleared automatically (host restarted or older than {hours}h); to undo it, restore the pre-batch config snapshot',
         updateNone: 'No updatable plugin in selection (check updates first)',
         rowUpdate: 'Update',
         queueAdded: 'Added to update queue (item {n})',
         queueDuplicate: 'This plugin is already in the current update queue',
+        queueCancel: 'Cancel update',
+        queueCanceled: 'Removed from update queue',
         queueSelfTail: 'The Plugin Ops console itself is queued last and the queue is sealed — no other updates can join this round; the panel reloads after it updates, please refresh',
         queueSealed: 'This round includes the Plugin Ops console itself and is sealed; start other updates after it finishes',
-        queueProgress: 'Update queue running… {done}/{total} (keep clicking other rows to append)',
+        queueProgress: 'Installing {done}/{total}',
         onlyUpdatable: 'Updatable only',
         // ---- Search ----
         searchPlaceholder: 'Search by name / description / version',
@@ -472,16 +477,17 @@ window.__ModuleLoader__.load({
         // ---- 显示位置 ----
         showInSettings: 'Also show "Plugin Ops" in Settings',
         showInSettingsHint: 'When off, the panel only appears as a tab under Plugins; the change applies after re-entering the page.',
-        showInSettingsSaved: 'Display location updated; applies after re-entering the page',
+        showInSettingsSaved: 'Saved',
         collapseGroupsByDefault: 'Collapse groups by default on entry',
         collapseGroupsByDefaultHint: 'When on, the "Plugin Ops" panel opens with all source groups collapsed; the change applies after re-entering the page.',
-        collapseGroupsByDefaultSaved: 'Default-collapse setting updated; applies after re-entering the page',
+        collapseGroupsByDefaultSaved: 'Saved',
         onlyUpdatableByDefault: 'Check "Updatable only" by default on entry',
         onlyUpdatableByDefaultHint: 'When on, "Plugin Ops" opens with the "Updatable only" filter checked; applies after re-entering the page.',
-        onlyUpdatableByDefaultSaved: 'Default filter setting updated; applies after re-entering the page',
+        onlyUpdatableByDefaultSaved: 'Saved',
         checkOnEnter: 'Check for updates on entry',
         checkOnEnterHint: 'When on, "Plugin Ops" checks for updates once on entry; skipped if the last check was less than {min} minutes ago. Applies after re-entering the page.',
-        checkOnEnterSaved: 'Auto-check setting updated; applies after re-entering the page',
+        checkOnEnterSaved: 'Saved',
+        settingsReenterNote: 'Changes take effect after re-entering the page; the on-entry check is skipped if the last check was under {min} minutes ago.',
         // ---- 分组折叠 ----
         groupCollapse: 'Collapse group',
         groupExpand: 'Expand group',
@@ -577,16 +583,20 @@ window.__ModuleLoader__.load({
 .dpk-root{color:var(--dsw-alias-label-primary);font-size:13px;line-height:20px;display:flex;flex-direction:column;gap:12px;min-width:0;}
 .dpk-toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;row-gap:6px;}
 .dpk-tbgroup{display:flex;align-items:center;gap:8px;white-space:nowrap;}
+/* 工具栏按钮按最长文案预留宽度：加载态文案「刷新中…」比「刷新」宽，若不定宽会把整组挤到下一行造成闪烁 */
+.dpk-tbgroup .dpk-btn{min-width:5.8em;text-align:center;}
 .dpk-summary{color:var(--dsw-alias-label-secondary);font-size:12px;min-width:0;}
 .dpk-spacer{flex:1;}
-.dpk-btn{border:1px solid var(--dsw-alias-border-l2);background:0 0;color:var(--dsw-alias-label-primary);border-radius:var(--dsw-radius-md,8px);padding:2px 10px;font:inherit;font-size:12px;line-height:20px;cursor:pointer;transition:background .12s,border-color .12s,color .12s;}
-.dpk-btn:hover{background:var(--dsw-alias-interactive-bg-hover);}
-.dpk-btn:disabled{opacity:.38;cursor:default;}
-.dpk-btn:disabled:hover{background:0 0;}
+.dpk-btn{border:1px solid var(--dsw-alias-border-l2);background:0 0;color:var(--dsw-alias-label-primary);border-radius:var(--dsw-radius-sm,8px);padding:3px 11px;font:inherit;font-size:12px;line-height:20px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:4px;transition:background-color .16s ease,border-color .16s ease,color .16s ease,transform .08s ease;}
+.dpk-btn:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover);border-color:var(--dsw-alias-border-l3);}
+.dpk-btn:active:not(:disabled){transform:translateY(.5px);}
+.dpk-btn:focus-visible{outline:1px solid var(--dsw-alias-brand-primary);outline-offset:1px;}
+.dpk-btn:disabled{opacity:.4;cursor:default;}
+.dpk-btn:disabled:hover{background:0 0;border-color:var(--dsw-alias-border-l2);}
 .dpk-btn.is-primary{border-color:var(--dsw-alias-brand-primary);color:var(--dsw-alias-brand-primary);}
-.dpk-btn.is-primary:hover{background:var(--dsw-alias-interactive-bg-hover);}
+.dpk-btn.is-primary:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover);border-color:var(--dsw-alias-brand-primary);}
 .dpk-btn.is-danger{border-color:var(--dsw-alias-state-error-primary);color:var(--dsw-alias-state-error-primary);}
-.dpk-btn.is-danger:hover{background:var(--dsw-alias-interactive-bg-hover);}
+.dpk-btn.is-danger:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover);border-color:var(--dsw-alias-state-error-primary);}
 /* 行内「更新」按钮：绿色（成功主题色），与检查更新的品牌色区分，一眼识别「有更新可点」 */
 .dpk-btn.is-success{border-color:var(--dsw-alias-state-success-primary);color:var(--dsw-alias-state-success-primary);}
 .dpk-btn.is-success:hover{background:var(--dsw-alias-interactive-bg-hover);}
@@ -595,28 +605,33 @@ window.__ModuleLoader__.load({
 @keyframes dpk-fade{from{opacity:0;}to{opacity:1;}}
 @media (prefers-reduced-motion:reduce){.dpk-modalwrap{animation:none;}}
 /* 弹框内容盒：不再自己 fixed 定位，由 wrap 居中；z-index/层叠交给 wrap。 */
-.dpk-modal{position:relative;background:var(--dsw-alias-bg-layer-1);border:1px solid var(--dsw-alias-border-l2);border-radius:var(--dsw-radius-lg,10px);padding:14px 16px;width:360px;max-width:calc(100vw - 48px);max-height:calc(100vh - 48px);overflow:auto;display:flex;flex-direction:column;gap:10px;box-shadow:0 8px 32px rgba(0,0,0,.25);}
+.dpk-modal{position:relative;background:var(--dsw-alias-bg-layer-1);border:.5px solid var(--dsw-alias-border-l2);border-radius:var(--dsw-radius-lg,16px);padding:16px 18px;width:380px;max-width:calc(100vw - 48px);max-height:calc(100vh - 48px);overflow:auto;display:flex;flex-direction:column;gap:12px;box-shadow:var(--dsw-elevation-prominent);}
 .dpk-mtitle{font-size:13px;font-weight:600;color:var(--dsw-alias-label-primary);}
 .dpk-mlist{max-height:200px;overflow:auto;font-size:11px;color:var(--dsw-alias-label-secondary);line-height:22px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;padding:6px 10px;background:var(--dsw-alias-bg-layer-2);border-radius:var(--dsw-radius-md,8px);}
-.dpk-mfoot{display:flex;justify-content:flex-end;gap:8px;}
-.dpk-btn.is-mini{padding:0 8px;font-size:11px;line-height:18px;flex:none;}
+.dpk-mfoot{display:flex;justify-content:flex-end;gap:8px;border-top:.5px solid var(--dsw-alias-border-l2);padding-top:12px;margin-top:2px;}
+.dpk-btn.is-mini{padding:1px 9px;font-size:11px;line-height:18px;flex:none;}
 .dpk-lastcheck{font-size:11px;color:var(--dsw-alias-label-tertiary);white-space:nowrap;}
-.dpk-check{font-size:10px;line-height:16px;padding:0 7px;border-radius:999px;border:1px solid var(--dsw-alias-border-l1);background:0 0;color:var(--dsw-alias-label-tertiary);white-space:nowrap;flex:none;max-width:200px;overflow:hidden;text-overflow:ellipsis;}
+.dpk-check{font-size:10px;line-height:16px;padding:0 7px;border-radius:999px;border:.5px solid var(--dsw-alias-border-l1);background:0 0;color:var(--dsw-alias-label-tertiary);white-space:nowrap;flex:none;max-width:200px;overflow:hidden;text-overflow:ellipsis;}
 .dpk-check.is-latest{color:var(--dsw-alias-label-tertiary);}
 .dpk-check.is-update{color:var(--dsw-alias-brand-primary);border-color:var(--dsw-alias-brand-primary);}
 .dpk-check.is-warn{color:var(--dsw-alias-state-warn-primary);border-color:var(--dsw-alias-state-warn-primary);}
 .dpk-check.is-err{color:var(--dsw-alias-state-error-primary);border-color:var(--dsw-alias-state-error-primary);}
 .dpk-setbody{display:flex;flex-direction:column;gap:8px;padding-top:8px;}
 /* 高级配置按功能分区：只加分隔线与间距，标题复用 dpk-gtitle，不引入新颜色/圆角 */
-.dpk-setsec{display:flex;flex-direction:column;gap:8px;padding-top:10px;border-top:1px solid var(--dsw-alias-border-l1);}
+.dpk-setsec{display:flex;flex-direction:column;gap:8px;padding-top:10px;border-top:.5px solid var(--dsw-alias-border-l2);}
 .dpk-setsec:first-child{border-top:none;padding-top:0;}
 .dpk-instprog{display:flex;flex-direction:column;gap:6px;}
 .dpk-setrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+/* 代理操作行：输入框弹性收缩、按钮不换行，避免「测试」按钮文案变化时在行间跳动 */
+.dpk-setrow.dpk-proxyacts{flex-wrap:nowrap;}
+.dpk-setrow.dpk-proxyacts .dpk-input{min-width:0;flex:1 1 140px;}
+.dpk-setrow.dpk-proxyacts .dpk-btn{flex:none;min-width:5.2em;}
 .dpk-setlabel{font-size:12px;color:var(--dsw-alias-label-secondary);white-space:nowrap;}
-.dpk-input{background:var(--dsw-alias-bg-layer-1);border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-primary);border-radius:var(--dsw-radius-md,8px);padding:3px 10px;font:inherit;font-size:12px;line-height:20px;min-width:280px;}
+.dpk-input{background:var(--dsw-alias-bg-layer-1);border:.5px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-primary);border-radius:var(--dsw-radius-sm,8px);padding:4px 10px;font:inherit;font-size:12px;line-height:20px;min-width:280px;transition:border-color .16s ease,box-shadow .16s ease;}
 .dpk-input:focus{outline:1px solid var(--dsw-alias-brand-primary);outline-offset:0;}
 .dpk-input::placeholder{color:var(--dsw-alias-label-caption);}
 .dpk-hint{font-size:11px;color:var(--dsw-alias-label-tertiary);line-height:18px;}
+.dpk-setnote{font-size:11px;line-height:18px;color:var(--dsw-alias-label-tertiary);padding-top:6px;}
 .dpk-savedok{font-size:11px;color:var(--dsw-alias-state-success-primary);}
 .dpk-savederr{font-size:11px;color:var(--dsw-alias-state-error-primary);}
 .dpk-err{color:var(--dsw-alias-state-error-primary);font-size:12px;}
@@ -625,8 +640,9 @@ window.__ModuleLoader__.load({
 /* 装完引导横幅：文字 + 手动刷新按钮纵向排列（不做自动整页刷新） */
 .dpk-banner.is-guide{display:flex;flex-direction:column;align-items:flex-start;gap:6px;}
 .dpk-group{display:flex;flex-direction:column;gap:4px;min-width:0;}
-.dpk-ghead{display:flex;align-items:center;gap:7px;cursor:pointer;user-select:none;padding:2px 0;}
-.dk-ghead:hover .dpk-gtitle{color:var(--dsw-alias-brand-primary);}
+.dpk-ghead{display:flex;align-items:center;gap:7px;cursor:pointer;user-select:none;padding:4px 6px;margin:-2px -4px;border-radius:var(--dsw-radius-sm,8px);transition:background-color .12s ease;}
+.dpk-ghead:hover{background:var(--dsw-alias-interactive-bg-hover);}
+.dpk-ghead:hover .dpk-gtitle{color:var(--dsw-alias-brand-primary);}
 /* 收纳三角：内联 SVG（字符 ▸/▾ 在 9px 下几乎不可见）。
    12×12 视窗 + 16×16 命中区，颜色提到 label-secondary（caption 太弱）。 */
 .dpk-garrow{width:16px;height:16px;flex:none;display:inline-flex;align-items:center;justify-content:center;border-radius:var(--dsw-radius-sm,4px);color:var(--dsw-alias-label-secondary);transition:color .12s,background .12s;}
@@ -634,10 +650,10 @@ window.__ModuleLoader__.load({
 .dpk-garrow:hover{background:var(--dsw-alias-interactive-bg-hover);}
 .dpk-garrow svg{display:block;width:12px;height:12px;fill:currentColor;}
 .dpk-garrow:focus-visible{outline:1px solid var(--dsw-alias-brand-primary);outline-offset:1px;}
-.dpk-gtitle{font-size:12px;font-weight:500;color:var(--dsw-alias-label-primary);transition:color .12s;}
+.dpk-gtitle{font-size:13px;font-weight:600;color:var(--dsw-alias-label-primary);transition:color .12s;}
 .dpk-gcount{font-size:11px;color:var(--dsw-alias-label-caption);}
-.dpk-rows{border:1px solid var(--dsw-alias-border-l1);border-radius:var(--dsw-radius-md,8px);overflow:hidden;}
-.dpk-row{display:block;padding:6px 12px;min-width:0;}
+.dpk-rows{border:.5px solid var(--dsw-alias-border-l2);border-radius:var(--dsw-radius-md,12px);overflow:hidden;}
+.dpk-row{display:block;padding:8px 12px;min-width:0;transition:background-color .12s ease;}
 .dpk-rowmain{display:flex;align-items:center;gap:10px;min-width:0;height:22px;}
 .dpk-rowdesc{color:var(--dsw-alias-label-tertiary);font-size:11px;line-height:16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-left:24px;margin-top:2px;}
 .dpk-onlyup{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--dsw-alias-label-secondary);cursor:pointer;white-space:nowrap;}
@@ -647,7 +663,7 @@ window.__ModuleLoader__.load({
 .dpk-search{position:relative;display:inline-flex;align-items:center;min-width:0;}
 .dpk-searchicon{position:absolute;left:7px;display:inline-flex;align-items:center;justify-content:center;color:var(--dsw-alias-label-caption);pointer-events:none;}
 .dpk-searchicon svg{display:block;width:12px;height:12px;}
-.dpk-searchinput{background:var(--dsw-alias-bg-layer-1);border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-primary);border-radius:var(--dsw-radius-md,8px);padding:2px 24px 2px 23px;font:inherit;font-size:12px;line-height:20px;width:190px;max-width:100%;}
+.dpk-searchinput{background:var(--dsw-alias-bg-layer-1);border:.5px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-primary);border-radius:var(--dsw-radius-sm,8px);padding:3px 24px 3px 23px;font:inherit;font-size:12px;line-height:20px;width:190px;max-width:100%;transition:border-color .16s ease,box-shadow .16s ease;}
 .dpk-searchinput:focus{outline:1px solid var(--dsw-alias-brand-primary);outline-offset:0;}
 .dpk-searchinput::placeholder{color:var(--dsw-alias-label-caption);}
 .dpk-searchclear{position:absolute;right:3px;width:17px;height:17px;border:none;border-radius:var(--dsw-radius-sm,4px);padding:0;background:0 0;color:var(--dsw-alias-label-tertiary);cursor:pointer;font:inherit;font-size:13px;line-height:17px;display:inline-flex;align-items:center;justify-content:center;}
@@ -657,7 +673,7 @@ window.__ModuleLoader__.load({
 /* 命中文本高亮：黄色底（不用主题色 —— 搜索命中一律黄底），文字颜色保持原样，
    这样明暗主题下都读得清（黄字在白底上会糊）。 */
 .dpk-hit{background:rgba(255,213,79,.42);color:inherit;border-radius:3px;padding:0 1px;font-weight:600;}
-.dpk-row + .dpk-row{border-top:1px solid var(--dsw-alias-border-l1);}
+.dpk-row + .dpk-row{border-top:.5px solid var(--dsw-alias-border-l2);}
 .dpk-row:hover{background:var(--dsw-alias-interactive-bg-hover);}
 .dpk-row.is-clickable{cursor:pointer;}
 .dpk-row.is-official{opacity:.72;}
@@ -668,7 +684,7 @@ window.__ModuleLoader__.load({
 .dpk-dot.on{background:var(--dsw-alias-state-success-primary);}
 .dpk-name{font-family:${MONO};font-size:12.5px;white-space:nowrap;flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;}
 .dpk-ver{font-family:${MONO};font-size:11px;color:var(--dsw-alias-label-tertiary);white-space:nowrap;flex:none;max-width:16ch;overflow:hidden;text-overflow:ellipsis;}
-.dpk-badge{font-size:10px;line-height:16px;padding:0 7px;border-radius:999px;border:1px solid var(--dsw-alias-border-l1);background:0 0;color:var(--dsw-alias-label-tertiary);white-space:nowrap;flex:none;}
+.dpk-badge{font-size:10px;line-height:16px;padding:0 7px;border-radius:999px;border:.5px solid var(--dsw-alias-border-l1);background:0 0;color:var(--dsw-alias-label-tertiary);white-space:nowrap;flex:none;}
 .dpk-open{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;flex:none;border:none;border-radius:var(--dsw-radius-sm,4px);padding:0;background:0 0;color:var(--dsw-alias-label-caption);cursor:pointer;text-decoration:none;transition:color .12s,background .12s;}
 .dpk-open:hover{color:var(--dsw-alias-brand-primary);background:var(--dsw-alias-interactive-bg-hover);}
 .dpk-open.is-copied{color:var(--dsw-alias-state-success-primary);}
@@ -695,7 +711,7 @@ window.__ModuleLoader__.load({
 .dpk-ledrow .dpk-name{font-size:11px;}
 .dpk-empty{color:var(--dsw-alias-label-tertiary);font-size:12px;}
 /* 主题化悬浮提示浮层（body 直挂单例，替代不随主题的原生 title） */
-.dpk-tip{position:fixed;z-index:10000;max-width:400px;background:var(--dsw-alias-bg-layer-1);border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-primary);font-size:11px;line-height:18px;padding:3px 9px;border-radius:var(--dsw-radius-md,8px);box-shadow:0 4px 16px rgba(0,0,0,.2);pointer-events:none;display:none;white-space:pre-wrap;overflow-wrap:anywhere;}
+.dpk-tip{position:fixed;z-index:10000;max-width:400px;background:var(--dsw-alias-bg-layer-1);border:.5px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-primary);font-size:11px;line-height:18px;padding:4px 10px;border-radius:var(--dsw-radius-sm,8px);box-shadow:var(--dsw-elevation-soft,var(--dsw-elevation-prominent));pointer-events:none;display:none;white-space:pre-wrap;overflow-wrap:anywhere;}
 /* 忽略粒度气泡：可点选项，对齐宿主菜单三层表面（backing→material→menu），根不写背景 */
 .dpk-ignorepop{position:fixed;z-index:90;min-width:220px;max-width:min(360px,calc(100vw - 16px));border-radius:var(--dsw-radius-lg,16px);box-shadow:var(--dsw-elevation-prominent);isolation:isolate;overflow:hidden;}
 .dpk-ignorepop-layer{position:absolute;inset:0;z-index:-1;border-radius:inherit;pointer-events:none;}
@@ -719,7 +735,7 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
 /* 设置项较多：限制高度并让内容滚动，其余外观完全沿用 dpk-modal */
 .dpk-modal.is-settings{max-height:min(80vh,720px);overflow:auto;}
 .dpk-cfglist{display:flex;flex-direction:column;gap:6px;max-height:260px;overflow:auto;}
-.dpk-cfgrow{display:flex;align-items:flex-start;gap:8px;padding:6px 10px;border:1px solid var(--dsw-alias-border-l1);border-radius:var(--dsw-radius-md,8px);background:var(--dsw-alias-bg-layer-2);}
+.dpk-cfgrow{display:flex;align-items:flex-start;gap:8px;padding:8px 10px;border:.5px solid var(--dsw-alias-border-l2);border-radius:var(--dsw-radius-md,12px);background:var(--dsw-alias-bg-layer-2);}
 .dpk-cfgrow.is-suspicious{border-color:var(--dsw-alias-state-warn-primary);}
 .dpk-cfgnames{min-width:0;flex:1;}
 .dpk-cfgrel{font-family:${MONO};font-size:11px;line-height:16px;color:var(--dsw-alias-label-primary);overflow-wrap:anywhere;}
@@ -729,7 +745,7 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
 .dpk-cb.is-warn{accent-color:var(--dsw-alias-state-warn-primary);}
 .dpk-cmdrow{display:flex;align-items:center;gap:8px;font-family:${MONO};font-size:11px;line-height:16px;color:var(--dsw-alias-label-secondary);background:var(--dsw-alias-bg-layer-2);border-radius:var(--dsw-radius-md,8px);padding:4px 8px;overflow-wrap:anywhere;}
 /* 冲突策略下拉（导入弹框） */
-.dpk-select{background:var(--dsw-alias-bg-layer-1);border:1px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-primary);border-radius:var(--dsw-radius-md,8px);padding:2px 6px;font:inherit;font-size:11px;line-height:18px;flex:none;max-width:150px;}
+.dpk-select{background:var(--dsw-alias-bg-layer-1);border:.5px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-primary);border-radius:var(--dsw-radius-sm,8px);padding:3px 6px;font:inherit;font-size:11px;line-height:18px;flex:none;max-width:150px;transition:border-color .16s ease;}
 .dpk-select:focus{outline:1px solid var(--dsw-alias-brand-primary);outline-offset:0;}
 .dpk-select:disabled{opacity:.4;}
 /* 导入弹框里的兼容性徽标要能跟文字并排 */
@@ -971,6 +987,10 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
       banner: null, // {text, ok}
       listeners: new Set(),
     };
+    // 本会话最近一次「实时」快照。页签切换会重挂载组件，用它初始化可在重进时保持行结构与
+    // 刚离开时完全一致，避免退回 localStorage 缓存（缺 hostBootAt、带 fromCache）导致
+    // 台账/折叠入口/「来自缓存」提示行先隐后现的内容闪动。
+    let lastFreshSnapshot = null;
     function notifyStore() {
       for (const fn of [...batchStore.listeners]) {
         try { fn(); } catch { /* 单个订阅者异常不影响其余 */ }
@@ -1583,7 +1603,7 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
       }, flash === 'ok' ? CHECK_ICON : COPY_ICON);
     }
 
-    function Row({ entry, checked, disabled, onToggle, opStatus, onUpdate, onIgnore, onRestore, busy, updateDisabled, terms }) {
+    function Row({ entry, checked, disabled, onToggle, opStatus, onUpdate, onCancelUpdate, queued, onIgnore, onRestore, busy, updateDisabled, terms }) {
       const gk = groupKeyOf(entry);
       const srcKind = entry.source?.kind;
       const ignored = Boolean(entry.ignored?.mode);
@@ -1661,7 +1681,14 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
           badgeText ? h('span', { className: 'dpk-badge' }, badgeText) : null,
           h('div', { className: 'dpk-rowops' },
             checkBadgeOf(entry),
-            spec && onUpdate
+            queued
+              ? h('button', {
+                className: 'dpk-btn is-mini is-danger',
+                type: 'button',
+                'aria-label': t('queueCancel'),
+                onClick: (e) => { e.stopPropagation(); onCancelUpdate?.(entry); },
+              }, t('queueCancel'))
+              : spec && onUpdate
               ? h('button', {
                 className: 'dpk-btn is-mini is-success',
                 type: 'button',
@@ -1834,7 +1861,9 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
       // cacheRef 让 loading 初值知道「有没有缓存可用」。
       const cacheRef = React.useRef(null);
       const [snap, setSnap] = React.useState(() => {
-        cacheRef.current = loadCachedSnapshot();
+        // 页签切换会重挂载组件：优先用本会话最近一次「实时」快照，保证重进时行结构与刚离开时一致，
+        // 避免退回 localStorage 缓存（缺少 hostBootAt、带 fromCache）导致台账/提示行先隐后现的内容闪动。
+        cacheRef.current = lastFreshSnapshot ?? loadCachedSnapshot();
         return cacheRef.current;
       });
       const [err, setErr] = React.useState(null);
@@ -1842,6 +1871,9 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
       // 当前是否有数据可展示（超时降级提示用；ref 避免闭包里拿到旧值）
       const snapRef = React.useRef(null);
       React.useEffect(() => { snapRef.current = snap; }, [snap]);
+      // 保持模块级「最近实时快照」与当前 snap 同步（含设置/忽略清单/启停态等所有就地更新），
+      // 供页签切换重挂载时无缝恢复；带 fromCache 的旧缓存不覆盖它。
+      React.useEffect(() => { if (snap && !snap.fromCache) lastFreshSnapshot = snap; }, [snap]);
       // 分组检查状态：{ npm: {status, counts, error, connErr, firstErrorNote}, github: {...} }
       const [checkState, setCheckState] = React.useState({});
       const [saving, setSaving] = React.useState(false);
@@ -1849,16 +1881,16 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
       const [testing, setTesting] = React.useState(false);
       const [proxyTest, setProxyTest] = React.useState(null);
       // 显示位置开关（设置页是否也显示本插件）：默认关；改动在重新进入页面后生效
-      const [showInSettings, setShowInSettings] = React.useState(false);
+      const [showInSettings, setShowInSettings] = React.useState(() => cacheRef.current?.settings?.showInSettings === true);
       const [locationFlash, setLocationFlash] = React.useState(null); // 'ok' | {err}
       // 进入时默认折叠分组：默认关；改动在重新进入页面后生效
-      const [collapseByDefault, setCollapseByDefault] = React.useState(false);
+      const [collapseByDefault, setCollapseByDefault] = React.useState(() => cacheRef.current?.settings?.collapseGroupsByDefault === true);
       const [collapseFlash, setCollapseFlash] = React.useState(null); // 'ok' | {err}
       // 进入时默认勾选「只看可更新」：默认关；改动在重新进入页面后生效
-      const [onlyUpdatableByDefault, setOnlyUpdatableByDefault] = React.useState(false);
+      const [onlyUpdatableByDefault, setOnlyUpdatableByDefault] = React.useState(() => cacheRef.current?.settings?.onlyUpdatableByDefault === true);
       const [onlyUpdatableFlash, setOnlyUpdatableFlash] = React.useState(null); // 'ok' | {err}
       // 进入时默认检查更新：默认关；改动在重新进入页面后生效
-      const [checkOnEnter, setCheckOnEnter] = React.useState(false);
+      const [checkOnEnter, setCheckOnEnter] = React.useState(() => cacheRef.current?.settings?.checkOnEnter === true);
       const [checkOnEnterFlash, setCheckOnEnterFlash] = React.useState(null); // 'ok' | {err}
       // 自动检查判定锚点：load() 拿到首份快照后置入，触发下面的 useEffect 只判一轮
       const [autoCheckReady, setAutoCheckReady] = React.useState(null);
@@ -1921,10 +1953,11 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
         obs.observe(document.documentElement, { attributes: true, attributeFilter: ['lang'] });
         return () => obs.disconnect();
       }, []);
-      // 只看可更新（默认关）；分组折叠（会话内记忆）
-      const [onlyUpdatable, setOnlyUpdatable] = React.useState(false);
-      // 「默认勾选」只在首次拿到快照时套用一次，之后用户手动切换不被 load() 覆盖
-      const onlyUpdatableInitRef = React.useRef(false);
+      // 只看可更新：用首份快照的「默认勾选」设置做初值，避免首帧全量再过滤的闪动
+      const [onlyUpdatable, setOnlyUpdatable] = React.useState(() => cacheRef.current?.settings?.onlyUpdatableByDefault === true);
+      // 「默认勾选」只在首次拿到快照时套用一次，之后用户手动切换不被 load() 覆盖；
+      // 已用 cacheRef 初始化过即视为已套用，置 true 防止 load() 再改
+      const onlyUpdatableInitRef = React.useRef(cacheRef.current != null);
       // 搜索：query = 输入框实时值；search = 防抖后真正生效的查询串
       const [query, setQuery] = React.useState('');
       const [search, setSearch] = React.useState('');
@@ -1934,9 +1967,11 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
         const timer = setTimeout(() => setSearch(query), SEARCH_DEBOUNCE_MS);
         return () => clearTimeout(timer);
       }, [query]);
-      const [collapsedGroups, setCollapsedGroups] = React.useState(() => new Set());
-      // 「默认折叠分组」只在首次拿到快照时套用一次，避免手动展开后被 load() 反复覆盖
-      const collapseInitRef = React.useRef(false);
+      // 用首份快照的「默认折叠」设置做初值：首帧即折叠，避免先展开再折叠的闪动
+      const [collapsedGroups, setCollapsedGroups] = React.useState(() => (cacheRef.current?.settings?.collapseGroupsByDefault ? new Set(GROUP_ORDER) : new Set()));
+      // 「默认折叠分组」只在首次拿到快照时套用一次，避免手动展开后被 load() 反复覆盖；
+      // 已用 cacheRef 初始化过即视为已套用，置 true
+      const collapseInitRef = React.useRef(cacheRef.current != null);
       const toggleGroupCollapse = React.useCallback((key) => {
         setCollapsedGroups((prev) => {
           const next = new Set(prev);
@@ -1945,9 +1980,12 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
         });
       }, []);
 
-      const load = React.useCallback(async () => {
+      const load = React.useCallback(async (opts) => {
+        // silent：已有快照时的后台静默刷新（页签切换重进 / 批量后补刷），
+        // 不触发 loading 骨架与刷新按钮文案跳变，避免内容闪动。
+        const silent = opts?.silent === true;
         const t0 = performance.now();
-        setLoading(true);
+        if (!silent) setLoading(true);
         setErr(null);
         try {
           // 超时兜底：RPC 迟迟不返回时给出可见降级（保留缓存数据继续显示）
@@ -1956,6 +1994,7 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
           );
           markPerf('snapshot', performance.now() - t0);
           if (data && data.ok) {
+            lastFreshSnapshot = data;
             setSnap(data);
             saveCachedSnapshot(data);
             // 显示位置开关跟随快照（宿主半是唯一真值来源）
@@ -1998,7 +2037,7 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
             ? t('loadTimeout', { sec: Math.round(LOAD_TIMEOUT_MS / 1000) })
             : String(e?.message ?? e));
         } finally {
-          setLoading(false);
+          if (!silent) setLoading(false);
         }
         // 官方 bundle 启用态并入（listBundles 失败不影响主数据）。
         // face 返回值可能是 {ok,value} 信封（与 callPm 同口径），先统一拆一次再验数组；
@@ -2020,7 +2059,7 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
       }, []);
 
       // 语言切换只重渲染文案，不重拉数据（拉数据由刷新按钮/批量后触发）
-      React.useEffect(() => { void load(); }, [load]);
+      React.useEffect(() => { void load({ silent: cacheRef.current != null }); }, [load]);
 
       // 会话恢复：本会话尚无批量状态、而宿主 lastBatch 带结果台账 → 恢复台账展示
       // 与「需重启」提醒（跨页签由模块级 store 承担；跨刷新由这份落盘数据承担）。
@@ -2808,7 +2847,7 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
         if (!namesOverride) setSelected(new Set());
         await load();
         // 宿主 startedBundles 的热更新是异步落账的，延迟补一刷，行状态才不滞留
-        setTimeout(() => { void load(); }, 1500);
+        setTimeout(() => { void load({ silent: true }); }, 1500);
       }, [selected, byName, load]);
 
       // ---------- 可追加串行更新队列：单消费者 ----------
@@ -2845,7 +2884,7 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
           storeBatch((b) => (b ? {
             ...b,
             done: updateQueue.results.length,
-            total: Math.max(b.total, updateQueue.totalQueued), // 运行中追加会抬高分母
+            total: updateQueue.totalQueued, // 直接取当前入队总数：追加会抬高、取消会回落
             results: [...updateQueue.results],
           } : b));
         }
@@ -2863,7 +2902,7 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
         resetUpdateQueue();
         await load();
         // 宿主 startedBundles 的热更新是异步落账的，延迟补一刷，行状态才不滞留
-        setTimeout(() => { void load(); }, 1500);
+        setTimeout(() => { void load({ silent: true }); }, 1500);
       }, [load]);
 
       // 行内/批量「更新」统一入口：折算候选 → 去重/排队/自身排队尾并封队 → 追加 → 起消费者。
@@ -2888,6 +2927,10 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
         updateQueue.seen = plan.seen;
         for (const it of plan.items) updateQueue.pending.push(it);
         updateQueue.totalQueued += plan.items.length;
+        if (!starting) {
+          // 运行中追加：立即抬高进度分母，不必等当前项装完再刷新总数
+          storeBatch((b) => (b ? { ...b, total: updateQueue.totalQueued } : b));
+        }
         if (plan.sealed) {
           updateQueue.sealed = true;
           storeBanner({ ok: true, text: t('queueSelfTail') });
@@ -2902,6 +2945,19 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
         setConfirmOp(null); // 确认框开着时点行内更新：作废浮层，避免名单与现实脱节
         void enqueueUpdate([entry]);
       }, [enqueueUpdate]);
+
+      // 行内取消：仅对「已入队但还没轮到执行」的项生效，从待跑队列里摘掉并把名额还回去
+      const onRowCancel = React.useCallback((entry) => {
+        const name = entry?.name;
+        const idx = updateQueue.pending.findIndex((p) => p.name === name);
+        if (idx < 0) return; // 已在执行或未入队：不可取消
+        updateQueue.pending.splice(idx, 1);
+        updateQueue.seen.delete(name); // 归还名额，允许之后重新入队
+        updateQueue.totalQueued = Math.max(0, updateQueue.totalQueued - 1);
+        // 立刻回落进度分母（不小于已完成数），并清掉过时的"已加入"提示
+        storeBatch((b) => (b ? { ...b, total: Math.max(b.done, updateQueue.totalQueued) } : b));
+        storeBanner({ ok: true, text: t('queueCanceled') });
+      }, []);
 
       // 恢复最近一次批量快照（把批量前的 package.json / cordis.patch.yml 复制回原位）
       const doRestore = React.useCallback(async (id) => {
@@ -3032,13 +3088,13 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
         )
         : null;
 
-      // 仅当运行中的批量就是更新队列时，才用「可继续追加」的进度文案并放开行内更新按钮；
+      // 仅当运行中的批量就是更新队列时，才用「安装中 当前/总数」的进度文案并放开行内更新按钮；
       // 其它批量（启用/停用/卸载）与加载/检查中仍沿用 busy 全禁用，避免两个批量并发写同一 storeBatch
       const queueRunning = batchRunning && batch.op === 'update';
       const batchProgress = batchRunning
         ? h('div', { className: 'dpk-batchbar' },
           h('span', { className: 'dpk-progress', role: 'status', 'aria-live': 'polite' }, queueRunning
-            ? t('queueProgress', { done: batch.done, total: batch.total })
+            ? t('queueProgress', { done: Math.min(batch.done + 1, batch.total), total: batch.total })
             : t('batchRunning', {
               op: t(OP_LABEL_KEY[batch.op] ?? 'opUpdate'),
               done: batch.done,
@@ -3150,7 +3206,7 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
           // ---- 分区 1：网络代理 ----
           h('div', { className: 'dpk-setsec' },
             h('div', { className: 'dpk-gtitle' }, t('sectionProxy')),
-          h('div', { className: 'dpk-setrow' },
+          h('div', { className: 'dpk-setrow dpk-proxyacts' },
             h('span', { className: 'dpk-setlabel' }, t('proxyLabel')),
             h('input', {
               ref: proxyRef,
@@ -3339,7 +3395,6 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
               t('showInSettings'),
             ),
           ),
-          h('div', { className: 'dpk-hint' }, t('showInSettingsHint')),
           locationFlash === 'ok' ? h('div', { className: 'dpk-savedok' }, t('showInSettingsSaved')) : null,
           locationFlash && locationFlash.err ? h('div', { className: 'dpk-savederr' }, locationFlash.err) : null,
           // 进入时默认折叠分组：默认不勾选
@@ -3354,7 +3409,6 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
               t('collapseGroupsByDefault'),
             ),
           ),
-          h('div', { className: 'dpk-hint' }, t('collapseGroupsByDefaultHint')),
           collapseFlash === 'ok' ? h('div', { className: 'dpk-savedok' }, t('collapseGroupsByDefaultSaved')) : null,
           collapseFlash && collapseFlash.err ? h('div', { className: 'dpk-savederr' }, collapseFlash.err) : null,
           // 进入时默认勾选「只看可更新」：默认关
@@ -3369,7 +3423,6 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
               t('onlyUpdatableByDefault'),
             ),
           ),
-          h('div', { className: 'dpk-hint' }, t('onlyUpdatableByDefaultHint')),
           onlyUpdatableFlash === 'ok' ? h('div', { className: 'dpk-savedok' }, t('onlyUpdatableByDefaultSaved')) : null,
           onlyUpdatableFlash && onlyUpdatableFlash.err ? h('div', { className: 'dpk-savederr' }, onlyUpdatableFlash.err) : null,
           // 进入时默认检查更新：默认关
@@ -3384,9 +3437,9 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
               t('checkOnEnter'),
             ),
           ),
-          h('div', { className: 'dpk-hint' }, t('checkOnEnterHint', { min: Math.round(AUTO_CHECK_MIN_MS / 60000) })),
           checkOnEnterFlash === 'ok' ? h('div', { className: 'dpk-savedok' }, t('checkOnEnterSaved')) : null,
           checkOnEnterFlash && checkOnEnterFlash.err ? h('div', { className: 'dpk-savederr' }, checkOnEnterFlash.err) : null,
+          h('div', { className: 'dpk-setnote' }, t('settingsReenterNote', { min: Math.round(AUTO_CHECK_MIN_MS / 60000) })),
           ),
           ),
           h('div', { className: 'dpk-mfoot' },
@@ -3838,6 +3891,8 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
                     disabled: entry.official || batchRunning,
                     onToggle: toggleOne,
                     onUpdate: onRowUpdate,
+                    queued: updateQueue.pending.some((p) => p.name === entry.name),
+                    onCancelUpdate: onRowCancel,
                     onIgnore: (entry, anchor) => openIgnorePop([entry.name], anchor),
                     onRestore: (entry) => { void doRestoreIgnored([entry.name]); },
                     busy: batchRunning,

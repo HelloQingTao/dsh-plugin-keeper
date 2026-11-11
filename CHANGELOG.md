@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.3.9 (2026-11-11)
+
+### 中文
+
+- **新增：可取消排队中的更新** — 更新排队时，点该行的「取消更新」即可在执行前移除。
+- **优化：整体界面美化** — 更贴合浅色/深色主题（按钮、列表行、弹层、圆角与分隔线统一）。
+- **优化：更新队列进度更直观** — 显示「安装中 x/x」，继续追加时总数即时刷新。
+- **优化：高级配置弹框更清爽** — 重复说明收敛到底部一条，保存提示简化为「已保存」。
+- **优化：底部恢复入口改名为「其他」** — 更简洁。
+- **修复：页签切换时列表闪动** — 在「已安装 / 插件运维」之间来回切换时，插件列表内容不再闪动。
+- **修复：按钮上下跳动** — 刷新、测试代理等按钮在状态变化时不再换行跳动。
+
+### English
+
+- **New: cancel a queued update** — While updates are queued, click 'Cancel update' on a row to remove it before it runs.
+- **Improved: refreshed look** — The panel now fits light and dark themes better (unified buttons, list rows, dialogs, corner radii and dividers).
+- **Improved: clearer queue progress** — Shows 'Installing x/x', and the total updates instantly as you queue more.
+- **Improved: cleaner Advanced settings dialog** — Repeated hints are consolidated into a single note at the bottom; save feedback is simplified to 'Saved'.
+- **Improved: bottom restore entry renamed to 'Others'** — For brevity.
+- **Fixed: content flicker when switching tabs** — The plugin list no longer flickers when switching between Installed and Plugin Ops.
+- **Fixed: buttons jumping between rows** — Refresh, Test proxy and similar buttons no longer wrap and jump while their state changes.
+
 ## 0.3.8 (2026-11-11)
 
 ### 中文
