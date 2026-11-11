@@ -303,6 +303,10 @@ const STATE_DEFAULT = Object.freeze({
   showInSettings: false,
   // 「进入时默认折叠分组」：默认关（分组默认展开）。
   collapseGroupsByDefault: false,
+  // 「进入时默认勾选只看可更新」：默认关（进入时不过滤）。
+  onlyUpdatableByDefault: false,
+  // 「进入时默认检查更新」：默认关（进入时不自动发检查请求）。
+  checkOnEnter: false,
   lastCheck: null,
   lastBatch: null,
 });
@@ -315,6 +319,8 @@ export function publicProxySettings(state) {
     hasProxyPass: Boolean(state?.proxyPass),
     showInSettings: state?.showInSettings === true,
     collapseGroupsByDefault: state?.collapseGroupsByDefault === true,
+    onlyUpdatableByDefault: state?.onlyUpdatableByDefault === true,
+    checkOnEnter: state?.checkOnEnter === true,
   };
 }
 
@@ -332,6 +338,8 @@ async function readState() {
     // 缺字段 = 旧状态文件 → 按默认（false）处理，不当成 true
     showInSettings: raw?.showInSettings === true,
     collapseGroupsByDefault: raw?.collapseGroupsByDefault === true,
+    onlyUpdatableByDefault: raw?.onlyUpdatableByDefault === true,
+    checkOnEnter: raw?.checkOnEnter === true,
     lastCheck: raw?.lastCheck && typeof raw.lastCheck === 'object' ? raw.lastCheck : null,
     lastBatch: raw?.lastBatch && typeof raw.lastBatch === 'object' ? raw.lastBatch : null,
   };
@@ -1228,6 +1236,8 @@ export class PluginKeeperService extends TypertRemoteService {
    *    账号清空 = 取消认证，同时清掉密码。地址里直接粘 userinfo 会自动拆分。
    *  - showInSettings：是否在设置页也显示本插件
    *  - collapseGroupsByDefault：进入时是否默认折叠所有分组
+   *  - onlyUpdatableByDefault：进入时是否默认勾选「只看可更新」
+   *  - checkOnEnter：进入时是否默认检查更新
    * 只更新显式传入的字段（点开关不会清空代理）；保存后立即应用策略。
    */
   async saveSettings(input) {
@@ -1249,6 +1259,8 @@ export class PluginKeeperService extends TypertRemoteService {
     const clearCredentials = has('proxyUser') && proxyUser === '';
     const showInSettings = typeof input?.showInSettings === 'boolean' ? input.showInSettings : null;
     const collapseGroupsByDefault = typeof input?.collapseGroupsByDefault === 'boolean' ? input.collapseGroupsByDefault : null;
+    const onlyUpdatableByDefault = typeof input?.onlyUpdatableByDefault === 'boolean' ? input.onlyUpdatableByDefault : null;
+    const checkOnEnter = typeof input?.checkOnEnter === 'boolean' ? input.checkOnEnter : null;
     await withStateLock(async () => {
       const state = await readState();
       await writeState({
@@ -1259,6 +1271,8 @@ export class PluginKeeperService extends TypertRemoteService {
         ...(clearCredentials ? { proxyPass: '' } : {}),
         ...(showInSettings === null ? {} : { showInSettings }),
         ...(collapseGroupsByDefault === null ? {} : { collapseGroupsByDefault }),
+        ...(onlyUpdatableByDefault === null ? {} : { onlyUpdatableByDefault }),
+        ...(checkOnEnter === null ? {} : { checkOnEnter }),
       });
     });
     const latest = await readState();

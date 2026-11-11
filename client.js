@@ -122,6 +122,9 @@ window.__ModuleLoader__.load({
         localInstallWarn: '注意：{warning}',
         installDone: '已安装 {name}，刷新列表可见',
         installRestart: '已安装 {name}，重启后生效',
+        installGuideRestart: '已安装 {name}。插件包内容已更新，需重启 dsh web 后才能完全生效；重启前请勿依赖新功能。',
+        installGuideApplied: '已安装 {name} 并已生效。若界面未自动更新，可点下方按钮刷新页面。',
+        installGuideReload: '刷新页面',
         installStage: '安装进度',
         stageStarting: '准备中（解析地址、连接仓库）',
         stageInstalling: '正在安装依赖 · 第 {index}/{total} 个源 {registry}',
@@ -140,7 +143,7 @@ window.__ModuleLoader__.load({
         batchUninstall: '卸载所选',
         dialogCancel: '取消',
         dialogDescUpdate: '将先卸载所选插件的当前版本，再安装检查到的最新版本；操作前自动备份配置快照，可随时恢复。',
-        dialogSelfReload: '名单包含「插件运维」自身，它会排在最后执行；更新本插件后面板会重新加载，请刷新页面，其余插件不受影响。',
+        dialogSelfReload: '名单含「插件运维」自身：它只做队尾，且入队后队列封闭、不能再加入其它更新；更新本插件后面板会重新加载，请刷新页面。',
         dialogDescEnable: '将启用所选插件：加入运行列表并生效（操作前自动备份配置快照）；若需重启会另行提示。',
         dialogDescDisable: '将停用所选插件：立即停止运行，配置保留，可随时重新启用（操作前自动备份配置快照）。',
         dialogDescUninstall: '将从本 profile 卸载所选插件；操作前自动备份配置快照，可用「恢复快照」撤销。',
@@ -172,8 +175,16 @@ window.__ModuleLoader__.load({
         restoreDone: '快照已恢复，重启后生效',
         restoreFail: '恢复失败',
         lastBatchLine: '上次批量：{op} · {time}——批量前的配置备份，点「恢复快照」可撤销该次批量；若批量中途关闭页面，此记录可能未完成',
+        autoDismissFoldShow: '▸ 恢复上次批量的配置快照',
+        autoDismissFoldHide: '▾ 收起',
+        autoDismissHint: '上次批量的通知已自动清除（宿主重启或超过 {hours} 小时）；如需撤销该次批量，可恢复批量前的配置快照',
         updateNone: '所选中没有可更新的插件（先检查更新）',
         rowUpdate: '更新',
+        queueAdded: '已加入更新队列（第 {n} 项）',
+        queueDuplicate: '该插件已在本轮更新队列中',
+        queueSelfTail: '「插件运维」自身已排到队尾，队列封闭：本轮不再接受其它更新；它更新后面板会重新加载，请刷新页面',
+        queueSealed: '本轮含「插件运维」自身的更新且已封队，请等本轮完成后再发起其它更新',
+        queueProgress: '更新队列进行中… {done}/{total}（可继续点其它行追加）',
         onlyUpdatable: '只看可更新',
         // ---- 搜索 ----
         searchPlaceholder: '搜索插件名 / 描述 / 版本',
@@ -202,6 +213,12 @@ window.__ModuleLoader__.load({
         collapseGroupsByDefault: '进入时默认折叠分组',
         collapseGroupsByDefaultHint: '打开「插件运维」时自动折叠所有来源分组；改动在重新进入页面后生效。',
         collapseGroupsByDefaultSaved: '默认折叠设置已更新，重新进入页面后生效',
+        onlyUpdatableByDefault: '进入时默认勾选「只看可更新」',
+        onlyUpdatableByDefaultHint: '打开「插件运维」时自动勾选「只看可更新」；改动在重新进入页面后生效。',
+        onlyUpdatableByDefaultSaved: '默认勾选设置已更新，重新进入页面后生效',
+        checkOnEnter: '进入时默认检查更新',
+        checkOnEnterHint: '打开「插件运维」时自动检查一次更新；距上次检查不足 {min} 分钟则跳过，避免反复请求。改动在重新进入页面后生效。',
+        checkOnEnterSaved: '默认检查设置已更新，重新进入页面后生效',
         // ---- 分组折叠 ----
         groupCollapse: '折叠分组',
         groupExpand: '展开分组',
@@ -368,6 +385,9 @@ window.__ModuleLoader__.load({
         localInstallWarn: 'Note: {warning}',
         installDone: 'Installed {name}, refresh the list to see it',
         installRestart: 'Installed {name}, takes effect after restart',
+        installGuideRestart: 'Installed {name}. The plugin package changed — restart dsh web for it to take full effect; do not rely on the new features before restarting.',
+        installGuideApplied: 'Installed {name} and it is already active. If the UI did not update automatically, use the button below to reload the page.',
+        installGuideReload: 'Reload page',
         installStage: 'Install progress',
         stageStarting: 'Preparing (resolving spec, connecting)',
         stageInstalling: 'Installing dependencies · source {index}/{total} {registry}',
@@ -386,7 +406,7 @@ window.__ModuleLoader__.load({
         batchUninstall: 'Uninstall selected',
         dialogCancel: 'Cancel',
         dialogDescUpdate: 'Removes the current version of the selected plugins, then installs the latest checked version; a config snapshot is saved first and can be restored.',
-        dialogSelfReload: 'This list includes the Plugin Ops console itself; it runs last. Updating it reloads the panel — refresh the page afterwards. Other plugins are unaffected.',
+        dialogSelfReload: 'This list includes the Plugin Ops console itself: it is queued last, and once queued the round is sealed — no other updates can join. Updating it reloads the panel; please refresh afterwards.',
         dialogDescEnable: 'Enables the selected plugins so they join the running set; a config snapshot is saved first. A restart prompt follows if needed.',
         dialogDescDisable: 'Disables the selected plugins: they stop running immediately, the configuration is kept, and they can be re-enabled anytime; a config snapshot is saved first.',
         dialogDescUninstall: 'Uninstalls the selected plugins from this profile; a config snapshot is saved first and can be restored to undo.',
@@ -418,8 +438,16 @@ window.__ModuleLoader__.load({
         restoreDone: 'Snapshot restored, takes effect after restart',
         restoreFail: 'Restore failed',
         lastBatchLine: 'Last batch: {op} · {time} — config backup taken before the batch; "Restore snapshot" undoes it. If the page was closed mid-run, this record may be incomplete',
+        autoDismissFoldShow: '▸ Restore last batch snapshot',
+        autoDismissFoldHide: '▾ Collapse',
+        autoDismissHint: 'Notices from the last batch were cleared automatically (host restarted or older than {hours}h); to undo it, restore the pre-batch config snapshot',
         updateNone: 'No updatable plugin in selection (check updates first)',
         rowUpdate: 'Update',
+        queueAdded: 'Added to update queue (item {n})',
+        queueDuplicate: 'This plugin is already in the current update queue',
+        queueSelfTail: 'The Plugin Ops console itself is queued last and the queue is sealed — no other updates can join this round; the panel reloads after it updates, please refresh',
+        queueSealed: 'This round includes the Plugin Ops console itself and is sealed; start other updates after it finishes',
+        queueProgress: 'Update queue running… {done}/{total} (keep clicking other rows to append)',
         onlyUpdatable: 'Updatable only',
         // ---- Search ----
         searchPlaceholder: 'Search by name / description / version',
@@ -448,6 +476,12 @@ window.__ModuleLoader__.load({
         collapseGroupsByDefault: 'Collapse groups by default on entry',
         collapseGroupsByDefaultHint: 'When on, the "Plugin Ops" panel opens with all source groups collapsed; the change applies after re-entering the page.',
         collapseGroupsByDefaultSaved: 'Default-collapse setting updated; applies after re-entering the page',
+        onlyUpdatableByDefault: 'Check "Updatable only" by default on entry',
+        onlyUpdatableByDefaultHint: 'When on, "Plugin Ops" opens with the "Updatable only" filter checked; applies after re-entering the page.',
+        onlyUpdatableByDefaultSaved: 'Default filter setting updated; applies after re-entering the page',
+        checkOnEnter: 'Check for updates on entry',
+        checkOnEnterHint: 'When on, "Plugin Ops" checks for updates once on entry; skipped if the last check was less than {min} minutes ago. Applies after re-entering the page.',
+        checkOnEnterSaved: 'Auto-check setting updated; applies after re-entering the page',
         // ---- 分组折叠 ----
         groupCollapse: 'Collapse group',
         groupExpand: 'Expand group',
@@ -588,6 +622,8 @@ window.__ModuleLoader__.load({
 .dpk-err{color:var(--dsw-alias-state-error-primary);font-size:12px;}
 .dpk-banner{font-size:11px;color:var(--dsw-alias-state-warn-primary);line-height:18px;overflow-wrap:anywhere;}
 .dpk-banner.is-ok{color:var(--dsw-alias-state-success-primary);}
+/* 装完引导横幅：文字 + 手动刷新按钮纵向排列（不做自动整页刷新） */
+.dpk-banner.is-guide{display:flex;flex-direction:column;align-items:flex-start;gap:6px;}
 .dpk-group{display:flex;flex-direction:column;gap:4px;min-width:0;}
 .dpk-ghead{display:flex;align-items:center;gap:7px;cursor:pointer;user-select:none;padding:2px 0;}
 .dk-ghead:hover .dpk-gtitle{color:var(--dsw-alias-brand-primary);}
@@ -802,6 +838,14 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
     const CACHE_KEY = 'dsh-plugin-keeper:snapshot:v1';
     const LOAD_TIMEOUT_MS = 5000;
     const CHECK_TIMEOUT_MS = 30000;
+    // 进入时自动检查的节流窗口：距上次成功检查不足该时长就跳过，避免反复进页面打网络。
+    // 具名常量便于按实际网络情况调整；不是用户配置项，故不占设置开关。
+    const AUTO_CHECK_MIN_MS = 30 * 60 * 1000;
+    // 一次页面会话里「进入时自动检查」最多判定一轮；两个挂载点共享去重，刷新页面即重置。
+    const autoCheckStore = { done: false };
+    // 底部台账/横幅的自动清除账龄：批量快照产生超过该时长，进页面时不再恢复展示。
+    // 具名常量便于调整；不是用户配置项，故不占设置开关（同 AUTO_CHECK_MIN_MS 约定）。
+    const NOTIFY_TTL_MS = 12 * 60 * 60 * 1000;
     // 搜索防抖：输入停顿 200ms 后自动筛选（本地过滤是纯内存，延迟只是手感）
     const SEARCH_DEBOUNCE_MS = 200;
 
@@ -939,6 +983,66 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
     function storeBanner(next) {
       batchStore.banner = next;
       notifyStore();
+    }
+
+    // ---------- 可追加串行「更新」队列（模块级，单消费者） ----------
+    // 单条点「更新」不再触发全局锁：点一个立即入队、按点击顺序依次执行，运行中仍可
+    // 点其它行追加到队尾（while 循环每轮重新读取 pending，追加项会被接着执行）。
+    // 模块级 → 切页签 / 组件重挂载不丢失；执行循环持有 store 引用，组件卸载后仍推进。
+    // SELF 规则：点了自身 → 自身只做队尾并「封队」，之后其它项一律拒绝入队。
+    // 自身更新会卸载本插件 client bundle 与 host service，剩余队列项是纯内存、无人
+    // 执行；封队从根上杜绝这种静默丢失（用户 m00873 拍板）。
+    const updateQueue = {
+      pending: [],      // 待执行 {name, spec}
+      running: false,   // 单消费者守卫（跨两个挂载点共享）
+      sealed: false,    // 已入队自身 → 拒绝后续入队
+      seen: new Set(),  // 本轮已入队过的 name（追加时去重）
+      results: [],      // 本轮累计结果台账
+      totalQueued: 0,   // 本轮累计入队数（进度分母，追加时增长）
+      snapshotId: null, // 本轮共享的 prepareBatch 快照 id
+    };
+    function resetUpdateQueue() {
+      updateQueue.pending = [];
+      updateQueue.running = false;
+      updateQueue.sealed = false;
+      updateQueue.seen = new Set();
+      updateQueue.results = [];
+      updateQueue.totalQueued = 0;
+      updateQueue.snapshotId = null;
+    }
+    function countResults(results) {
+      const counts = { ok: 0, restart: 0, fail: 0, skip: 0 };
+      for (const r of results) {
+        if (r.status === 'ok') counts.ok += 1;
+        else if (r.status === 'restart') counts.restart += 1;
+        else if (r.status === 'failed') counts.fail += 1;
+        else counts.skip += 1;
+      }
+      return counts;
+    }
+    // 纯函数：把一批候选折算成可入队项 —— 去重、自身只做队尾、判定封队。
+    // 不改状态，便于独立验证（见 .temp/dsh-plugin-keeper/test-update-queue.cjs）。
+    function planUpdateEnqueue(candidates, seen) {
+      const items = [];
+      const nextSeen = new Set(seen);
+      let selfItem = null;
+      for (const c of candidates) {
+        if (!c || c.official || !c.spec || nextSeen.has(c.name)) continue;
+        nextSeen.add(c.name);
+        if (c.name === SELF) selfItem = { name: c.name, spec: c.spec };
+        else items.push({ name: c.name, spec: c.spec });
+      }
+      if (selfItem) items.push(selfItem); // 自身只做队尾
+      return { items, seen: nextSeen, sealed: Boolean(selfItem) };
+    }
+    // 执行单个更新项：先卸后装（installBundle 对已装包 refused already-installed）。
+    async function runOneUpdate(name, spec) {
+      try {
+        try { await callPm('removeBundle', name); } catch { /* 移除失败交给安装步报错 */ }
+        return { name, op: 'update', ...mapChange(await callPm('installBundle', spec, { enabled: true })) };
+      } catch (e) {
+        return { name, op: 'update', status: 'failed', note: String(e?.message ?? e) };
+      }
     }
 
     // typert face 的返回值可能是 {ok,value} 信封，也可能是裸值（取决于 result codec）。
@@ -1123,6 +1227,16 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
       const at = lb?.at ? Date.parse(lb.at) : NaN;
       if (typeof boot !== 'number' || !Number.isFinite(boot) || !Number.isFinite(at)) return false;
       return boot > at;
+    }
+    // 底部通知自动清除判定：宿主进程在该批次之后重启过，或批次产生已超过 NOTIFY_TTL_MS。
+    // 只读落盘锚点、不改宿主数据；命中则在会话恢复时跳过台账/横幅，仅保留折叠的恢复入口。
+    function shouldAutoDismissBatch(lb, snap) {
+      const at = lb?.at ? Date.parse(lb.at) : NaN;
+      if (!Number.isFinite(at) || at <= 0) return false;
+      const boot = snap?.hostBootAt;
+      const restarted = typeof boot === 'number' && Number.isFinite(boot) && boot > at;
+      const aged = Date.now() - at > NOTIFY_TTL_MS;
+      return restarted || aged;
     }
 
     // 检查结果归一化：更新后 check 可能滞后（latest===当前版本），此时按最新渲染
@@ -1469,7 +1583,7 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
       }, flash === 'ok' ? CHECK_ICON : COPY_ICON);
     }
 
-    function Row({ entry, checked, disabled, onToggle, opStatus, onUpdate, onIgnore, onRestore, busy, terms }) {
+    function Row({ entry, checked, disabled, onToggle, opStatus, onUpdate, onIgnore, onRestore, busy, updateDisabled, terms }) {
       const gk = groupKeyOf(entry);
       const srcKind = entry.source?.kind;
       const ignored = Boolean(entry.ignored?.mode);
@@ -1551,7 +1665,9 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
               ? h('button', {
                 className: 'dpk-btn is-mini is-success',
                 type: 'button',
-                disabled: Boolean(busy),
+                // 队列模式下：运行中仍可点其它行追加，仅该项已入队或队列封队时禁用；
+                // 非队列（普通批量/加载/检查中）沿用 busy
+                disabled: Boolean(updateDisabled ?? busy),
                 onClick: (e) => { e.stopPropagation(); onUpdate(entry); },
               }, t('rowUpdate'))
               : null,
@@ -1738,6 +1854,14 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
       // 进入时默认折叠分组：默认关；改动在重新进入页面后生效
       const [collapseByDefault, setCollapseByDefault] = React.useState(false);
       const [collapseFlash, setCollapseFlash] = React.useState(null); // 'ok' | {err}
+      // 进入时默认勾选「只看可更新」：默认关；改动在重新进入页面后生效
+      const [onlyUpdatableByDefault, setOnlyUpdatableByDefault] = React.useState(false);
+      const [onlyUpdatableFlash, setOnlyUpdatableFlash] = React.useState(null); // 'ok' | {err}
+      // 进入时默认检查更新：默认关；改动在重新进入页面后生效
+      const [checkOnEnter, setCheckOnEnter] = React.useState(false);
+      const [checkOnEnterFlash, setCheckOnEnterFlash] = React.useState(null); // 'ok' | {err}
+      // 自动检查判定锚点：load() 拿到首份快照后置入，触发下面的 useEffect 只判一轮
+      const [autoCheckReady, setAutoCheckReady] = React.useState(null);
       const proxyRef = React.useRef(null);
       const proxyUserRef = React.useRef(null);
       const proxyPassRef = React.useRef(null);
@@ -1755,6 +1879,8 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
       const [ledgerDismissed, setLedgerDismissed] = React.useState(false);
       // 被「清空」屏蔽的 lastBatch id（持久化在 localStorage，跨刷新/重开有效）
       const [dismissedBatchId, setDismissedBatchId] = React.useState(() => loadDismissedBatchId());
+      // 自动清除后折叠的「恢复快照」入口是否展开（默认收起，不占地方）
+      const [restoreFoldOpen, setRestoreFoldOpen] = React.useState(false);
       const installRef = React.useRef(null);
       const localInstallRef = React.useRef(null);
       const [localInstalling, setLocalInstalling] = React.useState(false);
@@ -1797,6 +1923,8 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
       }, []);
       // 只看可更新（默认关）；分组折叠（会话内记忆）
       const [onlyUpdatable, setOnlyUpdatable] = React.useState(false);
+      // 「默认勾选」只在首次拿到快照时套用一次，之后用户手动切换不被 load() 覆盖
+      const onlyUpdatableInitRef = React.useRef(false);
       // 搜索：query = 输入框实时值；search = 防抖后真正生效的查询串
       const [query, setQuery] = React.useState('');
       const [search, setSearch] = React.useState('');
@@ -1845,6 +1973,21 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
                 }
               }
             }
+            // 默认勾选「只看可更新」：跟随即时真值；同样只在首次拿到快照时套用一次，
+            // 之后用户手动取消/勾选不被批量后的 load() 覆盖。
+            if (data.settings && typeof data.settings.onlyUpdatableByDefault === 'boolean') {
+              setOnlyUpdatableByDefault(data.settings.onlyUpdatableByDefault);
+              if (!onlyUpdatableInitRef.current) {
+                onlyUpdatableInitRef.current = true;
+                if (data.settings.onlyUpdatableByDefault) setOnlyUpdatable(true);
+              }
+            }
+            // 默认检查更新：设置态跟随真值；实际是否触发交给下面的 useEffect 判定
+            if (data.settings && typeof data.settings.checkOnEnter === 'boolean') {
+              setCheckOnEnter(data.settings.checkOnEnter);
+            }
+            // 交出判定锚点（含落盘的 lastCheckAt，用于节流）
+            setAutoCheckReady(data);
           } else {
             setErr(t('loadFailed'));
           }
@@ -1881,13 +2024,20 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
 
       // 会话恢复：本会话尚无批量状态、而宿主 lastBatch 带结果台账 → 恢复台账展示
       // 与「需重启」提醒（跨页签由模块级 store 承担；跨刷新由这份落盘数据承担）。
+      // 首屏缓存只用于加速插件列表：它不含 hostBootAt，无法判定「宿主重启」。
+      // 底部通知（台账/横幅/残留行/折叠入口）一律以实时快照为准，避免先用缓存灌出一条台账、
+      // 等实时快照带着新 hostBootAt 到达时又因 store 非空而清不掉的竞态。
       // store 已有状态（进行中/本会话已收尾）时以实时数据优先，不覆盖。
       React.useEffect(() => {
+        if (snap?.fromCache) return;
         if (batchStore.batch) return;
         const lb = snap?.lastBatch;
         if (!lb || !Array.isArray(lb.results) || !lb.results.length) return;
         // 用户已「清空」过这条台账 → 跨刷新/重开不再自动弹回
         if (dismissedBatchId && lb.id === dismissedBatchId) return;
+        // 自动清除：宿主进程在该批次之后重启过，或账龄超过 NOTIFY_TTL_MS → 不恢复台账/横幅，
+        // 仅由渲染层给一条折叠的恢复入口（不落盘、不动宿主数据、可逆）。
+        if (shouldAutoDismissBatch(lb, snap)) return;
         const counts = { ok: 0, restart: 0, fail: 0, skip: 0 };
         for (const r of lb.results) {
           if (r.status === 'ok') counts.ok += 1;
@@ -1969,6 +2119,21 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
         setErr(null);
         await Promise.all(CHECKABLE_GROUPS.map((kind) => doCheckGroup(kind)));
       }, [doCheckGroup]);
+
+      // 进入时默认检查更新：只在「本会话拿到首份快照」时判定一次。
+      // - 模块级 autoCheckStore 跨两个挂载点（插件页 Tab / 设置页分区）去重，避免重复发网络请求；
+      // - 占位放在开关判断之前：当次改动设置不追发，符合「重新进入页面后生效」；
+      // - 节流：宿主落盘的 lastCheckAt 不足 AUTO_CHECK_MIN_MS 就跳过，避免每次进页面都打网络。
+      React.useEffect(() => {
+        if (!autoCheckReady) return;
+        if (autoCheckStore.done) return;
+        autoCheckStore.done = true;
+        if (autoCheckReady.settings?.checkOnEnter !== true) return;
+        const raw = autoCheckReady.lastCheckAt;
+        const last = typeof raw === 'number' ? raw : Date.parse(raw ?? '');
+        if (Number.isFinite(last) && last > 0 && Date.now() - last < AUTO_CHECK_MIN_MS) return;
+        void doCheck();
+      }, [autoCheckReady, doCheck]);
 
       // 检查汇总：checking / 组级失败 / 连接判定来自 checkState；
       // 可更新·最新·失败改为按当前清单实时聚合（排除已忽略插件），不直接用 host counts 快照。
@@ -2085,6 +2250,38 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
         setSaving(false);
       }, []);
 
+      // 保存「进入时默认勾选只看可更新」开关：只落盘 + 提示，改动重新进入页面后生效
+      const doSaveOnlyUpdatableByDefault = React.useCallback(async (value) => {
+        setSaving(true);
+        setOnlyUpdatableFlash(null);
+        const r = await callSaveSettings({ onlyUpdatableByDefault: value });
+        if (r?.ok) {
+          const next = r.onlyUpdatableByDefault === true;
+          setOnlyUpdatableByDefault(next);
+          setOnlyUpdatableFlash('ok');
+          setSnap((s) => (s ? { ...s, settings: { ...(s.settings ?? {}), onlyUpdatableByDefault: next } } : s));
+        } else {
+          setOnlyUpdatableFlash({ err: r?.error ?? t('saveFailed') });
+        }
+        setSaving(false);
+      }, []);
+
+      // 保存「进入时默认检查更新」开关：只落盘 + 提示，改动重新进入页面后生效
+      const doSaveCheckOnEnter = React.useCallback(async (value) => {
+        setSaving(true);
+        setCheckOnEnterFlash(null);
+        const r = await callSaveSettings({ checkOnEnter: value });
+        if (r?.ok) {
+          const next = r.checkOnEnter === true;
+          setCheckOnEnter(next);
+          setCheckOnEnterFlash('ok');
+          setSnap((s) => (s ? { ...s, settings: { ...(s.settings ?? {}), checkOnEnter: next } } : s));
+        } else {
+          setCheckOnEnterFlash({ err: r?.error ?? t('saveFailed') });
+        }
+        setSaving(false);
+      }, []);
+
       // ---------- GitHub 直装 ----------
       // spec 归一化只有 host 半区 github-spec.js 一份实现，客户端只消费结果，
       // 避免带/不带 github: 前缀在两处正则里漂移。
@@ -2110,10 +2307,12 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
             // RPC 没给结果（超时/断连）时宿主可能仍在装：不误报失败，进度面板继续显示事件流
             setInstallFlash({ ok: false, text: t('installNoResponse') });
           } else if (r.application === 'restart-required') {
-            setInstallFlash({ ok: true, text: t('installRestart', { name: r.target ?? spec }) });
+            // 包内容变更：刷新页面 ≠ 重启宿主，只提示需重启 dsh web，不给刷新按钮
+            setInstallFlash({ ok: true, guide: 'restart', text: t('installGuideRestart', { name: r.target ?? spec }) });
             ok = true;
           } else if (r.application === 'applied' || r.application === 'overridden') {
-            setInstallFlash({ ok: true, text: t('installDone', { name: r.target ?? spec }) });
+            // 已热生效：界面未自动更新时给用户一个手动刷新入口（不自动整页刷新）
+            setInstallFlash({ ok: true, guide: 'applied', text: t('installGuideApplied', { name: r.target ?? spec }) });
             ok = true;
           } else {
             setInstallFlash({ ok: false, text: `${t('installFailed')}${errText ? `：${errText}` : ''}` });
@@ -2148,17 +2347,23 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
           if (!r) {
             setLocalFlash({ ok: false, text: t('installNoResponse') });
           } else if (r.application === 'applied' || r.application === 'overridden' || r.application === 'restart-required') {
+            const target = r.target ?? normalized.name ?? normalized.spec;
+            const restart = r.application === 'restart-required';
             setLocalFlash({
               ok: true,
-              text: t('localInstallOk', { name: r.target ?? normalized.name ?? normalized.spec }),
+              guide: restart ? 'restart' : 'applied',
+              text: restart
+                ? t('installGuideRestart', { name: target })
+                : t('installGuideApplied', { name: target }),
             });
             ok = true;
           } else {
             setLocalFlash({ ok: false, text: `${t('localInstallFail')}${errText ? `：${errText}` : ''}` });
           }
           if (normalized.warning) {
+            // spread 保留 guide（刷新/重启引导按钮），只追加 warning 文字
             setLocalFlash((prev) => (prev?.ok
-              ? { ok: true, text: `${prev.text} · ${t('localInstallWarn', { warning: normalized.warning })}` }
+              ? { ...prev, text: `${prev.text} · ${t('localInstallWarn', { warning: normalized.warning })}` }
               : prev));
           }
           if (r) updateProgress({ status: ok ? 'done' : 'failed' });
@@ -2606,12 +2811,97 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
         setTimeout(() => { void load(); }, 1500);
       }, [selected, byName, load]);
 
-      // 行内更新（单个可更新插件，不经过勾选集）
+      // ---------- 可追加串行更新队列：单消费者 ----------
+      // 整轮共用一份 prepareBatch 快照（op='update'），进度/台账复用 batchStore。
+      // while 每轮重读 updateQueue.pending，故队列中仍可继续追加、按入队顺序依次执行。
+      // 动自身（队尾）之前先把已完成结果连台账落盘：自身更新会卸载本插件 client bundle
+      // 与 host service，之后 rpcFace 的 reportBatch/snapshot 会失效；封队又保证其后无待执行项，
+      // 因此其它插件的更新成果不会因面板重载而丢失。
+      const drainUpdateQueue = React.useCallback(async () => {
+        if (updateQueue.running) return;
+        if (!updateQueue.pending.length) return;
+        updateQueue.running = true;
+        hideTip(); // 批量重渲染会移动行位置，收起悬浮避免错位残留
+        storeBatch({ op: 'update', running: true, done: 0, total: updateQueue.totalQueued, results: [], snapshotId: null });
+        const prep = await callPrepareBatch('update');
+        if (!prep?.ok) {
+          storeBanner({ ok: false, text: prep?.error ?? t('loadFailed') });
+          storeBatch(null);
+          resetUpdateQueue();
+          return;
+        }
+        updateQueue.snapshotId = prep.id;
+        while (updateQueue.pending.length) {
+          const { name, spec } = updateQueue.pending.shift();
+          // 自身是队尾：动手前把已完成结果落盘，保住其它行更新成果（含台账/需重启提醒）
+          if (name === SELF && updateQueue.results.length) {
+            await callReportBatch({
+              id: updateQueue.snapshotId, op: 'update',
+              results: [...updateQueue.results], counts: countResults(updateQueue.results),
+            });
+          }
+          const item = await runOneUpdate(name, spec);
+          updateQueue.results.push(item);
+          storeBatch((b) => (b ? {
+            ...b,
+            done: updateQueue.results.length,
+            total: Math.max(b.total, updateQueue.totalQueued), // 运行中追加会抬高分母
+            results: [...updateQueue.results],
+          } : b));
+        }
+        const finalResults = [...updateQueue.results];
+        const counts = countResults(finalResults);
+        const sealed = updateQueue.sealed;
+        storeBatch({
+          op: 'update', running: false, done: finalResults.length, total: finalResults.length,
+          results: finalResults, snapshotId: updateQueue.snapshotId, counts,
+        });
+        if (counts.restart > 0) storeBanner(restartBannerFor(finalResults, counts.restart));
+        else if (!sealed) storeBanner(null); // 封队轮保留「自身已更新，请刷新」提示
+        // 组件已卸载时本循环仍会跑到这里（模块级调用不受影响）
+        void callReportBatch({ id: updateQueue.snapshotId, op: 'update', results: finalResults, counts });
+        resetUpdateQueue();
+        await load();
+        // 宿主 startedBundles 的热更新是异步落账的，延迟补一刷，行状态才不滞留
+        setTimeout(() => { void load(); }, 1500);
+      }, [load]);
+
+      // 行内/批量「更新」统一入口：折算候选 → 去重/排队/自身排队尾并封队 → 追加 → 起消费者。
+      // 不再触发全局锁：队列运行中仍可点其它行追加（自身入队后封队除外）。
+      const enqueueUpdate = React.useCallback((entries) => {
+        const candidates = (Array.isArray(entries) ? entries : []).map((e) => ({
+          name: e?.name,
+          official: Boolean(e?.official),
+          spec: updateSpecOf(e),
+        })).filter((c) => c.name);
+        if (!candidates.length) return;
+        if (updateQueue.sealed) { // 本轮已含自身，拒绝后续任何入队
+          storeBanner({ ok: false, text: t('queueSealed') });
+          return;
+        }
+        const plan = planUpdateEnqueue(candidates, updateQueue.seen);
+        if (!plan.items.length) {
+          storeBanner({ ok: false, text: t('queueDuplicate') });
+          return;
+        }
+        const starting = !updateQueue.running;
+        updateQueue.seen = plan.seen;
+        for (const it of plan.items) updateQueue.pending.push(it);
+        updateQueue.totalQueued += plan.items.length;
+        if (plan.sealed) {
+          updateQueue.sealed = true;
+          storeBanner({ ok: true, text: t('queueSelfTail') });
+        } else {
+          storeBanner({ ok: true, text: t('queueAdded', { n: updateQueue.totalQueued }) });
+        }
+        if (starting) void drainUpdateQueue(); // 已在跑则仅追加，while 下轮自会取到
+      }, [drainUpdateQueue]);
+
+      // 行内更新（单个可更新插件，不经过勾选集）：改为入队，不再受批量全局锁限制
       const onRowUpdate = React.useCallback((entry) => {
-        if (batch?.running) return;
         setConfirmOp(null); // 确认框开着时点行内更新：作废浮层，避免名单与现实脱节
-        void runBatch('update', [entry.name]);
-      }, [batch?.running, runBatch]);
+        void enqueueUpdate([entry]);
+      }, [enqueueUpdate]);
 
       // 恢复最近一次批量快照（把批量前的 package.json / cordis.patch.yml 复制回原位）
       const doRestore = React.useCallback(async (id) => {
@@ -2681,7 +2971,8 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
           h('button', {
             className: 'dpk-btn is-success',
             type: 'button',
-            disabled: busy || updatableCount === 0,
+            // 更新入队不走全局锁：显式不含 batchRunning（运行中本条工具条整体隐藏，追加靠行内按钮）
+            disabled: loading || checking || updatableCount === 0,
             onClick: () => onBatchBtn('update'),
           }, `${t('batchUpdate')} (${updatableCount})`),
           // 忽略所选：与行内按钮共用同一个气泡，目标换成 names 数组
@@ -2741,13 +3032,18 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
         )
         : null;
 
+      // 仅当运行中的批量就是更新队列时，才用「可继续追加」的进度文案并放开行内更新按钮；
+      // 其它批量（启用/停用/卸载）与加载/检查中仍沿用 busy 全禁用，避免两个批量并发写同一 storeBatch
+      const queueRunning = batchRunning && batch.op === 'update';
       const batchProgress = batchRunning
         ? h('div', { className: 'dpk-batchbar' },
-          h('span', { className: 'dpk-progress', role: 'status', 'aria-live': 'polite' }, t('batchRunning', {
-            op: t(OP_LABEL_KEY[batch.op] ?? 'opUpdate'),
-            done: batch.done,
-            total: batch.total,
-          })))
+          h('span', { className: 'dpk-progress', role: 'status', 'aria-live': 'polite' }, queueRunning
+            ? t('queueProgress', { done: batch.done, total: batch.total })
+            : t('batchRunning', {
+              op: t(OP_LABEL_KEY[batch.op] ?? 'opUpdate'),
+              done: batch.done,
+              total: batch.total,
+            })))
         : null;
 
       // 结果台账（本次会话批量后）
@@ -2798,7 +3094,8 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
         : null;
 
       // 跨会话残留的批量快照（状态文件 lastBatch）——只提示存在与恢复入口
-      const lastBatchLine = !batch && !ledgerDismissed && snap?.lastBatch?.id && snap.lastBatch.id !== dismissedBatchId
+      const lastBatchLine = !batch && !ledgerDismissed && !snap?.fromCache && snap?.lastBatch?.id && snap.lastBatch.id !== dismissedBatchId
+        && !shouldAutoDismissBatch(snap.lastBatch, snap)
         ? h('div', { className: 'dpk-ledrow' },
           h('span', { className: 'dpk-hint' }, t('lastBatchLine', {
             op: t(OP_LABEL_KEY[snap.lastBatch.op] ?? snap.lastBatch.op ?? ''),
@@ -2810,6 +3107,33 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
             disabled: restoring || batchRunning,
             onClick: () => { void doRestore(snap.lastBatch.id); },
           }, restoring ? t('restoring') : t('restoreBtn')),
+        )
+        : null;
+
+      // 自动清除后的折叠恢复入口（L2）：台账/横幅都不占地方，但撤销能力不丢。
+      // 默认收起，仅一行小按钮；展开后才给出说明与「恢复快照」按钮。
+      const autoDismissFold = !batch && !ledgerDismissed && !snap?.fromCache && snap?.lastBatch?.id
+        && snap.lastBatch.id !== dismissedBatchId && shouldAutoDismissBatch(snap.lastBatch, snap)
+        ? h('div', null,
+          h('div', { className: 'dpk-ledrow' },
+            h('button', {
+              className: 'dpk-btn is-mini',
+              type: 'button',
+              'aria-expanded': restoreFoldOpen,
+              onClick: () => setRestoreFoldOpen((v) => !v),
+            }, restoreFoldOpen ? t('autoDismissFoldHide') : t('autoDismissFoldShow')),
+          ),
+          restoreFoldOpen
+            ? h('div', { className: 'dpk-ledrow' },
+              h('span', { className: 'dpk-hint' }, t('autoDismissHint', { hours: Math.round(NOTIFY_TTL_MS / 3600000) })),
+              h('button', {
+                className: 'dpk-btn',
+                type: 'button',
+                disabled: restoring || batchRunning,
+                onClick: () => { void doRestore(snap.lastBatch.id); },
+              }, restoring ? t('restoring') : t('restoreBtn')),
+            )
+            : null,
         )
         : null;
 
@@ -2928,7 +3252,18 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
             }, installing ? t('installing') : t('installBtn')),
           ),
           installFlash
-            ? h('div', { className: `dpk-banner${installFlash.ok ? ' is-ok' : ''}` }, installFlash.text)
+            ? h('div', {
+                className: `dpk-banner${installFlash.ok ? ' is-ok' : ''}${installFlash.guide ? ' is-guide' : ''}`,
+              },
+                h('span', null, installFlash.text),
+                installFlash.guide === 'applied'
+                  ? h('button', {
+                      className: 'dpk-btn is-mini',
+                      type: 'button',
+                      onClick: () => { globalThis.location.reload(); },
+                    }, t('installGuideReload'))
+                  : null,
+              )
             : null,
           // ---- 分区 3：从本地安装（开发中的插件：目录软链 / 本地压缩包） ----
           h('div', { className: 'dpk-setsec' },
@@ -2952,7 +3287,18 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
               }, localInstalling ? t('localInstalling') : t('localInstallBtn')),
             ),
             localFlash
-              ? h('div', { className: `dpk-banner${localFlash.ok ? ' is-ok' : ''}` }, localFlash.text)
+              ? h('div', {
+                  className: `dpk-banner${localFlash.ok ? ' is-ok' : ''}${localFlash.guide ? ' is-guide' : ''}`,
+                },
+                  h('span', null, localFlash.text),
+                  localFlash.guide === 'applied'
+                    ? h('button', {
+                        className: 'dpk-btn is-mini',
+                        type: 'button',
+                        onClick: () => { globalThis.location.reload(); },
+                      }, t('installGuideReload'))
+                    : null,
+                )
               : null,
           ),
           // 实时进度：阶段来自 install-state，日志行来自宿主转发的 pnpm 输出（非模拟）
@@ -3011,6 +3357,36 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
           h('div', { className: 'dpk-hint' }, t('collapseGroupsByDefaultHint')),
           collapseFlash === 'ok' ? h('div', { className: 'dpk-savedok' }, t('collapseGroupsByDefaultSaved')) : null,
           collapseFlash && collapseFlash.err ? h('div', { className: 'dpk-savederr' }, collapseFlash.err) : null,
+          // 进入时默认勾选「只看可更新」：默认关
+          h('div', { className: 'dpk-setrow' },
+            h('label', { className: 'dpk-switch' },
+              h('input', {
+                type: 'checkbox',
+                checked: onlyUpdatableByDefault,
+                disabled: saving,
+                onChange: (e) => { void doSaveOnlyUpdatableByDefault(e.target.checked); },
+              }),
+              t('onlyUpdatableByDefault'),
+            ),
+          ),
+          h('div', { className: 'dpk-hint' }, t('onlyUpdatableByDefaultHint')),
+          onlyUpdatableFlash === 'ok' ? h('div', { className: 'dpk-savedok' }, t('onlyUpdatableByDefaultSaved')) : null,
+          onlyUpdatableFlash && onlyUpdatableFlash.err ? h('div', { className: 'dpk-savederr' }, onlyUpdatableFlash.err) : null,
+          // 进入时默认检查更新：默认关
+          h('div', { className: 'dpk-setrow' },
+            h('label', { className: 'dpk-switch' },
+              h('input', {
+                type: 'checkbox',
+                checked: checkOnEnter,
+                disabled: saving,
+                onChange: (e) => { void doSaveCheckOnEnter(e.target.checked); },
+              }),
+              t('checkOnEnter'),
+            ),
+          ),
+          h('div', { className: 'dpk-hint' }, t('checkOnEnterHint', { min: Math.round(AUTO_CHECK_MIN_MS / 60000) })),
+          checkOnEnterFlash === 'ok' ? h('div', { className: 'dpk-savedok' }, t('checkOnEnterSaved')) : null,
+          checkOnEnterFlash && checkOnEnterFlash.err ? h('div', { className: 'dpk-savederr' }, checkOnEnterFlash.err) : null,
           ),
           ),
           h('div', { className: 'dpk-mfoot' },
@@ -3058,7 +3434,16 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
             h('button', {
               className: `dpk-btn is-primary${confirmOp === 'uninstall' ? ' is-danger' : ''}`,
               type: 'button',
-              onClick: () => { setConfirmOp(null); void runBatch(confirmOp); },
+              onClick: () => {
+                setConfirmOp(null);
+                // 更新走可追加串行队列（名单已按 SELF 排最后过滤），其余操作仍走原批量
+                if (confirmOp === 'update') {
+                  void enqueueUpdate(names.map((n) => byName.get(n)).filter(Boolean));
+                  setSelected(new Set());
+                } else {
+                  void runBatch(confirmOp);
+                }
+              },
             }, t('dialogOkOp', { op: opLabel })),
           ),
         );
@@ -3456,6 +3841,11 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
                     onIgnore: (entry, anchor) => openIgnorePop([entry.name], anchor),
                     onRestore: (entry) => { void doRestoreIgnored([entry.name]); },
                     busy: batchRunning,
+                    // 更新队列运行中：仅该项已入队或队列封队时禁用，其余行保持可点以便追加；
+                    // 其它批量/空闲状态沿用 batchRunning，避免与启用/停用/卸载批量并发写 storeBatch
+                    updateDisabled: queueRunning
+                      ? updateQueue.sealed || updateQueue.seen.has(entry.name)
+                      : batchRunning,
                     terms, // 检索词：命中文本用主题色高亮
                     opStatus: batch && !batch.running
                       ? batch.results?.findLast((r) => r.name === entry.name) ?? null
@@ -3467,6 +3857,7 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
           }),
         ledger,
         lastBatchLine,
+        autoDismissFold,
       );
     }
 

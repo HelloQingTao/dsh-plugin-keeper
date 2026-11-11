@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.3.8 (2026-11-11)
+
+### 中文
+
+- **修复：单条更新不再卡住其它更新** — 点一个插件的「更新」不再让所有更新操作变灰；更新按点击顺序依次执行，运行中还能继续点其它插件排到后面。
+- **优化：更新「插件运维」自身更稳妥** — 它仍排在最后更新，之后点其它更新也不会再加入；面板重新加载时不会有待更新项丢失。
+- **新增：进入面板时的两个默认开关** — 高级配置可设置打开插件运维时自动勾选「只看可更新」，或自动检查一次更新；均默认关闭，刚检查过不会重复发起。
+- **新增：过期的批量通知自动清理** — 重启应用或距上次批量操作超过 12 小时后，分组末尾的安装进度与结果通知自动消失；需要撤销时仍可展开入口恢复批量前的配置。
+- **优化：安装完成后给明确引导** — 从 GitHub 或本地安装插件后，按结果提示「需重启后生效」或「已生效、可刷新页面」。
+
+### English
+
+- **Fix: updating one plugin no longer disables the others** — Clicking 'Update' on one plugin no longer greys out every other update action; updates now run in click order, and you can keep adding plugins while they run.
+- **Improved: self-updates are safer** — Updating the Plugin Ops console itself still runs last, and no further updates join that round, so none are lost when the panel reloads.
+- **New: two on-open defaults** — Advanced settings can now tick 'Only updatable' or run an update check automatically when the panel opens; both are off by default, and a recent check is not repeated.
+- **New: stale batch notices clear themselves** — After an app restart, or once a batch is over 12 hours old, the install progress and result notices at the bottom of the groups disappear automatically; an expandable entry still lets you restore the pre-batch configuration.
+- **Improved: clear guidance after installing** — Installing from GitHub or a local path now says whether a restart is needed for full effect, or that it is already live and the page can be refreshed.
+
 ## 0.3.7 (2026-11-09)
 
 ### 中文
