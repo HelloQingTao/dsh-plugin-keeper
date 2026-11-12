@@ -78,6 +78,29 @@ window.__ModuleLoader__.load({
         sectionDisplay: '显示与交互',
         collapseAllGroups: '一键折叠全部分组',
         expandAllGroups: '一键展开全部分组',
+        viewGroup: '分组',
+        viewList: '列表',
+        viewGroupAria: '切换到分组视图',
+        viewListAria: '切换到列表视图',
+        sortName: '按名称',
+        sortInstalled: '按安装时间',
+        sortUpdated: '按更新时间',
+        sortAsc: '升序',
+        sortDesc: '降序',
+        sortAria: '排序方式',
+        dirAria: '切换升降序',
+        relJustNow: '刚刚',
+        relMin: '{n} 分钟前',
+        relHour: '{n} 小时前',
+        relDay: '{n} 天前',
+        relMonth: '{n} 个月前',
+        relYear: '{n} 年前',
+        timeInstalled: '安装于 {time}',
+        timeUpdated: '更新于 {time}',
+        timeChanged: '版本变更于 {time}',
+        timeInstalledBadge: '装 {time}',
+        timeUpdatedBadge: '更 {time}',
+        timeUnknown: '时间未知',
         dialogClose: '关闭',
         clearLedger: '清空',
         clearLedgerAria: '清空所有消息',
@@ -350,6 +373,29 @@ window.__ModuleLoader__.load({
         sectionDisplay: 'Display & interaction',
         collapseAllGroups: 'Collapse all groups',
         expandAllGroups: 'Expand all groups',
+        viewGroup: 'Groups',
+        viewList: 'List',
+        viewGroupAria: 'Switch to group view',
+        viewListAria: 'Switch to list view',
+        sortName: 'By name',
+        sortInstalled: 'By install time',
+        sortUpdated: 'By update time',
+        sortAsc: 'Ascending',
+        sortDesc: 'Descending',
+        sortAria: 'Sort by',
+        dirAria: 'Toggle sort direction',
+        relJustNow: 'just now',
+        relMin: '{n} min ago',
+        relHour: '{n} h ago',
+        relDay: '{n} d ago',
+        relMonth: '{n} mo ago',
+        relYear: '{n} y ago',
+        timeInstalled: 'Installed {time}',
+        timeUpdated: 'Updated {time}',
+        timeChanged: 'Version changed {time}',
+        timeInstalledBadge: 'in {time}',
+        timeUpdatedBadge: 'up {time}',
+        timeUnknown: 'time unknown',
         dialogClose: 'Close',
         clearLedger: 'Clear',
         clearLedgerAria: 'Clear all messages',
@@ -711,6 +757,19 @@ window.__ModuleLoader__.load({
 .dpk-op.is-failed{color:var(--dsw-alias-state-error-primary);}
 .dpk-op.is-skipped{color:var(--dsw-alias-label-tertiary);}
 .dpk-batchbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
+/* 视图切换 + 排序控件（P1 双视图）：常驻工具行，右对齐；批量运行中仍可切视图/排序 */
+.dpk-viewbar{display:flex;align-items:center;gap:8px;margin-bottom:8px;justify-content:flex-end;}
+.dpk-viewtoggle{display:inline-flex;border:1px solid var(--dsw-alias-border-l2);border-radius:var(--dsw-radius-sm,8px);overflow:hidden;}
+.dpk-viewtoggle .dpk-btn{border:0;border-radius:0;}
+.dpk-viewtoggle .dpk-btn + .dpk-btn{border-left:1px solid var(--dsw-alias-border-l2);}
+.dpk-viewtoggle .dpk-btn.is-active{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-state-business-primary,var(--dsw-alias-brand-primary));font-weight:600;}
+.dpk-sortsel{border:1px solid var(--dsw-alias-border-l2);background:0 0;color:var(--dsw-alias-label-primary);border-radius:var(--dsw-radius-sm,8px);padding:1px 6px;font:inherit;font-size:11px;line-height:18px;cursor:pointer;}
+.dpk-sortsel:hover{background:var(--dsw-alias-interactive-bg-hover);}
+/* 行内时间徽标：弱化小字；更新=主题蓝，版本变更=警示黄，安装=三级灰 */
+.dpk-rowtime{font-size:11px;line-height:18px;color:var(--dsw-alias-label-tertiary);flex:none;white-space:nowrap;}
+.dpk-rowtime.is-upd{color:var(--dsw-alias-state-business-primary,var(--dsw-alias-brand-primary));}
+.dpk-rowtime.is-chg{color:var(--dsw-alias-state-warn-primary);}
+
 /* 批量进度文字：主题蓝（business 主题色） + 呼吸动效（原为弱化 hint 色，不显眼） */
 .dpk-progress{font-size:12px;line-height:18px;font-weight:600;color:var(--dsw-alias-state-business-primary,var(--dsw-alias-brand-primary));display:inline-flex;align-items:center;gap:6px;animation:dpk-pulse 1.3s ease-in-out infinite;}
 .dpk-progress::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--dsw-alias-state-business-primary,var(--dsw-alias-brand-primary));flex:none;animation:dpk-dot 1.1s ease-in-out infinite;}
@@ -1458,6 +1517,37 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
       return String(entry?.source?.repo ?? '');
     }
 
+    // 相对时间（时间台账 → 排序与行内徽标）。非法/未来时间返回空串（徽标不显示）。
+    function relTimeOf(iso) {
+      const ts = new Date(iso).getTime();
+      if (!Number.isFinite(ts)) return '';
+      const ms = Date.now() - ts;
+      if (ms < 0) return '';
+      const min = Math.floor(ms / 60000);
+      if (min < 1) return t('relJustNow');
+      if (min < 60) return t('relMin', { n: min });
+      const hr = Math.floor(min / 60);
+      if (hr < 24) return t('relHour', { n: hr });
+      const day = Math.floor(hr / 24);
+      if (day < 30) return t('relDay', { n: day });
+      const mo = Math.floor(day / 30);
+      if (mo < 12) return t('relMonth', { n: mo });
+      return t('relYear', { n: Math.floor(mo / 12) });
+    }
+
+    // 行内时间徽标：优先「更新」，其次「版本变更」，再次「安装」；都没有则不显示。
+    function timeBadgeOf(entry) {
+      const times = entry?.times;
+      if (!times) return null;
+      const updated = times.updatedAt ? relTimeOf(times.updatedAt) : '';
+      if (updated) return h('span', { className: 'dpk-rowtime is-upd', 'data-tip': t('timeUpdated', { time: new Date(times.updatedAt).toLocaleString() }) }, t('timeUpdatedBadge', { time: updated }));
+      const changed = times.versionChangedAt ? relTimeOf(times.versionChangedAt) : '';
+      if (changed) return h('span', { className: 'dpk-rowtime is-chg', 'data-tip': t('timeChanged', { time: new Date(times.versionChangedAt).toLocaleString() }) }, t('timeUpdatedBadge', { time: changed }));
+      const installed = times.installedAt ? relTimeOf(times.installedAt) : '';
+      if (installed) return h('span', { className: 'dpk-rowtime', 'data-tip': t('timeInstalled', { time: new Date(times.installedAt).toLocaleString() }) }, t('timeInstalledBadge', { time: installed }));
+      return null;
+    }
+
     // 检查结果展示口径：与 host countResults 一致，但已忽略的插件不计入可更新/最新/失败。
     // 用当前清单实时算：忽略决定、或远端换版本导致忽略失效，数字都立刻跟着变。
     function countChecks(plugins, kinds) {
@@ -1639,7 +1729,7 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
       }, flash === 'ok' ? CHECK_ICON : COPY_ICON);
     }
 
-    function Row({ entry, checked, disabled, onToggle, opStatus, onUpdate, onCancelUpdate, queued, onIgnore, onRestore, busy, updateDisabled, terms }) {
+    function Row({ entry, checked, disabled, onToggle, opStatus, onUpdate, onCancelUpdate, queued, onIgnore, onRestore, busy, updateDisabled, terms, showTime }) {
       const gk = groupKeyOf(entry);
       const srcKind = entry.source?.kind;
       const ignored = Boolean(entry.ignored?.mode);
@@ -1716,6 +1806,8 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
           entry.version ? h('span', { className: 'dpk-ver', 'data-tip': `v${entry.version}` }, highlightText(`v${entry.version}`, terms)) : null,
           badgeText ? h('span', { className: 'dpk-badge' }, badgeText) : null,
           h('div', { className: 'dpk-rowops' },
+            // 时间徽标（列表视图）：更新 > 版本变更 > 安装，取最近一条；hover 给绝对时间
+            showTime ? timeBadgeOf(entry) : null,
             checkBadgeOf(entry),
             queued
               ? h('button', {
@@ -2005,6 +2097,29 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
       }, [query]);
       // 用首份快照的「默认折叠」设置做初值：首帧即折叠，避免先展开再折叠的闪动
       const [collapsedGroups, setCollapsedGroups] = React.useState(() => (cacheRef.current?.settings?.collapseGroupsByDefault ? new Set(GROUP_ORDER) : new Set()));
+      // ---------- 双视图 + 时间排序（P1）----------
+      // 视图/排序是纯本机 UI 偏好，走 localStorage（不进 host 设置面板，避免设置项膨胀）。
+      const [viewMode, setViewMode] = React.useState(() => (localStorage.getItem('dpk.viewMode') === 'list' ? 'list' : 'group'));
+      const [sortKey, setSortKey] = React.useState(() => {
+        const v = localStorage.getItem('dpk.sortKey');
+        return v === 'installedAt' || v === 'updatedAt' ? v : 'name';
+      });
+      const [sortDir, setSortDir] = React.useState(() => (localStorage.getItem('dpk.sortDir') === 'asc' ? 'asc' : 'desc'));
+      const switchViewMode = React.useCallback((mode) => {
+        setViewMode(mode);
+        try { localStorage.setItem('dpk.viewMode', mode); } catch { /* 隐私模式等写失败可忽略 */ }
+      }, []);
+      const switchSortKey = React.useCallback((key) => {
+        setSortKey(key);
+        try { localStorage.setItem('dpk.sortKey', key); } catch { /* ignore */ }
+      }, []);
+      const toggleSortDir = React.useCallback(() => {
+        setSortDir((prev) => {
+          const next = prev === 'asc' ? 'desc' : 'asc';
+          try { localStorage.setItem('dpk.sortDir', next); } catch { /* ignore */ }
+          return next;
+        });
+      }, []);
       // 「默认折叠分组」只在首次拿到快照时套用一次，避免手动展开后被 load() 反复覆盖；
       // 已用 cacheRef 初始化过即视为已套用，置 true
       const collapseInitRef = React.useRef(cacheRef.current != null);
@@ -3012,15 +3127,39 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
         await load();
       }, [load]);
 
+      // 排序键：时间键空值排最后（不参与升降序翻转的双向比较——空值永远垫底）；
+      // 同值回退按名称，保证顺序稳定。时间排序默认降序（新→旧）符合「最近动过在前」直觉。
+      const sortPlugins = React.useCallback((list) => {
+        const keyed = list.map((p) => {
+          let key;
+          if (sortKey === 'installedAt') key = p.times?.installedAt ?? '';
+          else if (sortKey === 'updatedAt') key = p.times?.updatedAt ?? p.times?.versionChangedAt ?? '';
+          else key = p.name;
+          return { p, key };
+        });
+        const dirMul = sortDir === 'asc' ? 1 : -1;
+        keyed.sort((a, b) => {
+          const aEmpty = a.key === '' && sortKey !== 'name';
+          const bEmpty = b.key === '' && sortKey !== 'name';
+          if (aEmpty && bEmpty) return a.p.name.localeCompare(b.p.name);
+          if (aEmpty) return 1; // 空值垫底（不受方向影响）
+          if (bEmpty) return -1;
+          const cmp = sortKey === 'name' ? a.key.localeCompare(b.key)
+            : (a.key < b.key ? -1 : a.key > b.key ? 1 : a.p.name.localeCompare(b.p.name));
+          return cmp * dirMul;
+        });
+        return keyed.map((x) => x.p);
+      }, [sortKey, sortDir]);
+
       const groups = React.useMemo(() => {
         const map = new Map();
-        for (const p of visiblePlugins) {
+        for (const p of sortPlugins(visiblePlugins)) {
           const k = groupKeyOf(p);
           if (!map.has(k)) map.set(k, []);
           map.get(k).push(p);
         }
         return GROUP_ORDER.filter((k) => map.has(k)).map((k) => [k, map.get(k)]);
-      }, [visiblePlugins]);
+      }, [visiblePlugins, sortPlugins]);
 
       const counts = React.useMemo(() => {
         // 顶部汇总按「来源」统计：显示分组会把已忽略插件挪到 ignored 组，这里仍算回原来源，
@@ -3057,6 +3196,42 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
 
       // 一键折叠：全部已折叠时点击展开，否则（含部分折叠）点击折叠全部
       const allCollapsed = GROUP_ORDER.every((k) => collapsedGroups.has(k));
+      // 视图切换 + 排序控件：常驻（批量运行中也可切，纯只读 UI 操作）
+      const viewBar = h('div', { className: 'dpk-viewbar' },
+        h('div', { className: 'dpk-viewtoggle', role: 'group', 'aria-label': t('viewGroupAria') },
+          h('button', {
+            className: `dpk-btn is-mini${viewMode === 'group' ? ' is-active' : ''}`,
+            type: 'button',
+            'aria-label': t('viewGroupAria'),
+            'aria-pressed': viewMode === 'group',
+            onClick: () => switchViewMode('group'),
+          }, t('viewGroup')),
+          h('button', {
+            className: `dpk-btn is-mini${viewMode === 'list' ? ' is-active' : ''}`,
+            type: 'button',
+            'aria-label': t('viewListAria'),
+            'aria-pressed': viewMode === 'list',
+            onClick: () => switchViewMode('list'),
+          }, t('viewList')),
+        ),
+        h('select', {
+          className: 'dpk-sortsel',
+          'aria-label': t('sortAria'),
+          value: sortKey,
+          onChange: (e) => switchSortKey(e.target.value),
+        },
+          h('option', { value: 'name' }, t('sortName')),
+          h('option', { value: 'installedAt' }, t('sortInstalled')),
+          h('option', { value: 'updatedAt' }, t('sortUpdated')),
+        ),
+        h('button', {
+          className: 'dpk-btn is-mini',
+          type: 'button',
+          'aria-label': sortDir === 'asc' ? t('sortAsc') : t('sortDesc'),
+          'data-tip': sortDir === 'asc' ? t('sortAsc') : t('sortDesc'),
+          onClick: toggleSortDir,
+        }, sortDir === 'asc' ? '↑' : '↓'),
+      );
       // 批量工具条：常驻显示（选中与否都在，避免列表跳动）；无选中时按钮禁用。
       // 四个按钮点击后弹二次确认框（列出将处理的插件），确认才执行。
       const batchBar = !batchRunning
@@ -3739,6 +3914,31 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
         );
       })();
 
+      // 行渲染（列表视图与分组视图共用一份 props，改一处两视图同步生效）
+      const rowOf = (entry) => h(Row, {
+        key: entry.name,
+        entry,
+        checked: selected.has(entry.name),
+        disabled: entry.official || batchRunning,
+        onToggle: toggleOne,
+        onUpdate: onRowUpdate,
+        queued: updateQueue.pending.some((p) => p.name === entry.name),
+        onCancelUpdate: onRowCancel,
+        onIgnore: (entry, anchor) => openIgnorePop([entry.name], anchor),
+        onRestore: (entry) => { void doRestoreIgnored([entry.name]); },
+        busy: batchRunning,
+        // 更新队列运行中：仅该项已入队或队列封队时禁用，其余行保持可点以便追加；
+        // 其它批量/空闲状态沿用 batchRunning，避免与启用/停用/卸载批量并发写 storeBatch
+        updateDisabled: queueRunning
+          ? updateQueue.sealed || updateQueue.seen.has(entry.name)
+          : batchRunning,
+        terms, // 检索词：命中文本用主题色高亮
+        showTime: viewMode === 'list', // 时间徽标只在列表视图显示（分组视图保持清爽）
+        opStatus: batch && !batch.running
+          ? batch.results?.findLast((r) => r.name === entry.name) ?? null
+          : null,
+      });
+
       return h('div', { className: 'dpk-root' },
         confirmModal,
         exportModal,
@@ -3848,6 +4048,7 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
             time: snap.cachedAt ? new Date(snap.cachedAt).toLocaleString() : '',
           }))
           : null,
+        viewBar,
         batchBar,
         batchProgress,
         loading && !snap
@@ -3857,7 +4058,10 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
         searching && visiblePlugins.length === 0
           ? h('div', { className: 'dpk-empty' }, t('searchNoMatch', { q: search.trim() }))
           : null,
-        groups.map(([key, list]) => {
+        // 列表视图：平铺全部可见行（排序全局生效）；分组视图：组内按排序键排
+        viewMode === 'list'
+          ? h('div', { className: 'dpk-rows' }, sortPlugins(visiblePlugins).map((entry) => rowOf(entry)))
+          : groups.map(([key, list]) => {
             // 勾选限定：任意非官方插件可选中（启停/卸载批量不限可更新行；
             // 行内"更新"按钮按 updateSpecOf 独立显隐，批量更新对无目标行记 skipped）
             const eligible = list.filter((p) => !p.official);
@@ -3922,29 +4126,7 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
               ),
               !collapsed
                 ? h('div', { className: 'dpk-rows' },
-                  list.map((entry) => h(Row, {
-                    key: entry.name,
-                    entry,
-                    checked: selected.has(entry.name),
-                    disabled: entry.official || batchRunning,
-                    onToggle: toggleOne,
-                    onUpdate: onRowUpdate,
-                    queued: updateQueue.pending.some((p) => p.name === entry.name),
-                    onCancelUpdate: onRowCancel,
-                    onIgnore: (entry, anchor) => openIgnorePop([entry.name], anchor),
-                    onRestore: (entry) => { void doRestoreIgnored([entry.name]); },
-                    busy: batchRunning,
-                    // 更新队列运行中：仅该项已入队或队列封队时禁用，其余行保持可点以便追加；
-                    // 其它批量/空闲状态沿用 batchRunning，避免与启用/停用/卸载批量并发写 storeBatch
-                    updateDisabled: queueRunning
-                      ? updateQueue.sealed || updateQueue.seen.has(entry.name)
-                      : batchRunning,
-                    terms, // 检索词：命中文本用主题色高亮
-                    opStatus: batch && !batch.running
-                      ? batch.results?.findLast((r) => r.name === entry.name) ?? null
-                      : null,
-                  })),
-                )
+                  list.map((entry) => rowOf(entry)))
                 : null,
             );
           }),

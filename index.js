@@ -390,6 +390,105 @@ async function writeIgnored(data) {
   await chmod(path, 0o600).catch(() => {});
 }
 
+// ---------- 时间台账（$DSH_HOME/plugin-keeper-times.json）----------
+// 记录每个插件的安装/更新时间，供前端「按安装/更新时间排序」。三条入账路径：
+// ① 盘点播种：首次见到的插件名，用安装目录 mtime 近似 installedAt（pnpm add 会重建目录，
+//    mtime ≈ 安装时间；本地链接插件也适用）。
+// ② 更新落账：updateBundleInPlace 成功后 recordUpdate() 写 updatedAt/updatedVersion。
+// ③ 版本漂移检测：盘点发现版本 ≠ 台账锚定版本且不是本插件自己的更新 → 外部变更
+//    （手动 pnpm add / 其他工具），记 versionChangedAt 并重新锚定。
+
+const TIMES_FILE = 'plugin-keeper-times.json';
+
+function timesPathOf() {
+  const home = serviceBridge?.profile?.home
+    || process.env.DSH_HOME
+    || join(homedir(), '.dsh');
+  return join(home, TIMES_FILE);
+}
+
+async function readTimes() {
+  const raw = await readJsonSafe(timesPathOf());
+  const plugins = raw?.plugins && typeof raw.plugins === 'object' && !Array.isArray(raw.plugins) ? raw.plugins : {};
+  return { version: 1, plugins };
+}
+
+async function writeTimes(data) {
+  const path = timesPathOf();
+  await writeFile(path, `${JSON.stringify(data, null, 2)}\n`, { encoding: 'utf8', mode: 0o600 });
+  await chmod(path, 0o600).catch(() => {});
+}
+
+/** 更新落账（updateBundleInPlace 成功后调用）：写 updatedAt/updatedVersion，失败不影响主流程。 */
+async function recordUpdate(name, version) {
+  try {
+    const data = await readTimes();
+    const map = data.plugins;
+    const rec = map[name] && typeof map[name] === 'object' ? { ...map[name] } : {};
+    const at = new Date().toISOString();
+    rec.updatedAt = at;
+    rec.updatedVersion = typeof version === 'string' ? version : rec.updatedVersion ?? null;
+    if (!rec.installedAt) rec.installedAt = at; // 台账缺失兜底：以本次更新时间当作锚点
+    if (!rec.installedVersion) rec.installedVersion = rec.updatedVersion;
+    map[name] = rec;
+    await writeTimes(data);
+  } catch (e) {
+    console.log(`[dsh-plugin-keeper] recordUpdate(${name}) failed: ${String(e?.message ?? e)}`);
+  }
+}
+
+/**
+ * 盘点播种 + 版本漂移检测：就地给每个 plugin 挂上 p.times（浏览器排序用），
+ * 并按需播种/落账写盘。任何失败都不影响盘点主流程。
+ */
+async function reconcileTimes(plugins) {
+  try {
+    const data = await readTimes();
+    const map = data.plugins;
+    let dirty = false;
+    const now = new Date().toISOString();
+    for (const p of plugins) {
+      const rec = map[p.name];
+      if (!rec || typeof rec !== 'object') {
+        // ① 播种：安装目录 mtime ≈ 安装时间；拿不到退化为当前时间
+        let installedAt = now;
+        try {
+          const st = await stat(p.installedPath);
+          if (st?.mtime instanceof Date && !Number.isNaN(st.mtime.getTime())) installedAt = st.mtime.toISOString();
+        } catch { /* ignore */ }
+        map[p.name] = { installedAt, installedVersion: p.version ?? null };
+        dirty = true;
+      } else {
+        if (p.version && rec.installedVersion && p.version !== rec.installedVersion && rec.updatedVersion !== p.version) {
+          // ③ 版本漂移：外部改动（更新落账路径已提前改锚，不会走到这）
+          rec.versionChangedAt = now;
+          rec.versionChangedFrom = rec.installedVersion;
+          rec.versionChangedTo = p.version;
+          rec.installedVersion = p.version;
+          dirty = true;
+        } else if (p.version && rec.installedVersion !== p.version) {
+          rec.installedVersion = p.version; // 静默重锚（版本号缺失等边界）
+          dirty = true;
+        }
+      }
+      const cur = map[p.name];
+      p.times = {
+        installedAt: typeof cur.installedAt === 'string' ? cur.installedAt : null,
+        updatedAt: typeof cur.updatedAt === 'string' ? cur.updatedAt : null,
+        versionChangedAt: typeof cur.versionChangedAt === 'string' ? cur.versionChangedAt : null,
+      };
+    }
+    // 孤儿清理：已卸载插件的条目随盘点顺带落盘
+    const live = new Set(plugins.map((p) => p.name));
+    for (const k of Object.keys(map)) {
+      if (!live.has(k)) { delete map[k]; dirty = true; }
+    }
+    if (dirty) await writeTimes(data);
+  } catch (e) {
+    console.log(`[dsh-plugin-keeper] reconcileTimes failed: ${String(e?.message ?? e)}`);
+  }
+}
+
 /**
  * 惰性清理，返回「本次真正生效」的映射（不写盘，删除留到下次写操作顺带落盘）：
  * - 已卸载插件的孤儿条目；
@@ -1023,9 +1122,15 @@ export class PluginKeeperService extends TypertRemoteService {
    * 来源分组盘点快照（附带上次检查结果）。只读：碰的文件只有 profile
    * package.json、node_modules/<name>/package.json 与自己的状态文件。
    */
+  /** 更新落账（updateBundleInPlace 内部调用；挂到服务上便于自检脚本直接驱动）。 */
+  recordUpdate(name, version) {
+    return recordUpdate(name, version);
+  }
+
   async snapshot() {
     const t0 = Date.now();
     const { errors, profileName, plugins, started } = await collectInventory();
+    await reconcileTimes(plugins); // 时间台账：播种/漂移检测/挂 p.times（失败不影响盘点）
     const t1 = Date.now();
     const state = await readState();
     const ignoredRaw = await readIgnored();
@@ -1793,6 +1898,7 @@ export class PluginKeeperService extends TypertRemoteService {
         if (exit === 0 && !timedOut) {
           const meta = await readJsonSafe(join(dir, 'node_modules', ...name.split('/'), 'package.json'));
           const installed = typeof meta?.version === 'string' ? meta.version : null;
+          await recordUpdate(name, installed); // ② 时间台账：更新落账（失败不影响升级结果）
           console.log(`[dsh-plugin-keeper] inplace update ok: ${name} ${deps[name]} -> ${installed ?? rawSpec}`);
           return { ok: true, status: 'restart', name, to: installed, spec: rawSpec };
         }
