@@ -145,6 +145,26 @@ window.__ModuleLoader__.load({
         localInstallWarn: '注意：{warning}',
         installDone: '已安装 {name}，刷新列表可见',
         installRestart: '已安装 {name}，重启后生效',
+        installQueueBtn: '+ 安装插件',
+        queueTitle: '安装队列',
+        queuePlaceholder: 'npm 包名，可带 @版本；回车连续加入',
+        queueAdd: '加入队列',
+        queueHint: '加入后台队列后即可关掉本面板继续操作，安装串行进行。',
+        queueEmpty: '队列为空',
+        queueStatusQueued: '排队中',
+        queueStatusRunning: '安装中',
+        queueStatusDone: '已完成',
+        queueStatusFailed: '失败',
+        queueStatusCancelled: '已取消',
+        iqCancel: '取消',
+        queueRetry: '重试',
+        queueRemove: '移除',
+        queueClose: '关闭',
+        queueCapsule: '⏳ 安装中 {i}/{n}',
+        queueNoticeDone: '✅ {name} 安装完成（{version}）',
+        queueNoticeRestart: '✅ {name} 已安装，需重启 dsh 后生效',
+        queueNoticeFailed: '❌ {name} 安装失败：{error}',
+        queueNeedBuilds: '该包需要批准构建脚本（approvedBuilds）；先在系统插件管理器里装一次以批准，再回来重试。',
         installGuideRestart: '已安装 {name}。插件包内容已更新，需重启 dsh web 后才能完全生效；重启前请勿依赖新功能。',
         installGuideApplied: '已安装 {name} 并已生效。若界面未自动更新，可点下方按钮刷新页面。',
         installGuideReload: '刷新页面',
@@ -440,6 +460,26 @@ window.__ModuleLoader__.load({
         localInstallWarn: 'Note: {warning}',
         installDone: 'Installed {name}, refresh the list to see it',
         installRestart: 'Installed {name}, takes effect after restart',
+        installQueueBtn: '+ Install plugin',
+        queueTitle: 'Install queue',
+        queuePlaceholder: 'npm package name, optional @version — Enter to add continuously',
+        queueAdd: 'Add to queue',
+        queueHint: 'Installs run serially in the background; you can close this panel and keep working.',
+        queueEmpty: 'Queue is empty',
+        queueStatusQueued: 'Queued',
+        queueStatusRunning: 'Installing',
+        queueStatusDone: 'Done',
+        queueStatusFailed: 'Failed',
+        queueStatusCancelled: 'Cancelled',
+        iqCancel: 'Cancel',
+        queueRetry: 'Retry',
+        queueRemove: 'Remove',
+        queueClose: 'Close',
+        queueCapsule: '⏳ Installing {i}/{n}',
+        queueNoticeDone: '✅ {name} installed ({version})',
+        queueNoticeRestart: '✅ {name} installed — restart dsh to take effect',
+        queueNoticeFailed: '❌ {name} install failed: {error}',
+        queueNeedBuilds: 'This package requires build-script approval (approvedBuilds); install it once in the system plugin manager to approve, then retry here.',
         installGuideRestart: 'Installed {name}. The plugin package changed — restart dsh web for it to take full effect; do not rely on the new features before restarting.',
         installGuideApplied: 'Installed {name} and it is already active. If the UI did not update automatically, use the button below to reload the page.',
         installGuideReload: 'Reload page',
@@ -769,6 +809,20 @@ window.__ModuleLoader__.load({
 .dpk-rowtime{font-size:11px;line-height:18px;color:var(--dsw-alias-label-tertiary);flex:none;white-space:nowrap;}
 .dpk-rowtime.is-upd{color:var(--dsw-alias-state-business-primary,var(--dsw-alias-brand-primary));}
 .dpk-rowtime.is-chg{color:var(--dsw-alias-state-warn-primary);}
+/* 后台安装队列（P2）：进度胶囊 / 面板列表 / 页内 notice */
+.dpk-queuecapsule{color:var(--dsw-alias-state-business-primary,var(--dsw-alias-brand-primary));white-space:nowrap;}
+.dpk-queuelist{display:flex;flex-direction:column;gap:6px;max-height:min(40vh,360px);overflow:auto;}
+.dpk-queuerow{display:flex;align-items:flex-start;gap:8px;padding:6px 8px;border:.5px solid var(--dsw-alias-border-l2);border-radius:var(--dsw-radius-md,10px);}
+.dpk-queuemain{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px;}
+.dpk-queuename{font-size:12px;line-height:18px;overflow-wrap:anywhere;}
+.dpk-queuebadge{font-size:11px;line-height:16px;color:var(--dsw-alias-label-secondary);white-space:nowrap;}
+.dpk-queuebadge.is-done{color:var(--dsw-alias-state-success-primary);}
+.dpk-queuebadge.is-failed{color:var(--dsw-alias-state-error-primary);}
+.dpk-queuebadge.is-running{color:var(--dsw-alias-state-business-primary,var(--dsw-alias-brand-primary));}
+.dpk-queuever{font-size:11px;line-height:16px;color:var(--dsw-alias-label-tertiary);white-space:nowrap;}
+.dpk-queueerr{font-size:11px;line-height:16px;color:var(--dsw-alias-state-error-primary);overflow-wrap:anywhere;}
+.dpk-queueops{display:flex;gap:6px;flex:none;flex-wrap:wrap;justify-content:flex-end;}
+.dpk-queuenotice{display:flex;align-items:center;justify-content:space-between;gap:8px;}
 
 /* 批量进度文字：主题蓝（business 主题色） + 呼吸动效（原为弱化 hint 色，不显眼） */
 .dpk-progress{font-size:12px;line-height:18px;font-weight:600;color:var(--dsw-alias-state-business-primary,var(--dsw-alias-brand-primary));display:inline-flex;align-items:center;gap:6px;animation:dpk-pulse 1.3s ease-in-out infinite;}
@@ -1171,6 +1225,48 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
     async function callSetIgnoredUpdates(payload) {
       try {
         const v = unwrapEnvelope(await rpcFace?.setIgnoredUpdates?.(payload));
+        return v ?? { ok: false, error: 'no response' };
+      } catch (e) {
+        return { ok: false, error: String(e?.message ?? e) };
+      }
+    }
+
+    // 后台安装队列（P2）：宿主半内存串行 worker，面板关了也在跑
+    async function callInstallEnqueue(name) {
+      try {
+        const v = unwrapEnvelope(await rpcFace?.installEnqueue?.({ name }));
+        return v ?? { ok: false, error: 'no response' };
+      } catch (e) {
+        return { ok: false, error: String(e?.message ?? e) };
+      }
+    }
+    async function callInstallQueueState() {
+      try {
+        const v = unwrapEnvelope(await rpcFace?.installQueueState?.({}));
+        return v ?? { ok: false, error: 'no response' };
+      } catch (e) {
+        return { ok: false, error: String(e?.message ?? e) };
+      }
+    }
+    async function callInstallQueueCancel(id) {
+      try {
+        const v = unwrapEnvelope(await rpcFace?.installQueueCancel?.({ id }));
+        return v ?? { ok: false, error: 'no response' };
+      } catch (e) {
+        return { ok: false, error: String(e?.message ?? e) };
+      }
+    }
+    async function callInstallQueueRemove(id) {
+      try {
+        const v = unwrapEnvelope(await rpcFace?.installQueueRemove?.({ id }));
+        return v ?? { ok: false, error: 'no response' };
+      } catch (e) {
+        return { ok: false, error: String(e?.message ?? e) };
+      }
+    }
+    async function callInstallQueueRetry(id) {
+      try {
+        const v = unwrapEnvelope(await rpcFace?.installQueueRetry?.({ id }));
         return v ?? { ok: false, error: 'no response' };
       } catch (e) {
         return { ok: false, error: String(e?.message ?? e) };
@@ -2207,6 +2303,102 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
         } catch (e) {
           console.debug('[dsh-plugin-keeper] listBundles merge failed:', e?.message ?? e);
         }
+      }, []);
+
+      // ---------- 后台安装队列（P2）----------
+      // 队列状态在宿主半（内存），前端轮询；面板可关，胶囊常驻工具栏。
+      const [installQueueItems, setInstallQueueItems] = React.useState(null); // null=还没拉过
+      const [installPanelOpen, setInstallPanelOpen] = React.useState(false);
+      const [installNotices, setInstallNotices] = React.useState([]); // {id, ok, text}
+      const [installInputFlash, setInstallInputFlash] = React.useState(null); // 入队失败的行内提示 {text}
+      const [installDraft, setInstallDraft] = React.useState('');
+      const installInputRef = React.useRef(null);
+      // 状态变化检测：上一次见到的 {id: status}，用来在条目结束时弹 notice + 刷列表
+      const queueSeenRef = React.useRef(new Map());
+      const queueActive = (installQueueItems ?? []).some((it) => it.status === 'queued' || it.status === 'running');
+
+      const pushInstallNotice = React.useCallback((ok, text) => {
+        const id = `n${Date.now()}${Math.random().toString(36).slice(2, 6)}`;
+        setInstallNotices((prev) => [...prev, { id, ok, text }]);
+      }, []);
+      const dismissInstallNotice = React.useCallback((id) => {
+        setInstallNotices((prev) => prev.filter((n) => n.id !== id));
+      }, []);
+
+      // 轮询：面板开着或队列还有活跃条目时，每 1.5s 拉一次；空闲时完全停掉
+      React.useEffect(() => {
+        if (!installPanelOpen && !queueActive) return undefined;
+        let alive = true;
+        const tick = async () => {
+          try {
+            const v = await callInstallQueueState();
+            if (!alive || !v?.ok) return;
+            const items = Array.isArray(v.items) ? v.items : [];
+            setInstallQueueItems(items);
+            // 与上次状态对比：结束的条目弹 notice（不重复）
+            const prevSeen = queueSeenRef.current;
+            const nextSeen = new Map();
+            for (const it of items) {
+              nextSeen.set(it.id, it.status);
+              const before = prevSeen.get(it.id);
+              if (before === it.status) continue;
+              if (it.status === 'done') {
+                const version = typeof it.installedVersion === 'string' ? it.installedVersion : '?';
+                const text = it.application === 'restart-required'
+                  ? t('queueNoticeRestart', { name: it.name })
+                  : t('queueNoticeDone', { name: it.name, version });
+                pushInstallNotice(true, text);
+                void load({ silent: true }); // 新插件入列，静默补刷
+              } else if (it.status === 'failed') {
+                pushInstallNotice(false, t('queueNoticeFailed', { name: it.name, error: it.error ?? '?' }));
+              }
+            }
+            queueSeenRef.current = nextSeen;
+          } catch { /* 网络抖动下轮等下一轮 */ }
+        };
+        void tick();
+        const tm = setInterval(() => { void tick(); }, 1500);
+        return () => { alive = false; clearInterval(tm); };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+      }, [installPanelOpen, queueActive]);
+
+      // notice 自动消失（12s），失败的不自动清
+      React.useEffect(() => {
+        const timers = installNotices
+          .filter((n) => n.ok)
+          .map((n) => setTimeout(() => dismissInstallNotice(n.id), 12000));
+        return () => { for (const tm of timers) clearTimeout(tm); };
+      }, [installNotices, dismissInstallNotice]);
+
+      const doInstallEnqueue = React.useCallback(async () => {
+        const name = installDraft.trim();
+        if (!name) return;
+        const v = await callInstallEnqueue(name);
+        if (v?.ok) {
+          setInstallDraft('');
+          setInstallInputFlash(null);
+          // 立即拉一次状态，让新条目立刻出现在列表里
+          const st = await callInstallQueueState();
+          if (st?.ok) setInstallQueueItems(Array.isArray(st.items) ? st.items : []);
+        } else {
+          setInstallInputFlash({ text: v?.error ?? v?.code ?? 'error' });
+        }
+      }, [installDraft]);
+
+      const doInstallQueueCancel = React.useCallback(async (id) => {
+        await callInstallQueueCancel(id);
+        const st = await callInstallQueueState();
+        if (st?.ok) setInstallQueueItems(Array.isArray(st.items) ? st.items : []);
+      }, []);
+      const doInstallQueueRemove = React.useCallback(async (id) => {
+        await callInstallQueueRemove(id);
+        const st = await callInstallQueueState();
+        if (st?.ok) setInstallQueueItems(Array.isArray(st.items) ? st.items : []);
+      }, []);
+      const doInstallQueueRetry = React.useCallback(async (id) => {
+        await callInstallQueueRetry(id);
+        const st = await callInstallQueueState();
+        if (st?.ok) setInstallQueueItems(Array.isArray(st.items) ? st.items : []);
       }, []);
 
       // 语言切换只重渲染文案，不重拉数据（拉数据由刷新按钮/批量后触发）
@@ -3914,6 +4106,74 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
         );
       })();
 
+      // 安装队列面板：输入即入队（可连续输），条目状态轮询宿主半；面板可随时关掉，安装继续跑
+      const installQueueModal = installPanelOpen
+        ? h(Modal, {
+          className: 'is-wide',
+          ariaLabel: t('queueTitle'),
+          onClose: () => setInstallPanelOpen(false),
+        },
+          h('div', { className: 'dpk-mtitle' }, t('queueTitle')),
+          h('div', { className: 'dpk-hint' }, t('queueHint')),
+          // ---- 输入行：回车/按钮都可入队，入队成功清空输入框方便连续输 ----
+          h('div', { className: 'dpk-setrow' },
+            h('input', {
+              ref: installInputRef,
+              className: 'dpk-input',
+              type: 'text',
+              spellCheck: false,
+              autoComplete: 'off',
+              placeholder: t('queuePlaceholder'),
+              value: installDraft,
+              onChange: (e) => setInstallDraft(e.target.value),
+              onKeyDown: (e) => { if (e.key === 'Enter') { e.preventDefault(); void doInstallEnqueue(); } },
+            }),
+            h('button', {
+              className: 'dpk-btn is-primary',
+              type: 'button',
+              disabled: !installDraft.trim(),
+              onClick: () => { void doInstallEnqueue(); },
+            }, t('queueAdd')),
+          ),
+          installInputFlash
+            ? h('div', { className: 'dpk-banner' }, installInputFlash.text)
+            : null,
+          // ---- 队列列表 ----
+          h('div', { className: 'dpk-queuelist' },
+            (installQueueItems ?? []).length === 0
+              ? h('div', { className: 'dpk-hint' }, t('queueEmpty'))
+              : (installQueueItems ?? []).map((it) => h('div', { className: 'dpk-queuerow', key: it.id },
+                h('div', { className: 'dpk-queuemain' },
+                  h('span', { className: 'dpk-queuename' }, it.name),
+                  h('span', { className: `dpk-queuebadge is-${it.status}` }, t(`queueStatus${it.status.charAt(0).toUpperCase()}${it.status.slice(1)}`)),
+                  typeof it.installedVersion === 'string' && it.status === 'done'
+                    ? h('span', { className: 'dpk-queuever' }, `v${it.installedVersion}`)
+                    : null,
+                  it.status === 'failed' && it.error
+                    ? h('div', { className: 'dpk-queueerr' },
+                      it.error,
+                      /approve|build|script|批准/i.test(String(it.error))
+                        ? h('div', { className: 'dpk-banner' }, t('queueNeedBuilds'))
+                        : null,
+                    )
+                    : null,
+                ),
+                h('div', { className: 'dpk-queueops' },
+                  (it.status === 'queued' || it.status === 'running')
+                    ? h('button', { className: 'dpk-btn is-mini', type: 'button', onClick: () => { void doInstallQueueCancel(it.id); } }, t('iqCancel'))
+                    : null,
+                  (it.status === 'failed' || it.status === 'cancelled')
+                    ? h('button', { className: 'dpk-btn is-mini', type: 'button', onClick: () => { void doInstallQueueRetry(it.id); } }, t('queueRetry'))
+                    : null,
+                  (it.status === 'done' || it.status === 'failed' || it.status === 'cancelled')
+                    ? h('button', { className: 'dpk-btn is-mini', type: 'button', onClick: () => { void doInstallQueueRemove(it.id); } }, t('queueRemove'))
+                    : null,
+                ),
+              )),
+          ),
+        )
+        : null;
+
       // 行渲染（列表视图与分组视图共用一份 props，改一处两视图同步生效）
       const rowOf = (entry) => h(Row, {
         key: entry.name,
@@ -3943,6 +4203,7 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
         confirmModal,
         exportModal,
         importModal,
+        installQueueModal,
         settingsModal,
         h(IgnorePop, { pop: ignorePop, onPick: doPickIgnore, onClose: closeIgnorePop }),
         // 隐藏的文件选择器（导入入口）
@@ -4014,6 +4275,24 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
           ),
           h('div', { className: 'dpk-spacer' }),
           h('div', { className: 'dpk-tbgroup' },
+            // 安装进度胶囊：队列活跃时常驻（点击打开队列面板）
+            queueActive
+              ? h('button', {
+                className: 'dpk-btn is-mini dpk-queuecapsule',
+                type: 'button',
+                'data-tip': t('queueTitle'),
+                onClick: () => setInstallPanelOpen(true),
+              }, t('queueCapsule', {
+                i: (installQueueItems ?? []).filter((it) => it.status === 'done').length + 1,
+                n: (installQueueItems ?? []).filter((it) => it.status !== 'cancelled' && it.status !== 'failed').length || 1,
+              }))
+              : null,
+            h('button', {
+              className: 'dpk-btn',
+              type: 'button',
+              disabled: loading || checking || batchRunning,
+              onClick: () => setInstallPanelOpen(true),
+            }, t('installQueueBtn')),
             h('span', { className: 'dpk-lastcheck' }, lastCheckText),
             h('button', {
               className: 'dpk-btn is-primary',
@@ -4029,6 +4308,21 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
             }, loading ? t('refreshing') : t('refresh')),
           ),
         ),
+        // 安装队列 notice（页内横幅，可手动关；成功的 12s 自动消失）
+        installNotices.length > 0
+          ? installNotices.map((n) => h('div', {
+            key: n.id,
+            className: `dpk-banner${n.ok ? ' is-ok' : ''} dpk-queuenotice`,
+          },
+            h('span', null, n.text),
+            h('button', {
+              className: 'dpk-btn is-mini',
+              type: 'button',
+              'aria-label': t('queueClose'),
+              onClick: () => dismissInstallNotice(n.id),
+            }, '×'),
+          ))
+          : null,
         banner ? h('div', { className: `dpk-banner${banner.ok ? ' is-ok' : ''}` }, banner.text) : null,
         // 检查结果行：有失败时升级为警示横幅（含首条原因与连接类提示），全成才显示普通统计
         // 检查进行中不显示统计（此时分组各自在跑，数字还是上一轮的）
@@ -4198,6 +4492,51 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
           service: 'PluginKeeperService',
           namespace: 'dsh-plugin-keeper',
           method: 'setIgnoredUpdates',
+          invocation: { kind: 'direct' },
+          parameters: [INPUT_PARAM],
+          result: { mode: 'src-json' },
+        },
+        {
+          id: 'dsh-plugin-keeper#dsh-plugin-keeper/installEnqueue',
+          service: 'PluginKeeperService',
+          namespace: 'dsh-plugin-keeper',
+          method: 'installEnqueue',
+          invocation: { kind: 'direct' },
+          parameters: [INPUT_PARAM],
+          result: { mode: 'src-json' },
+        },
+        {
+          id: 'dsh-plugin-keeper#dsh-plugin-keeper/installQueueState',
+          service: 'PluginKeeperService',
+          namespace: 'dsh-plugin-keeper',
+          method: 'installQueueState',
+          invocation: { kind: 'direct' },
+          parameters: [],
+          result: { mode: 'src-json' },
+        },
+        {
+          id: 'dsh-plugin-keeper#dsh-plugin-keeper/installQueueCancel',
+          service: 'PluginKeeperService',
+          namespace: 'dsh-plugin-keeper',
+          method: 'installQueueCancel',
+          invocation: { kind: 'direct' },
+          parameters: [INPUT_PARAM],
+          result: { mode: 'src-json' },
+        },
+        {
+          id: 'dsh-plugin-keeper#dsh-plugin-keeper/installQueueRemove',
+          service: 'PluginKeeperService',
+          namespace: 'dsh-plugin-keeper',
+          method: 'installQueueRemove',
+          invocation: { kind: 'direct' },
+          parameters: [INPUT_PARAM],
+          result: { mode: 'src-json' },
+        },
+        {
+          id: 'dsh-plugin-keeper#dsh-plugin-keeper/installQueueRetry',
+          service: 'PluginKeeperService',
+          namespace: 'dsh-plugin-keeper',
+          method: 'installQueueRetry',
           invocation: { kind: 'direct' },
           parameters: [INPUT_PARAM],
           result: { mode: 'src-json' },

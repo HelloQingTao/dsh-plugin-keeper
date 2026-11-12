@@ -489,6 +489,99 @@ async function reconcileTimes(plugins) {
   }
 }
 
+// ---------- 后台安装队列（P2）----------
+// 为什么要宿主半排队：并发 pnpm 对同一 profile 危险（与原地升级/导入互踩），浏览器关掉
+// 面板/切页签后安装也要继续跑。队列只存内存（重启即清空，安装结果以盘点为准）。
+// 串行 worker：同一时刻只跑一个 installBundle，跑完自动接队头。
+
+const NPM_SPEC_RE = /^(@[a-z0-9-~][a-z0-9-._~]*\/)?[a-z0-9-~][a-z0-9-._~]*(@[^/\s@]+)?$/;
+const INSTALL_QUEUE_ACTIVE = new Set(['queued', 'running']);
+
+const installQueue = []; // {id,name,spec,status,requestId,queuedAt,startedAt,finishedAt,error,code,application,target}
+let installQueueSeq = 0;
+let installWorkerActive = false;
+
+function queueItemsView() {
+  return installQueue.map((it) => ({ ...it }));
+}
+
+function friendlyInstallError(e) {
+  const msg = String(e?.message ?? e);
+  if (/already-installed/i.test(msg)) return '该插件已安装（如需更新请用行内「更新」）';
+  if (/network|ETIMEDOUT|ECONN|ENOTFOUND|fetch failed/i.test(msg)) return `网络异常：${msg}`;
+  return msg;
+}
+
+/** 台账补记安装：新装 → installedAt/updatedAt=now+锚版本；已有台账 → 走更新落账。 */
+async function recordInstall(name, version) {
+  try {
+    const data = await readTimes();
+    const prev = data.plugins[name];
+    if (prev && typeof prev === 'object') {
+      await recordUpdate(name, version);
+      return;
+    }
+    const at = new Date().toISOString();
+    data.plugins[name] = {
+      installedAt: at,
+      installedVersion: typeof version === 'string' ? version : null,
+      updatedAt: at,
+      updatedVersion: typeof version === 'string' ? version : null,
+    };
+    await writeTimes(data);
+  } catch (e) {
+    console.log(`[dsh-plugin-keeper] recordInstall(${name}) failed: ${String(e?.message ?? e)}`);
+  }
+}
+
+/** 串行 worker：循环吃队头，直到没有 queued 项。任何单项失败不影响后续。 */
+async function pumpInstallQueue() {
+  if (installWorkerActive) return;
+  installWorkerActive = true;
+  try {
+    for (;;) {
+      const item = installQueue.find((it) => it.status === 'queued');
+      if (!item) break;
+      item.status = 'running';
+      item.startedAt = new Date().toISOString();
+      item.requestId = `dpkq-${Date.now().toString(36)}-${randomBytes(4).toString('hex')}`;
+      try {
+        const r = await pluginManagerRef?.installBundle(item.spec, { enabled: true, requestId: item.requestId });
+        item.application = typeof r?.application === 'string' ? r.application : null;
+        item.target = typeof r?.target === 'string' ? r.target : item.name;
+        const meta = await readJsonSafe(join(
+          serviceBridge?.profile?.dir ?? '',
+          'node_modules',
+          ...item.name.split('/'),
+          'package.json',
+        ));
+        const installed = typeof meta?.version === 'string' ? meta.version : null;
+        if (!installed) {
+          // 装完却读不到包 → 安装没有真正完成（或 pm 缺失），按失败处理而不是假成功
+          item.status = 'failed';
+          item.error = '安装后未在 profile 中找到该包（安装可能未完成）';
+        } else {
+          item.installedVersion = installed;
+          await recordInstall(item.name, installed); // 时间台账：安装落账（失败不影响队列）
+          item.status = 'done';
+        }
+      } catch (e) {
+        if (/cancel/i.test(String(e?.message ?? e)) || e?.code === 'cancelled') {
+          item.status = 'cancelled';
+        } else {
+          item.status = 'failed';
+          item.error = friendlyInstallError(e);
+          item.code = typeof e?.code === 'string' ? e.code : null;
+        }
+      }
+      item.finishedAt = new Date().toISOString();
+      item.requestId = null; // 已结束，清掉以免 cancel 再打宿主
+    }
+  } finally {
+    installWorkerActive = false;
+  }
+}
+
 /**
  * 惰性清理，返回「本次真正生效」的映射（不写盘，删除留到下次写操作顺带落盘）：
  * - 已卸载插件的孤儿条目；
@@ -1280,6 +1373,100 @@ export class PluginKeeperService extends TypertRemoteService {
     });
   }
 
+  // ---------- 后台安装队列（P2）RPC ----------
+
+  /** 入队一个 npm 包（可带 @版本）。先做快查（已装/已在队列），再交给串行 worker。 */
+  async installEnqueue(input) {
+    const raw = typeof input?.name === 'string' ? input.name.trim() : '';
+    if (!raw || raw.startsWith('-')) return { ok: false, code: 'bad-name', error: '请输入 npm 包名（可带 @版本）' };
+    if (!NPM_SPEC_RE.test(raw)) {
+      return { ok: false, code: 'bad-name', error: '不是合法的 npm 包名；GitHub 地址请用「设置 → 从 GitHub 安装」入口' };
+    }
+    const name = raw.split('@').slice(0, raw.startsWith('@') ? 2 : 1).join('@');
+    // 已在队列（同名排队/安装中 → 拒绝重复入队）
+    const dup = installQueue.find((it) => it.name === name && INSTALL_QUEUE_ACTIVE.has(it.status));
+    if (dup) return { ok: false, code: 'queued', error: `${name} 已在队列中` };
+    // 已装同名包（采集快照即可，不必全量盘点）：提示走行内更新
+    try {
+      const { plugins } = await collectInventory();
+      const inst = plugins.find((p) => p.name === name);
+      if (inst) {
+        return { ok: false, code: 'already-installed', error: `${name}@${inst.version} 已安装（如需更新请用行内「更新」）` };
+      }
+    } catch { /* 盘点失败不拦入队，让 installBundle 自己报错 */ }
+    installQueueSeq += 1;
+    const item = {
+      id: `q${installQueueSeq}`,
+      name,
+      spec: raw,
+      status: 'queued',
+      requestId: null,
+      queuedAt: new Date().toISOString(),
+      startedAt: null,
+      finishedAt: null,
+      error: null,
+      code: null,
+      application: null,
+      target: null,
+      installedVersion: null,
+    };
+    installQueue.push(item);
+    void pumpInstallQueue().catch(() => {});
+    return { ok: true, item: { ...item } };
+  }
+
+  /** 队列当前状态（前端 1.5s 轮询用；条目少，直接全量回）。 */
+  async installQueueState() {
+    return { ok: true, items: queueItemsView(), running: installQueue.some((it) => INSTALL_QUEUE_ACTIVE.has(it.status)) };
+  }
+
+  /** 取消：排队中直接标记；安装中调 pm.cancelInstall(requestId)（结果事件回来后置 cancelled）。 */
+  async installQueueCancel(input) {
+    const id = typeof input?.id === 'string' ? input.id : '';
+    const item = installQueue.find((it) => it.id === id);
+    if (!item) return { ok: false, code: 'not-found' };
+    if (item.status === 'queued') {
+      item.status = 'cancelled';
+      item.finishedAt = new Date().toISOString();
+      return { ok: true, item: { ...item } };
+    }
+    if (item.status === 'running' && item.requestId) {
+      try {
+        await pluginManagerRef?.cancelInstall(item.requestId);
+        return { ok: true, item: { ...item } }; // cancelled 状态由 pumpInstallQueue 的 catch 分支落
+      } catch (e) {
+        return { ok: false, code: 'cancel-failed', error: friendlyInstallError(e) };
+      }
+    }
+    return { ok: false, code: 'not-cancellable' };
+  }
+
+  /** 移除：只允许清理已结束的条目（done/failed/cancelled）。 */
+  async installQueueRemove(input) {
+    const id = typeof input?.id === 'string' ? input.id : '';
+    const idx = installQueue.findIndex((it) => it.id === id);
+    if (idx < 0) return { ok: false, code: 'not-found' };
+    if (INSTALL_QUEUE_ACTIVE.has(installQueue[idx].status)) return { ok: false, code: 'not-removable' };
+    installQueue.splice(idx, 1);
+    return { ok: true };
+  }
+
+  /** 重试：失败/取消的条目重置回队尾，重新拉起 worker。 */
+  async installQueueRetry(input) {
+    const id = typeof input?.id === 'string' ? input.id : '';
+    const item = installQueue.find((it) => it.id === id);
+    if (!item) return { ok: false, code: 'not-found' };
+    if (item.status !== 'failed' && item.status !== 'cancelled') return { ok: false, code: 'not-retryable' };
+    item.status = 'queued';
+    item.error = null;
+    item.code = null;
+    item.startedAt = null;
+    item.finishedAt = null;
+    item.queuedAt = new Date().toISOString();
+    void pumpInstallQueue().catch(() => {});
+    return { ok: true, item: { ...item } };
+  }
+
   /** GitHub 安装地址归一化的唯一入口；顺便在安装前同步一次代理策略。 */
   async normalizeGithubSpec(input) {
     await applyProxyPolicy();
@@ -1923,6 +2110,11 @@ markRemoteMethods(PluginKeeperService.prototype, [
   'getSettings',
   'saveSettings',
   'setIgnoredUpdates',
+  'installEnqueue',
+  'installQueueState',
+  'installQueueCancel',
+  'installQueueRemove',
+  'installQueueRetry',
   'normalizeGithubSpec',
   'normalizeLocalSpec',
   'testProxy',
