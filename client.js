@@ -2663,7 +2663,7 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
 
       // ---------- 详情视图（P3）：基本信息 + 设置项 + 操作 ----------
       // 设置项数据面 = 官方 settings remote（describe 读 schema/值、mutate 按路径写），
-      // 插件 → namespace 的映射 = pluginManager.listBundles() 的 rows[].entryId。
+      // 插件 → namespace 的映射 = pluginManager.listBundles() 的 rows[].rowId（官方详情页同口径）。
       // 这里不复用 primitives 的 SettingsForm（宿主内部 API、脆），自绘控件 + 路径 op。
       const [detailName, setDetailName] = React.useState(null);
       const [detail, setDetail] = React.useState(null); // {loading,error,bundle,namespaces,writable}
@@ -2684,8 +2684,14 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
           const bundles = unwrapEnvelope(bundlesRaw);
           const desc = unwrapEnvelope(descRaw);
           const bundle = Array.isArray(bundles) ? bundles.find((b) => b && b.name === name) || null : null;
-          const entryIds = new Set((bundle && Array.isArray(bundle.rows) ? bundle.rows : []).map((r) => r && r.entryId).filter(Boolean));
-          // 无 bundle 的条目（patch 里直接 insert 的）entry id 通常就是包名
+          // settings 命名空间 = Loader entry 的 options.id，官方详情页按 rowId 匹配
+          // （bundle 的 row 在 patch 里以 include 形式落成 "include:<rowId>" 的 entryId，两者并不相同）；
+          // entryId 一并纳入兜底，最后退到包名。
+          const entryIds = new Set();
+          for (const r of (bundle && Array.isArray(bundle.rows) ? bundle.rows : [])) {
+            if (r && r.rowId) entryIds.add(r.rowId);
+            if (r && r.entryId) entryIds.add(r.entryId);
+          }
           if (!entryIds.size) entryIds.add(name);
           const namespaces = (desc && Array.isArray(desc.namespaces) ? desc.namespaces : [])
             .filter((v) => v && entryIds.has(v.ns))
