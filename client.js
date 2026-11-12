@@ -157,6 +157,12 @@ window.__ModuleLoader__.load({
         opApplied: '已应用',
         opRestart: '需重启',
         opFailed: '失败',
+        opFailedGeneric: '操作失败，请重试',
+        errUpdateFailed: '更新失败，请稍后重试',
+        errNetwork: '网络连接失败，请检查网络或代理后重试',
+        errNotFound: '找不到该版本，可能已被撤回',
+        errBlocked: '该版本刚发布，暂不可安装，请稍后再试',
+        errIncompatible: '该版本与当前 dsh 不兼容',
         opSkipped: '跳过',
         opNoTarget: '无可更新目标',
         opAlreadyEnabled: '已是启用状态',
@@ -423,6 +429,12 @@ window.__ModuleLoader__.load({
         opApplied: 'Applied',
         opRestart: 'Restart needed',
         opFailed: 'Failed',
+        opFailedGeneric: 'Operation failed, please retry',
+        errUpdateFailed: 'Update failed, please try again later',
+        errNetwork: 'Network error — check your network or proxy and retry',
+        errNotFound: 'Version not found (it may have been unpublished)',
+        errBlocked: 'This version was just published — please try again later',
+        errIncompatible: 'This version is incompatible with the current dsh',
         opSkipped: 'Skipped',
         opNoTarget: 'No update target',
         opAlreadyEnabled: 'Already enabled',
@@ -1055,14 +1067,28 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
       if (selfItem) items.push(selfItem); // 自身只做队尾
       return { items, seen: nextSeen, sealed: Boolean(selfItem) };
     }
-    // 执行单个更新项：先卸后装（installBundle 对已装包 refused already-installed）。
-    async function runOneUpdate(name, spec) {
-      try {
-        try { await callPm('removeBundle', name); } catch { /* 移除失败交给安装步报错 */ }
-        return { name, op: 'update', ...mapChange(await callPm('installBundle', spec, { enabled: true })) };
-      } catch (e) {
-        return { name, op: 'update', status: 'failed', note: String(e?.message ?? e) };
+    // 执行单个更新项：原地升级（pnpm add 包@版本，不卸载、不碰 bundles）。
+    // 失败码 → 用户可读中文（绝不回显内部错误码 / pnpm 原文）
+    function friendlyErrorCode(code) {
+      switch (String(code || '').toLowerCase()) {
+        case 'network':
+        case 'timeout': return t('errNetwork');
+        case 'not-found':
+        case 'no-matching-version': return t('errNotFound');
+        case 'blocked':
+        case 'minimum-release-age': return t('errBlocked');
+        case 'incompatible':
+        case 'incompatible-version': return t('errIncompatible');
+        default: return t('errUpdateFailed');
       }
+    }
+
+    async function runOneUpdate(name, spec) {
+      if (!spec) return { name, op: 'update', status: 'failed', note: t('opNoTarget') };
+      // 原地升级：host 半 pnpm add 包@版本（不卸载，失败自动回滚+重试）；用户只看到最终成败
+      const r = await callUpdateInPlace(name, spec);
+      if (r?.ok) return { name, op: 'update', status: 'restart', note: '' };
+      return { name, op: 'update', status: 'failed', note: friendlyErrorCode(r?.code) };
     }
 
     // typert face 的返回值可能是 {ok,value} 信封，也可能是裸值（取决于 result codec）。
@@ -1107,6 +1133,16 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
         return v ?? { ok: false, error: 'no response' };
       } catch (e) {
         return { ok: false, error: String(e?.message ?? e) };
+      }
+    }
+
+    // 原地升级（不卸载）：host 半 spawn pnpm add 包@版本，失败自动回滚并重试一次
+    async function callUpdateInPlace(name, spec) {
+      try {
+        const v = unwrapEnvelope(await rpcFace?.updateBundleInPlace?.({ name, spec }));
+        return v ?? { ok: false, code: 'unknown' };
+      } catch (e) {
+        return { ok: false, code: 'unknown' };
       }
     }
 
@@ -1226,8 +1262,8 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
         case 'overridden': return { status: 'ok', note: 'overridden' };
         case 'cancelled': return { status: 'skipped' };
         case 'failed':
-          return { status: 'failed', note: r.error?.code ?? r.error?.diagnostic ?? r.error?.message ?? '' };
-        default: return { status: 'failed', note: r.error?.message ?? 'unknown application' };
+          return { status: 'failed', note: t('opFailedGeneric') };
+        default: return { status: 'failed', note: t('opFailedGeneric') };
       }
     }
 
@@ -2809,15 +2845,17 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
         for (const { name, spec } of targets) {
           try {
             if (op === 'update') {
-              // installBundle 对已装包会 refused already-installed：更新 = 先卸后装两步
-              try { await callPm('removeBundle', name); } catch { /* 移除失败交给安装步报错 */ }
-              push({ name, op, ...mapChange(await callPm('installBundle', spec, { enabled: true })) });
+              // 原地升级：不卸载、不碰 bundles，失败自动回滚+重试（用户只见最终成败）
+              const r = await callUpdateInPlace(name, spec);
+              push(r?.ok
+                ? { name, op, status: 'restart', note: '' }
+                : { name, op, status: 'failed', note: friendlyErrorCode(r?.code) });
             }
             else if (op === 'enable') push({ name, op, ...mapChange(await callPm('setBundleEnabled', name, true)) });
             else if (op === 'disable') push({ name, op, ...mapChange(await callPm('setBundleEnabled', name, false)) });
             else push({ name, op, ...mapChange(await callPm('removeBundle', name)) });
           } catch (e) {
-            push({ name, op, status: 'failed', note: String(e?.message ?? e) });
+            push({ name, op, status: 'failed', note: t('opFailedGeneric') });
           }
         }
 
@@ -4032,6 +4070,15 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
           service: 'PluginKeeperService',
           namespace: 'dsh-plugin-keeper',
           method: 'reportBatch',
+          invocation: { kind: 'direct' },
+          parameters: [INPUT_PARAM],
+          result: { mode: 'src-json' },
+        },
+        {
+          id: 'dsh-plugin-keeper#dsh-plugin-keeper/updateBundleInPlace',
+          service: 'PluginKeeperService',
+          namespace: 'dsh-plugin-keeper',
+          method: 'updateBundleInPlace',
           invocation: { kind: 'direct' },
           parameters: [INPUT_PARAM],
           result: { mode: 'src-json' },

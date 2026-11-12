@@ -82,6 +82,9 @@ function markRemoteMethods(prototype, methods) {
 /** 模块级桥：由 apply 设置，Service 构造时取用（cordis 类插件实例化只传 ctx）。 */
 let serviceBridge = null; // { profile } | null
 
+/** 宿主 pluginManager 实例引用（apply 注入后捕获）；原地升级复用它的 runPnpm 跑 pnpm。 */
+let pluginManagerRef = null;
+
 /** 官方包判定：dsh 本体与 @deepseek-ai scope。 */
 function isOfficial(name) {
   return name === 'dsh' || name.startsWith('@deepseek-ai/');
@@ -822,12 +825,49 @@ async function checkGroupInternal(kind, plugins, state, dshVersion) {
 
 // ---------- 盘点（snapshot 与 checkUpdates 共用）----------
 
+/** 去引号（'x' / "x" → x）。 */
+function stripQuotes(v) {
+  return String(v ?? '').trim().replace(/^['"]|['"]$/g, '');
+}
+
+/**
+ * 读取 profile `cordis.patch.yml` 里 `- insert:` 无条件插入条目的包名集合。
+ * 这些插件不靠 bundle 选中也会常驻运行（如 railist / composer-tray），
+ * 展示时应视为「运行中」，且它们的更新只能走不卸载的原地升级。
+ */
+async function patchInsertedNames() {
+  const set = new Set();
+  const patchPath = serviceBridge?.profile?.patchPath;
+  if (!patchPath) return set;
+  let text;
+  try { text = await readFile(patchPath, 'utf8'); } catch { return set; }
+  let inInsert = false;
+  let insertIndent = -1;
+  for (const raw of text.split(/\r?\n/)) {
+    const line = raw.trimEnd();
+    const trimmed = line.trim();
+    const indent = line.length - line.trimStart().length;
+    if (!inInsert) {
+      if (/^-\s*insert:\s*$/.test(trimmed)) { inInsert = true; insertIndent = indent; }
+      continue;
+    }
+    // 回到同级/更浅的顶层序列项即结束 insert 块
+    if (/^-\s+\S/.test(trimmed) && indent <= insertIndent) { inInsert = false; }
+    else {
+      const m = /^name:\s*(.+)$/.exec(trimmed);
+      if (m) set.add(stripQuotes(m[1]));
+    }
+  }
+  return set;
+}
+
 async function collectInventory() {
   const errors = [];
   const dir = serviceBridge?.profile?.dir ?? null;
   const profileName = serviceBridge?.profile?.name ?? null;
   const started = new Set(Array.isArray(serviceBridge?.profile?.startedBundles)
     ? serviceBridge.profile.startedBundles : []);
+  const inserted = await patchInsertedNames();
   if (!dir) return { errors, profileName, plugins: [], started };
 
   const pkg = await readJsonSafe(join(dir, 'package.json'), errors);
@@ -845,7 +885,9 @@ async function collectInventory() {
       version: typeof meta.version === 'string' ? meta.version : null,
       description: typeof meta.description === 'string' ? meta.description : null,
       official: isOfficial(name),
-      started: started.has(name),
+      // patch insert 的插件不靠 bundle 选中也在跑 —— 视为已启动，避免误显示「已停用」
+      started: started.has(name) || inserted.has(name),
+      externallyLoaded: inserted.has(name),
       source,
       // 本地插件附「插件所在路径」（打开图标 hover/复制用），其余来源恒为 null
       localPath: source.kind === 'local' ? await localPluginPath(name, source, dir) : null,
@@ -926,6 +968,44 @@ async function restoreBatchSnapshot(id) {
     restored.push(f.from);
   }
   return { id, op: manifest.op ?? null, at: manifest.at ?? null, restored };
+}
+
+/**
+ * 把 pnpm 失败归一化成稳定错误码（只回传码，不回传原文，避免泄漏内部信息）。
+ * 浏览器半区再按码本地化成人话。
+ */
+function classifyPnpmFailure(r) {
+  const kind = typeof r?.kind === 'string' ? r.kind : '';
+  const kindMap = {
+    network: 'network', timeout: 'network',
+    'not-found': 'not-found', 'no-matching-version': 'not-found',
+    incompatible: 'incompatible', 'incompatible-version': 'incompatible',
+  };
+  if (kindMap[kind]) return kindMap[kind];
+  const text = String(r?.output ?? r?.error ?? '').toLowerCase();
+  if (/minimumreleaseage|minimum release age|too new|release age/.test(text)) return 'blocked';
+  if (/econn|etimedout|enotfound|eai_again|network|proxy|tunnel|socket hang up|fetch failed|\b50[234]\b/.test(text)) return 'network';
+  if (/not found|\b404\b|no matching version|etarget|no version/.test(text)) return 'not-found';
+  if (/engines|incompatible|peer dep|unsupported engine/.test(text)) return 'incompatible';
+  return 'unknown';
+}
+
+/** 兜底：宿主 runPnpm 不可用时自己 spawn 一次 pnpm add（继承当前 env）。 */
+function spawnPnpmAdd(spec, cwd, command) {
+  return new Promise((resolve) => {
+    let child;
+    try {
+      child = spawn(command || 'pnpm', ['add', spec, '--save-exact'], { cwd, env: process.env });
+    } catch (e) {
+      resolve({ exitCode: 1, output: String(e?.message ?? e) });
+      return;
+    }
+    let out = '';
+    child.stdout?.on('data', (d) => { out += d; });
+    child.stderr?.on('data', (d) => { out += d; });
+    child.on('error', (e) => resolve({ exitCode: 1, output: `${out}${String(e?.message ?? e)}` }));
+    child.on('close', (code) => resolve({ exitCode: typeof code === 'number' ? code : 1, output: out }));
+  });
 }
 
 /**
@@ -1654,6 +1734,80 @@ export class PluginKeeperService extends TypertRemoteService {
     if (mismatch) return { ok: false, error: 'batch id mismatch（已有更新的批量记录，忽略本次上报）' };
     return { ok: true, id, op, count: results.length };
   }
+
+  /**
+   * 原地升级（自愈式）：直接 `pnpm add 包@版本 --save-exact`，不卸载、不碰 bundles。
+   *
+   * 为什么不用宿主 installBundle/updateBundle：installBundle 对已装包抛 already-installed；
+   * updateBundle 在 HMR 下先 removeBundle → 对 patch insert 的双登记插件恒 bundle-in-use。
+   * 二者都会失败并留下「依赖在、已停用」的半卸载坏态。原地 pnpm add 只改版本，最稳。
+   *
+   * 失败自动回滚 package.json + pnpm-lock.yaml（并重试一次），保证不残留坏态；
+   * 用户只需看到最终成功 / 失败，内部重试与回滚静默进行。
+   */
+  async updateBundleInPlace(input) {
+    const name = typeof input?.name === 'string' ? input.name.trim() : '';
+    const rawSpec = typeof input?.spec === 'string' ? input.spec.trim() : '';
+    if (!name || name === 'dsh' || isOfficial(name)) return { ok: false, code: 'not-updatable' };
+    if (!rawSpec || rawSpec.startsWith('-')) return { ok: false, code: 'bad-spec' };
+    const dir = serviceBridge?.profile?.dir;
+    if (!dir) return { ok: false, code: 'no-profile' };
+    const pkg = await readJsonSafe(join(dir, 'package.json'));
+    const deps = pkg?.dependencies ?? {};
+    // 只允许升级已声明的依赖，杜绝借更新通道装新包
+    if (!Object.hasOwn(deps, name)) return { ok: false, code: 'not-installed' };
+
+    // 备份可回滚文件（package.json + lockfile），放不进 manifest 也无妨，仅内部回滚用
+    const ts = new Date().toISOString().replace(/[:.]/g, '-');
+    const backupDir = join(backupsRootOf(), `${ts}-inplace`);
+    const backups = [];
+    try {
+      await mkdir(backupDir, { recursive: true });
+      for (const f of ['package.json', 'pnpm-lock.yaml', 'pnpm-workspace.yaml']) {
+        const src = join(dir, f);
+        if (existsSync(src)) {
+          const dest = join(backupDir, f);
+          await copyFile(src, dest);
+          backups.push({ src, dest });
+        }
+      }
+    } catch { /* 备份失败时仍尝试，但回滚可能不完整 */ }
+    const restore = async () => {
+      for (const b of backups) {
+        try { await copyFile(b.dest, b.src); } catch { /* ignore */ }
+      }
+    };
+    const runOnce = async (requestId) => {
+      if (pluginManagerRef && typeof pluginManagerRef.runPnpm === 'function') {
+        return await pluginManagerRef.runPnpm(['add', rawSpec, '--save-exact'], undefined, requestId);
+      }
+      return await spawnPnpmAdd(rawSpec, dir);
+    };
+
+    let last = null;
+    for (let attempt = 1; attempt <= 2; attempt += 1) {
+      try {
+        const r = await runOnce(randomBytes(8).toString('hex'));
+        const exit = typeof r?.exitCode === 'number' ? r.exitCode : 1;
+        const timedOut = r?.timedOut === true;
+        if (exit === 0 && !timedOut) {
+          const meta = await readJsonSafe(join(dir, 'node_modules', ...name.split('/'), 'package.json'));
+          const installed = typeof meta?.version === 'string' ? meta.version : null;
+          console.log(`[dsh-plugin-keeper] inplace update ok: ${name} ${deps[name]} -> ${installed ?? rawSpec}`);
+          return { ok: true, status: 'restart', name, to: installed, spec: rawSpec };
+        }
+        last = r;
+      } catch (e) {
+        last = { error: String(e?.message ?? e) };
+      }
+      // 首次失败先回滚，再自愈重试一次（网络抖动/竞态常见）
+      if (attempt === 1) await restore();
+    }
+    await restore();
+    const code = classifyPnpmFailure(last);
+    console.log(`[dsh-plugin-keeper] inplace update failed: ${name} code=${code} out=${String(last?.output ?? last?.error ?? '').slice(0, 400)}`);
+    return { ok: false, code, name };
+  }
 }
 
 markRemoteMethods(PluginKeeperService.prototype, [
@@ -1667,6 +1821,7 @@ markRemoteMethods(PluginKeeperService.prototype, [
   'normalizeLocalSpec',
   'testProxy',
   'prepareBatch',
+  'updateBundleInPlace',
   'restoreBatch',
   'reportBatch',
   'planExport',
@@ -1850,6 +2005,7 @@ export function apply(ctx) {
   void applyProxyPolicy();
   ctx.inject(['pluginManager'], (pmCtx) => {
     const pm = pmCtx.reflect.get('pluginManager');
+    pluginManagerRef = pm;
     setPnpmCommand(pm?.pnpmCommand);
     setContextVerified(Boolean(pm) && pm.profile === profile);
     // 宿主默认只给 GitHub 仓库预检 5s（githubConnectionTimeoutMs）。经代理的
