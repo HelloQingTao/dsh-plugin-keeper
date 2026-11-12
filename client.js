@@ -165,6 +165,54 @@ window.__ModuleLoader__.load({
         queueNoticeRestart: '✅ {name} 已安装，需重启 dsh 后生效',
         queueNoticeFailed: '❌ {name} 安装失败：{error}',
         queueNeedBuilds: '该包需要批准构建脚本（approvedBuilds）；先在系统插件管理器里装一次以批准，再回来重试。',
+        // ---- 详情视图（P3）----
+        detailOpen: '查看详情',
+        detailTitle: '插件详情',
+        detailClose: '关闭',
+        detailSectionBasic: '基本信息',
+        detailSectionSettings: '设置项',
+        detailSectionActions: '操作',
+        detailVersion: '版本',
+        detailState: '状态',
+        detailRunning: '运行中',
+        detailStopped: '未运行',
+        detailSource: '来源',
+        detailInstalledAt: '安装时间',
+        detailUpdatedAt: '更新时间',
+        detailVersionChanged: '版本变更',
+        detailPath: '安装位置',
+        detailDesc: '描述',
+        detailNoDesc: '（无描述）',
+        detailNone: '—',
+        detailCopyPath: '复制路径',
+        detailLoading: '正在加载详情…',
+        detailLoadFailed: '加载详情失败：{error}',
+        detailNoSettings: '该插件没有可配置项',
+        detailSettingsHint: '改动保存后立即生效；配置为 secrets 的字段只写不回显。',
+        detailSave: '保存',
+        detailDiscard: '放弃',
+        detailSaving: '保存中…',
+        detailSaved: '✅ 设置已保存',
+        detailSaveFailed: '保存失败：{error}',
+        detailConflict: '保存失败：配置已被其他窗口修改，已重新载入最新值，请重试',
+        detailResetField: '恢复默认值',
+        detailUserSet: '已自定义',
+        detailSecretSet: '已设置（留空表示不修改）',
+        detailSecretUnset: '未设置',
+        detailJsonField: '（对象/数组，用 JSON 编辑）',
+        detailInvalidJson: 'JSON 格式不正确',
+        detailInvalidNumber: '需要数字',
+        detailActionUpdate: '更新到最新',
+        detailActionEnable: '启用',
+        detailActionDisable: '停用',
+        detailActionIgnore: '忽略更新',
+        detailActionRestore: '恢复更新',
+        detailActionUninstall: '卸载',
+        detailUninstallConfirm: '确认卸载（再点一次）',
+        detailUninstallHint: '确认卸载 {name}？会从 profile 移除该插件，可随时重新安装。',
+        detailUninstallOk: '✅ {name} 已卸载',
+        detailOpFailed: '操作失败：{error}',
+        detailRestartHint: '部分改动需重启 dsh 后完全生效',
         installGuideRestart: '已安装 {name}。插件包内容已更新，需重启 dsh web 后才能完全生效；重启前请勿依赖新功能。',
         installGuideApplied: '已安装 {name} 并已生效。若界面未自动更新，可点下方按钮刷新页面。',
         installGuideReload: '刷新页面',
@@ -480,6 +528,54 @@ window.__ModuleLoader__.load({
         queueNoticeRestart: '✅ {name} installed — restart dsh to take effect',
         queueNoticeFailed: '❌ {name} install failed: {error}',
         queueNeedBuilds: 'This package requires build-script approval (approvedBuilds); install it once in the system plugin manager to approve, then retry here.',
+        // ---- detail view (P3) ----
+        detailOpen: 'View details',
+        detailTitle: 'Plugin details',
+        detailClose: 'Close',
+        detailSectionBasic: 'Basics',
+        detailSectionSettings: 'Settings',
+        detailSectionActions: 'Actions',
+        detailVersion: 'Version',
+        detailState: 'State',
+        detailRunning: 'Running',
+        detailStopped: 'Stopped',
+        detailSource: 'Source',
+        detailInstalledAt: 'Installed',
+        detailUpdatedAt: 'Updated',
+        detailVersionChanged: 'Version changed',
+        detailPath: 'Install path',
+        detailDesc: 'Description',
+        detailNoDesc: '(no description)',
+        detailNone: '—',
+        detailCopyPath: 'Copy path',
+        detailLoading: 'Loading details…',
+        detailLoadFailed: 'Failed to load details: {error}',
+        detailNoSettings: 'This plugin has no configurable settings',
+        detailSettingsHint: 'Changes apply on save; secret fields are write-only.',
+        detailSave: 'Save',
+        detailDiscard: 'Discard',
+        detailSaving: 'Saving…',
+        detailSaved: '✅ Settings saved',
+        detailSaveFailed: 'Save failed: {error}',
+        detailConflict: 'Save failed: configuration changed elsewhere — reloaded the latest values, please retry',
+        detailResetField: 'Reset to default',
+        detailUserSet: 'customized',
+        detailSecretSet: 'set (leave empty to keep)',
+        detailSecretUnset: 'not set',
+        detailJsonField: '(object/array, edit as JSON)',
+        detailInvalidJson: 'Invalid JSON',
+        detailInvalidNumber: 'Number expected',
+        detailActionUpdate: 'Update to latest',
+        detailActionEnable: 'Enable',
+        detailActionDisable: 'Disable',
+        detailActionIgnore: 'Ignore updates',
+        detailActionRestore: 'Resume updates',
+        detailActionUninstall: 'Uninstall',
+        detailUninstallConfirm: 'Confirm uninstall (click again)',
+        detailUninstallHint: 'Uninstall {name}? This removes the plugin from the profile; you can reinstall anytime.',
+        detailUninstallOk: '✅ {name} uninstalled',
+        detailOpFailed: 'Action failed: {error}',
+        detailRestartHint: 'Some changes need a dsh restart to take full effect',
         installGuideRestart: 'Installed {name}. The plugin package changed — restart dsh web for it to take full effect; do not rely on the new features before restarting.',
         installGuideApplied: 'Installed {name} and it is already active. If the UI did not update automatically, use the button below to reload the page.',
         installGuideReload: 'Reload page',
@@ -824,6 +920,31 @@ window.__ModuleLoader__.load({
 .dpk-queueops{display:flex;gap:6px;flex:none;flex-wrap:wrap;justify-content:flex-end;}
 .dpk-queuenotice{display:flex;align-items:center;justify-content:space-between;gap:8px;}
 
+/* ---------- 详情视图（P3）：基本信息表 + 设置项控件 + 操作区 ---------- */
+.dpk-modal.is-detail{width:560px;}
+.dpk-dhead{display:flex;align-items:center;gap:8px;min-width:0;}
+.dpk-dname{font-family:${MONO};font-size:13px;font-weight:600;color:var(--dsw-alias-label-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.dpk-dfacts{display:flex;flex-direction:column;gap:4px;}
+.dpk-fact{display:flex;align-items:baseline;gap:10px;min-width:0;font-size:12px;line-height:18px;}
+.dpk-factlabel{flex:0 0 5.5em;color:var(--dsw-alias-label-tertiary);font-size:11px;}
+.dpk-factvalue{color:var(--dsw-alias-label-secondary);min-width:0;overflow-wrap:anywhere;}
+.dpk-factdesc{color:var(--dsw-alias-label-secondary);}
+.dpk-path{font-family:${MONO};font-size:11px;color:var(--dsw-alias-label-secondary);overflow-wrap:anywhere;}
+.dpk-nsblock{display:flex;flex-direction:column;gap:10px;border:1px solid var(--dsw-alias-border-l1);border-radius:var(--dsw-radius-md,8px);padding:10px 12px;}
+.dpk-nsname{font-family:${MONO};font-size:11px;color:var(--dsw-alias-label-tertiary);}
+.dpk-dfield{display:flex;flex-direction:column;gap:5px;}
+.dpk-dfieldhead{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;}
+.dpk-fieldtag{font-size:10px;line-height:14px;padding:0 5px;border-radius:999px;color:var(--dsw-alias-state-business-primary,var(--dsw-alias-brand-primary));border:.5px solid var(--dsw-alias-state-business-primary,var(--dsw-alias-brand-primary));}
+.dpk-fielddesc{font-size:11px;line-height:16px;color:var(--dsw-alias-label-tertiary);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%;}
+.dpk-dfieldbody{display:flex;align-items:center;gap:8px;}
+.dpk-dfieldctl{min-width:0;flex:1 1 auto;}
+.dpk-textarea{font-family:${MONO};font-size:11px;line-height:16px;resize:vertical;padding:6px 10px;}
+.dpk-detailfoot{display:flex;justify-content:flex-end;gap:8px;}
+.dpk-detailacts{display:flex;gap:8px;flex-wrap:wrap;}
+.dpk-name.is-link{cursor:pointer;}
+.dpk-name.is-link:hover{color:var(--dsw-alias-brand-primary);text-decoration:underline;text-underline-offset:2px;}
+.dpk-name.is-link:focus-visible{outline:1px solid var(--dsw-alias-brand-primary);outline-offset:1px;border-radius:var(--dsw-radius-sm,4px);}
+
 /* 批量进度文字：主题蓝（business 主题色） + 呼吸动效（原为弱化 hint 色，不显眼） */
 .dpk-progress{font-size:12px;line-height:18px;font-weight:600;color:var(--dsw-alias-state-business-primary,var(--dsw-alias-brand-primary));display:inline-flex;align-items:center;gap:6px;animation:dpk-pulse 1.3s ease-in-out infinite;}
 .dpk-progress::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--dsw-alias-state-business-primary,var(--dsw-alias-brand-primary));flex:none;animation:dpk-dot 1.1s ease-in-out infinite;}
@@ -1054,6 +1175,7 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
 
     let rpcFace = null; // remote.dsh-plugin-keeper face，由装配段注入
     let pmFace = null; // remote.pluginManager（官方）face，批量操作直接调用
+    let settingsFace = null; // remote.settings（官方）face，详情视图读写各插件设置项
 
     // ---------- 安装进度：订阅宿主真实事件流，不做假进度 ----------
     // installBundle 带 requestId 后，宿主会 emit：
@@ -1208,6 +1330,22 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
     // 统一拆一次：成功取 value，失败/异常取 null。
     function unwrapEnvelope(r) {
       if (r && typeof r === 'object' && 'ok' in r && 'value' in r) return r.ok ? r.value : null;
+      return r ?? null;
+    }
+
+    // 远端调用失败时官方 face 通常返回 {ok:false,error} 信封（不是抛异常）。
+    // 需要区分成败的场合用这个严格版：失败直接抛出带 code 的错误。
+    function unwrapEnvelopeStrict(r) {
+      if (r && typeof r === 'object' && 'ok' in r) {
+        if (!r.ok) {
+          const err = r.error != null ? r.error : {};
+          const msg = typeof err === 'string' ? err : (err.message || err.code || 'unknown');
+          const e = new Error(String(msg));
+          e.code = (err && err.code) || 'unknown';
+          throw e;
+        }
+        return 'value' in r ? r.value : r;
+      }
       return r ?? null;
     }
 
@@ -1644,7 +1782,118 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
       return null;
     }
 
-    // 检查结果展示口径：与 host countResults 一致，但已忽略的插件不计入可更新/最新/失败。
+    // ---------- 详情视图（P3）：设置项 schema 复原与字段读取 ----------
+    // 宿主 settings.describe() 给的 schema 是 schemastery 的 {uid, refs} 信封
+    // （refs[uid] → {type, meta, value?, dict?, inner?, list?, sKey?}，嵌套处存 uid）。
+    // 这里按宿主 Schema.from 的口径把引用接回树，得到可遍历的纯对象树。
+    function reviveSchema(json) {
+      if (!json || typeof json !== 'object' || !json.refs || json.uid === undefined) return null;
+      const refs = {};
+      for (const [uid, node] of Object.entries(json.refs)) refs[uid] = { ...node };
+      const get = (uid) => refs[String(uid)] ?? null;
+      for (const node of Object.values(refs)) {
+        if (node.sKey !== undefined) node.sKey = get(node.sKey);
+        if (node.inner !== undefined) node.inner = get(node.inner);
+        if (Array.isArray(node.list)) node.list = node.list.map((x) => (x && typeof x === 'object' ? x : get(x)));
+        if (node.dict && typeof node.dict === 'object') {
+          node.dict = Object.fromEntries(Object.entries(node.dict).map(([k, v]) => [k, v && typeof v === 'object' ? v : get(v)]));
+        }
+      }
+      return get(json.uid);
+    }
+
+    // schema 字段的展示类型：bool/num/str/enum/const/json/unknown
+    function schemaFieldKind(node) {
+      if (!node || typeof node !== 'object') return 'unknown';
+      const type = node.type;
+      if (type === 'boolean') return 'bool';
+      if (type === 'number' || type === 'natural' || type === 'percent') return 'num';
+      if (type === 'string' || type === 'date' || type === 'regExp') return 'str';
+      if (type === 'const') return 'const';
+      if (type === 'union') {
+        const list = Array.isArray(node.list) ? node.list : [];
+        return list.length > 0 && list.every((n) => n && n.type === 'const') ? 'enum' : 'json';
+      }
+      return 'json';
+    }
+
+    // 字段描述文本：meta.description 可能是字符串，也可能是按语言分桶的对象
+    function schemaFieldDesc(node) {
+      const desc = node?.meta?.description;
+      if (typeof desc === 'string') return desc;
+      if (desc && typeof desc === 'object') {
+        const lang = localeId();
+        const exact = desc[lang];
+        if (typeof exact === 'string' && exact) return exact;
+        for (const v of Object.values(desc)) if (typeof v === 'string' && v) return v;
+      }
+      return '';
+    }
+
+    // 默认值：schemastery 的对象节点 meta.default 只有 {}，真正的默认值在各子字段上，
+    // 所以对象字段要递归合并子字段默认值（JSON 编辑器才有意义可展示）。
+    function schemaFieldDefault(node, depth = 0) {
+      if (!node) return undefined;
+      const meta = node.meta || {};
+      const hasDefault = Object.prototype.hasOwnProperty.call(meta, 'default');
+      if (node.type === 'object' && node.dict && depth < 4) {
+        const out = hasDefault && meta.default && typeof meta.default === 'object' ? { ...meta.default } : {};
+        for (const [key, child] of Object.entries(node.dict)) {
+          if (out[key] !== undefined) continue;
+          const d = schemaFieldDefault(child, depth + 1);
+          if (d !== undefined) out[key] = d;
+        }
+        return out;
+      }
+      return hasDefault ? meta.default : undefined;
+    }
+
+    // 字段当前值：settings.describe 给的是脱敏后的 resolved 值，缺省时退回 schema 默认值
+    function namespaceFieldValue(view, key) {
+      const value = view && view.value && typeof view.value === 'object' ? view.value[key] : undefined;
+      const node = view && view.schemaTree && view.schemaTree.dict ? view.schemaTree.dict[key] : null;
+      return value !== undefined ? value : schemaFieldDefault(node);
+    }
+
+    // secrets 字段：宿主只回 {path,set}，不回明文；写入时留空表示不修改
+    function isSecretPath(view, key) {
+      const node = view && view.schemaTree && view.schemaTree.dict ? view.schemaTree.dict[key] : null;
+      if (node && node.meta && node.meta.role === 'secret') return true;
+      return Array.isArray(view && view.secrets)
+        && view.secrets.some((s) => Array.isArray(s && s.path) && s.path.length === 1 && s.path[0] === key);
+    }
+
+    // 字段初始展示文本（草稿基线）：布尔与对象各按各自编辑器口径序列化
+    function fieldTextOf(node, value) {
+      const kind = schemaFieldKind(node);
+      if (kind === 'bool') return value ? 'true' : 'false';
+      if (kind === 'json') {
+        try { return JSON.stringify(value ?? schemaFieldDefault(node) ?? null, null, 2); } catch { return String(value ?? ''); }
+      }
+      if (value === undefined || value === null) return '';
+      return String(value);
+    }
+
+    // 草稿文本 → 提交值；返回 {ok:false,error} 表示当前输入不合法
+    function parseFieldText(node, text) {
+      const kind = schemaFieldKind(node);
+      if (kind === 'bool') return { ok: true, value: text === 'true' };
+      if (kind === 'enum') {
+        // union(const...) 的选项带真实类型（可能是数字/布尔），提交时还原原始值
+        const hit = (node.list || []).find((x) => x && String(x.value) === text);
+        return { ok: true, value: hit ? hit.value : text };
+      }
+      if (kind === 'num') {
+        const n = Number(text);
+        return Number.isFinite(n) ? { ok: true, value: n } : { ok: false, error: 'number' };
+      }
+      if (kind === 'json') {
+        try { return { ok: true, value: JSON.parse(text) }; } catch { return { ok: false, error: 'json' }; }
+      }
+      return { ok: true, value: text };
+    }
+
+
     // 用当前清单实时算：忽略决定、或远端换版本导致忽略失效，数字都立刻跟着变。
     function countChecks(plugins, kinds) {
       let update = 0;
@@ -1825,7 +2074,7 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
       }, flash === 'ok' ? CHECK_ICON : COPY_ICON);
     }
 
-    function Row({ entry, checked, disabled, onToggle, opStatus, onUpdate, onCancelUpdate, queued, onIgnore, onRestore, busy, updateDisabled, terms, showTime }) {
+    function Row({ entry, checked, disabled, onToggle, opStatus, onUpdate, onCancelUpdate, queued, onIgnore, onRestore, busy, updateDisabled, terms, showTime, onOpenDetail }) {
       const gk = groupKeyOf(entry);
       const srcKind = entry.source?.kind;
       const ignored = Boolean(entry.ignored?.mode);
@@ -1875,10 +2124,21 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
             onClick: (e) => e.stopPropagation(),
           }),
           h('span', { className: `dpk-dot${entry.started && enabled !== false ? ' on' : ''}` }),
+          // 名字可点开详情（基本信息 + 设置项 + 操作）；行本身点击仍是勾选，故这里拦下冒泡
           h('span', {
-            className: 'dpk-name',
+            className: 'dpk-name is-link',
+            role: 'button',
+            tabIndex: 0,
+            'aria-label': `${t('detailOpen')}：${entry.name}`,
             // repo 不上行内（与包名重复且挤压按钮）；悬停同时给出全名与来源
             'data-tip': repoLabel ? `${entry.name} · ${repoLabel}` : entry.name,
+            onClick: (e) => { e.stopPropagation(); onOpenDetail?.(entry); },
+            onKeyDown: (e) => {
+              if (e.key !== 'Enter' && e.key !== ' ') return;
+              e.preventDefault();
+              e.stopPropagation();
+              onOpenDetail?.(entry);
+            },
           }, highlightText(entry.name, terms)),
           // 名字后面：复制可直接安装的名称（npm → name@version，github → github:owner/repo#ref）
           h(CopyIcon, {
@@ -2400,6 +2660,187 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
         const st = await callInstallQueueState();
         if (st?.ok) setInstallQueueItems(Array.isArray(st.items) ? st.items : []);
       }, []);
+
+      // ---------- 详情视图（P3）：基本信息 + 设置项 + 操作 ----------
+      // 设置项数据面 = 官方 settings remote（describe 读 schema/值、mutate 按路径写），
+      // 插件 → namespace 的映射 = pluginManager.listBundles() 的 rows[].entryId。
+      // 这里不复用 primitives 的 SettingsForm（宿主内部 API、脆），自绘控件 + 路径 op。
+      const [detailName, setDetailName] = React.useState(null);
+      const [detail, setDetail] = React.useState(null); // {loading,error,bundle,namespaces,writable}
+      const [detailDrafts, setDetailDrafts] = React.useState({}); // 'ns|key' → 草稿文本
+      const [detailErrors, setDetailErrors] = React.useState({}); // 'ns|key' → i18n key
+      const [detailSaving, setDetailSaving] = React.useState(false);
+      const [detailBusy, setDetailBusy] = React.useState(false);
+      const [detailFlash, setDetailFlash] = React.useState(null); // {ok,text}
+      const [uninstallArm, setUninstallArm] = React.useState(false); // 卸载二次确认（按钮二次点击）
+
+      const loadDetail = React.useCallback(async (name) => {
+        setDetail((prev) => (prev ? { ...prev, loading: true, error: null } : { loading: true, error: null, bundle: null, namespaces: [], writable: false }));
+        try {
+          const [bundlesRaw, descRaw] = await Promise.all([
+            pmFace && pmFace.listBundles ? pmFace.listBundles() : null,
+            settingsFace && settingsFace.describe ? settingsFace.describe() : null,
+          ]);
+          const bundles = unwrapEnvelope(bundlesRaw);
+          const desc = unwrapEnvelope(descRaw);
+          const bundle = Array.isArray(bundles) ? bundles.find((b) => b && b.name === name) || null : null;
+          const entryIds = new Set((bundle && Array.isArray(bundle.rows) ? bundle.rows : []).map((r) => r && r.entryId).filter(Boolean));
+          // 无 bundle 的条目（patch 里直接 insert 的）entry id 通常就是包名
+          if (!entryIds.size) entryIds.add(name);
+          const namespaces = (desc && Array.isArray(desc.namespaces) ? desc.namespaces : [])
+            .filter((v) => v && entryIds.has(v.ns))
+            .map((v) => ({ ...v, schemaTree: reviveSchema(v.schema) }))
+            .filter((v) => v.schemaTree && v.schemaTree.type === 'object' && v.schemaTree.dict && Object.keys(v.schemaTree.dict).length > 0);
+          setDetail({ loading: false, error: null, bundle, namespaces, writable: Boolean(desc && desc.writable) });
+          setDetailDrafts({});
+          setDetailErrors({});
+        } catch (e) {
+          setDetail({ loading: false, error: String((e && e.message) || e), bundle: null, namespaces: [], writable: false });
+        }
+      }, []);
+
+      const closeDetail = React.useCallback(() => {
+        setDetailName(null);
+        setDetail(null);
+        setDetailDrafts({});
+        setDetailErrors({});
+        setDetailFlash(null);
+        setUninstallArm(false);
+      }, []);
+
+      const openDetail = React.useCallback((entry) => {
+        const name = entry && entry.name ? entry.name : '';
+        if (!name) return;
+        setDetailName(name);
+        setDetail(null);
+        setDetailDrafts({});
+        setDetailErrors({});
+        setDetailFlash(null);
+        setUninstallArm(false);
+        void loadDetail(name);
+      }, [loadDetail]);
+
+      // 草稿：只存用户动过的字段；保存时与基线比较，未变的字段不发 op
+      const setDetailDraft = React.useCallback((dk, node, text) => {
+        setDetailDrafts((prev) => ({ ...prev, [dk]: text }));
+        const parsed = parseFieldText(node, text);
+        setDetailErrors((prev) => {
+          const next = { ...prev };
+          if (!parsed.ok) next[dk] = parsed.error === 'json' ? 'detailInvalidJson' : 'detailInvalidNumber';
+          else delete next[dk];
+          return next;
+        });
+        setDetailFlash(null);
+      }, []);
+
+      const resetDetailField = React.useCallback((view, key) => {
+        const node = view.schemaTree.dict[key];
+        const dk = `${view.ns}|${key}`;
+        setDetailDrafts((prev) => {
+          const next = { ...prev };
+          delete next[dk];
+          return next;
+        });
+        setDetailErrors((prev) => {
+          const next = { ...prev };
+          delete next[dk];
+          return next;
+        });
+        setDetailFlash(null);
+        return fieldTextOf(node, namespaceFieldValue(view, key));
+      }, []);
+
+      const saveDetailSettings = React.useCallback(async (view) => {
+        const ops = [];
+        const bad = [];
+        const dict = (view && view.schemaTree && view.schemaTree.dict) || {};
+        for (const key of Object.keys(dict)) {
+          const node = dict[key];
+          const dk = `${view.ns}|${key}`;
+          if (!Object.prototype.hasOwnProperty.call(detailDrafts, dk)) continue;
+          const text = detailDrafts[dk];
+          if (isSecretPath(view, key)) {
+            // secret 只写不读：留空 = 不修改
+            if (typeof text === 'string' && text !== '') ops.push({ op: 'set', path: [key], value: text });
+            continue;
+          }
+          const parsed = parseFieldText(node, text);
+          if (!parsed.ok) { bad.push(key); continue; }
+          if (text === fieldTextOf(node, namespaceFieldValue(view, key))) continue;
+          ops.push({ op: 'set', path: [key], value: parsed.value });
+        }
+        if (bad.length) {
+          setDetailFlash({ ok: false, text: t('detailSaveFailed', { error: bad.join(', ') }) });
+          return;
+        }
+        if (!ops.length) {
+          setDetailFlash({ ok: true, text: t('detailSaved') });
+          return;
+        }
+        setDetailSaving(true);
+        try {
+          unwrapEnvelopeStrict(await settingsFace.mutate(view.ns, ops, view.revision));
+          setDetailFlash({ ok: true, text: t('detailSaved') });
+          await loadDetail(detailName); // 重新拉：拿新 revision 与生效后的值
+        } catch (e) {
+          const code = String((e && (e.code || e.type || e.message)) || '');
+          if (/conflict/i.test(code)) {
+            setDetailFlash({ ok: false, text: t('detailConflict') });
+            await loadDetail(detailName);
+          } else {
+            setDetailFlash({ ok: false, text: t('detailSaveFailed', { error: code || String(e) }) });
+          }
+        } finally {
+          setDetailSaving(false);
+        }
+      }, [detailDrafts, detailName, loadDetail, t]);
+
+      const detailSetEnabled = React.useCallback(async (bundle, enabled) => {
+        const rows = bundle && Array.isArray(bundle.rows) ? bundle.rows : [];
+        const entryId = rows.map((r) => r && r.entryId).find(Boolean);
+        if (!entryId) {
+          setDetailFlash({ ok: false, text: t('detailOpFailed', { error: 'entryId missing' }) });
+          return;
+        }
+        setDetailBusy(true);
+        try {
+          const res = unwrapEnvelopeStrict(await pmFace.setPluginEnabled(entryId, enabled));
+          if (res && res.application === 'failed') {
+            throw new Error(String(res.error?.message || res.error?.code || 'failed'));
+          }
+          const restart = res && res.application === 'restart-required';
+          setDetailFlash({
+            ok: true,
+            text: `${enabled ? `✅ ${t('detailActionEnable')}` : `✅ ${t('detailActionDisable')}`}${restart ? ` · ${t('detailRestartHint')}` : ''}`,
+          });
+          await loadDetail(detailName);
+          void load({ silent: true });
+        } catch (e) {
+          setDetailFlash({ ok: false, text: t('detailOpFailed', { error: String((e && e.message) || e) }) });
+        } finally {
+          setDetailBusy(false);
+        }
+      }, [detailName, load, loadDetail, t]);
+
+      const detailUninstall = React.useCallback(async (bundle) => {
+        if (!bundle || !bundle.name) return;
+        if (!uninstallArm) { setUninstallArm(true); return; } // 第一次点只上膛，第二次才真删
+        setUninstallArm(false);
+        setDetailBusy(true);
+        try {
+          const res = unwrapEnvelopeStrict(await pmFace.removeBundle(bundle.name));
+          if (res && res.application === 'failed') {
+            throw new Error(String(res.error?.message || res.error?.code || 'failed'));
+          }
+          closeDetail();
+          pushInstallNotice(true, t('detailUninstallOk', { name: bundle.name }));
+          void load({ silent: true });
+        } catch (e) {
+          setDetailFlash({ ok: false, text: t('detailOpFailed', { error: String((e && e.message) || e) }) });
+        } finally {
+          setDetailBusy(false);
+        }
+      }, [closeDetail, load, pushInstallNotice, t, uninstallArm]);
 
       // 语言切换只重渲染文案，不重拉数据（拉数据由刷新按钮/批量后触发）
       React.useEffect(() => { void load({ silent: cacheRef.current != null }); }, [load]);
@@ -4174,6 +4615,232 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
         )
         : null;
 
+      // ---------- 详情视图渲染 ----------
+      // 基本信息用人话表格；设置项按 namespace 分区、字段自绘控件；操作区只放当前可用的动作。
+      const detailModal = !detailName ? null
+        : (() => {
+            const entry = plugins.find((p) => p.name === detailName) ?? null;
+            const bundle = detail && detail.bundle ? detail.bundle : null;
+            const namespaces = (detail && detail.namespaces) || [];
+            const writable = Boolean(detail && detail.writable) && !detailSaving;
+            const absTime = (iso) => {
+              if (typeof iso !== 'string' || !iso) return t('detailNone');
+              const d = new Date(iso);
+              return Number.isNaN(d.getTime()) ? t('detailNone') : d.toLocaleString();
+            };
+            const factRow = (label, value, extra) => h('div', { className: 'dpk-fact' },
+              h('span', { className: 'dpk-factlabel' }, label),
+              h('span', { className: 'dpk-factvalue' }, value),
+              extra ?? null,
+            );
+            const sourceText = entry
+              ? (entry.source && entry.source.kind === 'github' && entry.source.repo
+                  ? `${t(GROUP_TITLE_KEY[groupKeyOf(entry)])} · ${entry.source.repo}`
+                  : t(GROUP_TITLE_KEY[groupKeyOf(entry)]))
+              : t('detailNone');
+            const stateText = entry
+              ? (entry.enabled === false ? t('stateDisabled') : entry.started ? t('detailRunning') : t('detailStopped'))
+              : t('detailNone');
+            const nsDirty = (ns) => Object.keys(detailDrafts).some((k) => k.startsWith(`${ns}|`));
+            const fieldRow = (view, key) => {
+              const node = view.schemaTree.dict[key];
+              const dk = `${view.ns}|${key}`;
+              const kind = schemaFieldKind(node);
+              const secret = isSecretPath(view, key);
+              const hasDraft = Object.prototype.hasOwnProperty.call(detailDrafts, dk);
+              const baseText = secret ? '' : fieldTextOf(node, namespaceFieldValue(view, key));
+              const text = hasDraft ? detailDrafts[dk] : baseText;
+              const err = detailErrors[dk] ? t(detailErrors[dk]) : null;
+              const userSet = Boolean(view.user && typeof view.user === 'object'
+                && Object.prototype.hasOwnProperty.call(view.user, key));
+              const secretRec = secret
+                ? (view.secrets || []).find((x) => Array.isArray(x && x.path) && x.path.length === 1 && x.path[0] === key)
+                : null;
+              const desc = schemaFieldDesc(node);
+              let control = null;
+              if (kind === 'bool') {
+                control = h('input', {
+                  type: 'checkbox',
+                  className: 'dpk-cb',
+                  checked: text === 'true',
+                  disabled: !writable,
+                  onChange: (e) => setDetailDraft(dk, node, e.target.checked ? 'true' : 'false'),
+                });
+              } else if (kind === 'const') {
+                control = h('span', { className: 'dpk-hint' }, text);
+              } else if (kind === 'enum') {
+                const opts = (node.list || []).map((x) => (x ? String(x.value) : ''));
+                control = h('select', {
+                  className: 'dpk-input dpk-dfieldctl',
+                  value: text,
+                  disabled: !writable,
+                  onChange: (e) => setDetailDraft(dk, node, e.target.value),
+                }, opts.map((v) => h('option', { key: v, value: v }, v)));
+              } else if (kind === 'json') {
+                control = h('textarea', {
+                  className: 'dpk-input dpk-dfieldctl dpk-textarea',
+                  rows: Math.min(8, Math.max(3, String(text).split('\n').length)),
+                  spellCheck: false,
+                  value: text,
+                  disabled: !writable,
+                  onChange: (e) => setDetailDraft(dk, node, e.target.value),
+                });
+              } else {
+                control = h('input', {
+                  className: 'dpk-input dpk-dfieldctl',
+                  type: 'text',
+                  spellCheck: false,
+                  value: secret && !hasDraft ? '' : text,
+                  placeholder: secret ? (secretRec && secretRec.set ? t('detailSecretSet') : t('detailSecretUnset')) : undefined,
+                  disabled: !writable,
+                  onChange: (e) => setDetailDraft(dk, node, e.target.value),
+                });
+              }
+              return h('div', { className: 'dpk-dfield', key: dk },
+                h('div', { className: 'dpk-dfieldhead' },
+                  h('span', { className: 'dpk-setlabel' }, key),
+                  userSet ? h('span', { className: 'dpk-fieldtag' }, t('detailUserSet')) : null,
+                  kind === 'json' ? h('span', { className: 'dpk-fielddesc' }, t('detailJsonField')) : null,
+                  desc ? h('span', { className: 'dpk-fielddesc', 'data-tip': desc }, desc) : null,
+                  hasDraft && !secret
+                    ? h('button', {
+                        className: 'dpk-btn is-mini',
+                        type: 'button',
+                        disabled: detailSaving,
+                        onClick: () => { resetDetailField(view, key); },
+                      }, t('detailResetField'))
+                    : null,
+                ),
+                h('div', { className: 'dpk-dfieldbody' }, control),
+                err ? h('div', { className: 'dpk-savederr' }, err) : null,
+              );
+            };
+            const actions = [];
+            const canIgnore = Boolean(entry) && !entry.official
+              && (entry.source?.kind === 'npm' || entry.source?.kind === 'github');
+            const updateSpec = entry ? updateSpecOf(entry) : '';
+            if (entry && updateSpec && !entry.official && !entry.ignored?.mode) {
+              actions.push(h('button', {
+                className: 'dpk-btn',
+                type: 'button',
+                key: 'update',
+                disabled: detailBusy || batchRunning,
+                onClick: () => { onRowUpdate(entry); closeDetail(); },
+              }, t('detailActionUpdate')));
+            }
+            if (entry && !entry.official && bundle && (bundle.rows || []).some((r) => r && r.entryId)) {
+              const disabledNow = entry.enabled === false;
+              actions.push(h('button', {
+                className: 'dpk-btn',
+                type: 'button',
+                key: 'toggle',
+                disabled: detailBusy || batchRunning,
+                onClick: () => { void detailSetEnabled(bundle, disabledNow); },
+              }, disabledNow ? t('detailActionEnable') : t('detailActionDisable')));
+            }
+            if (canIgnore) {
+              actions.push(entry.ignored?.mode
+                ? h('button', {
+                    className: 'dpk-btn',
+                    type: 'button',
+                    key: 'restore',
+                    disabled: detailBusy || batchRunning,
+                    onClick: () => { void doRestoreIgnored([entry.name]).then(() => loadDetail(entry.name)); },
+                  }, t('detailActionRestore'))
+                : h('button', {
+                    className: 'dpk-btn',
+                    type: 'button',
+                    key: 'ignore',
+                    disabled: detailBusy || batchRunning,
+                    onClick: (e) => { openIgnorePop([entry.name], e.currentTarget); },
+                  }, t('detailActionIgnore')));
+            }
+            if (entry && !entry.official && bundle) {
+              actions.push(h('button', {
+                className: 'dpk-btn is-danger',
+                type: 'button',
+                key: 'uninstall',
+                disabled: detailBusy || batchRunning,
+                onClick: () => { void detailUninstall(bundle); },
+              }, uninstallArm ? t('detailUninstallConfirm', { name: entry.name }) : t('detailActionUninstall')));
+            }
+            return h(Modal, {
+              className: 'is-wide is-detail',
+              ariaLabel: t('detailTitle'),
+              onClose: closeDetail,
+            },
+              h('div', { className: 'dpk-mtitle' }, t('detailTitle')),
+              h('div', { className: 'dpk-dhead' },
+                h('span', { className: 'dpk-dname' }, detailName),
+                entry && entry.version ? h('span', { className: 'dpk-ver' }, `v${entry.version}`) : null,
+              ),
+              detail && detail.loading ? h('div', { className: 'dpk-hint' }, t('detailLoading')) : null,
+              detail && detail.error
+                ? h('div', { className: 'dpk-savederr' }, t('detailLoadFailed', { error: detail.error }))
+                : null,
+              // ---- 基本信息 ----
+              h('div', { className: 'dpk-setsec' },
+                h('div', { className: 'dpk-gtitle' }, t('detailSectionBasic')),
+                h('div', { className: 'dpk-dfacts' },
+                  factRow(t('detailVersion'), entry && entry.version ? `v${entry.version}` : t('detailNone')),
+                  factRow(t('detailState'), stateText),
+                  factRow(t('detailSource'), sourceText),
+                  factRow(t('detailInstalledAt'), absTime(entry?.times?.installedAt)),
+                  factRow(t('detailUpdatedAt'), absTime(entry?.times?.updatedAt)),
+                  entry?.times?.versionChangedAt
+                    ? factRow(t('detailVersionChanged'), absTime(entry.times.versionChangedAt))
+                    : null,
+                  entry?.installedPath
+                    ? factRow(t('detailPath'), h('code', { className: 'dpk-path' }, entry.installedPath),
+                        h('button', {
+                          className: 'dpk-btn is-mini',
+                          type: 'button',
+                          onClick: () => { void copyText(entry.installedPath).then((ok) => pushInstallNotice(ok, ok ? t('detailCopyPath') : t('copyFail'))); },
+                        }, t('detailCopyPath')))
+                    : null,
+                  entry?.description
+                    ? factRow(t('detailDesc'), h('span', { className: 'dpk-factdesc' }, entry.description))
+                    : null,
+                ),
+              ),
+              // ---- 设置项 ----
+              h('div', { className: 'dpk-setsec' },
+                h('div', { className: 'dpk-gtitle' }, t('detailSectionSettings')),
+                !detail || detail.loading ? null
+                  : namespaces.length === 0
+                    ? h('div', { className: 'dpk-hint' }, t('detailNoSettings'))
+                    : namespaces.map((view) => h('div', { className: 'dpk-nsblock', key: view.ns },
+                        namespaces.length > 1 ? h('div', { className: 'dpk-nsname' }, view.ns) : null,
+                        Object.keys(view.schemaTree.dict).map((key) => fieldRow(view, key)),
+                        h('div', { className: 'dpk-detailfoot' },
+                          h('button', {
+                            className: 'dpk-btn is-primary',
+                            type: 'button',
+                            disabled: detailSaving || !nsDirty(view.ns),
+                            onClick: () => { void saveDetailSettings(view); },
+                          }, detailSaving ? t('detailSaving') : t('detailSave')),
+                        ),
+                      )),
+                h('div', { className: 'dpk-hint' }, t('detailSettingsHint')),
+              ),
+              // ---- 操作 ----
+              h('div', { className: 'dpk-setsec' },
+                h('div', { className: 'dpk-gtitle' }, t('detailSectionActions')),
+                actions.length
+                  ? h('div', { className: 'dpk-detailacts' }, actions)
+                  : h('div', { className: 'dpk-hint' }, t('officialReadonly')),
+                uninstallArm
+                  ? h('div', { className: 'dpk-banner' }, h('span', null, t('detailUninstallHint', { name: detailName })))
+                  : null,
+                h('div', { className: 'dpk-hint' }, t('detailRestartHint')),
+              ),
+              detailFlash
+                ? h('div', { className: `dpk-banner${detailFlash.ok ? ' is-ok' : ''}` },
+                    h('span', null, detailFlash.text))
+                : null,
+            );
+          })();
+
       // 行渲染（列表视图与分组视图共用一份 props，改一处两视图同步生效）
       const rowOf = (entry) => h(Row, {
         key: entry.name,
@@ -4184,6 +4851,7 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
         onUpdate: onRowUpdate,
         queued: updateQueue.pending.some((p) => p.name === entry.name),
         onCancelUpdate: onRowCancel,
+        onOpenDetail: openDetail,
         onIgnore: (entry, anchor) => openIgnorePop([entry.name], anchor),
         onRestore: (entry) => { void doRestoreIgnored([entry.name]); },
         busy: batchRunning,
@@ -4204,6 +4872,7 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
         exportModal,
         importModal,
         installQueueModal,
+        detailModal,
         settingsModal,
         h(IgnorePop, { pop: ignorePop, onPick: doPickIgnore, onClose: closeIgnorePop }),
         // 隐藏的文件选择器（导入入口）
@@ -4782,10 +5451,11 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
         const disposeRemote = await ctx.remote.$mount(TYPERT_REMOTE);
         ctx.effect(() => () => { void disposeRemote(); }, 'dsh-plugin-keeper remote mount');
         await ctx.inject(
-          ['slots', 'remote', 'remote.dsh-plugin-keeper', 'remote.pluginManager'],
+          ['slots', 'remote', 'remote.dsh-plugin-keeper', 'remote.pluginManager', 'remote.settings'],
           (rctx) => {
             rpcFace = rctx.remote?.['dsh-plugin-keeper'] ?? null;
             pmFace = rctx.remote?.pluginManager ?? null;
+            settingsFace = rctx.remote?.settings ?? null;
             // 插件页 Tab：恒有（默认入口）
             rctx.effect(() => mountPluginsTab(rctx), 'dsh-plugin-keeper plugins tab');
             // 设置页 section：按「在设置页也显示」开关决定（默认关）。
