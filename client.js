@@ -831,7 +831,7 @@ window.__ModuleLoader__.load({
 .dpk-rows{border:.5px solid var(--dsw-alias-border-l2);border-radius:var(--dsw-radius-md,12px);overflow:hidden;}
 .dpk-row{display:block;padding:10px 14px;min-width:0;transition:background-color .12s ease;}
 .dpk-rowmain{display:flex;align-items:center;gap:10px;min-width:0;min-height:32px;}
-.dpk-rowdesc{color:var(--dsw-alias-label-tertiary);font-size:12px;line-height:17px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-left:95px;margin-top:3px;}
+.dpk-rowdesc{color:var(--dsw-alias-label-tertiary);font-size:12px;line-height:17px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-left:81px;margin-top:3px;} /* 81=cb14+gap10+tile32+gap10+dot5+gap10，与 .dpk-name 左缘对齐 */
 .dpk-onlyup{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--dsw-alias-label-secondary);cursor:pointer;white-space:nowrap;}
 .dpk-onlyup input{accent-color:var(--dsw-alias-brand-primary);margin:0;width:13px;height:13px;}
 /* 搜索框 + 只看可更新：同一组筛选控件 */
