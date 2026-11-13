@@ -789,11 +789,11 @@ window.__ModuleLoader__.load({
     const MONO = "ui-monospace, SFMono-Regular, Menlo, Consolas, 'Liberation Mono', monospace";
     const CSS = `
 .dpk-root{color:var(--dsw-alias-label-primary);font-size:13px;line-height:20px;display:flex;flex-direction:column;gap:12px;min-width:0;}
-.dpk-toolbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;row-gap:6px;}
+.dpk-toolbar{display:flex;align-items:center;gap:10px;flex-wrap:nowrap;row-gap:6px;min-width:0;}
 .dpk-tbgroup{display:flex;align-items:center;gap:8px;white-space:nowrap;}
 /* 工具栏按钮按最长文案预留宽度：加载态文案「刷新中…」比「刷新」宽，若不定宽会把整组挤到下一行造成闪烁 */
 .dpk-tbgroup .dpk-btn{min-width:5.8em;text-align:center;}
-.dpk-summary{color:var(--dsw-alias-label-secondary);font-size:12px;min-width:0;}
+.dpk-summary{color:var(--dsw-alias-label-secondary);font-size:12px;min-width:0;flex-shrink:0;white-space:nowrap;}
 .dpk-spacer{flex:1;}
 .dpk-btn{border:1px solid var(--dsw-alias-border-l2);background:0 0;color:var(--dsw-alias-label-primary);border-radius:var(--dsw-radius-sm,8px);padding:3px 11px;font:inherit;font-size:12px;line-height:20px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:4px;transition:background-color .16s ease,border-color .16s ease,color .16s ease,transform .08s ease;}
 .dpk-btn:hover:not(:disabled){background:var(--dsw-alias-interactive-bg-hover);border-color:var(--dsw-alias-border-l3);}
@@ -867,11 +867,11 @@ window.__ModuleLoader__.load({
 .dpk-onlyup{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--dsw-alias-label-secondary);cursor:pointer;white-space:nowrap;}
 .dpk-onlyup input{accent-color:var(--dsw-alias-brand-primary);margin:0;width:13px;height:13px;}
 /* 搜索框 + 只看可更新：同一组筛选控件 */
-.dpk-filters{display:flex;align-items:center;gap:10px;flex-wrap:wrap;row-gap:6px;min-width:0;}
-.dpk-search{position:relative;display:inline-flex;align-items:center;min-width:0;}
+.dpk-filters{display:flex;align-items:center;gap:10px;flex-wrap:nowrap;min-width:110px;flex:0 1 auto;}
+.dpk-search{position:relative;display:inline-flex;align-items:center;min-width:0;flex:0 1 190px;}
 .dpk-searchicon{position:absolute;left:7px;display:inline-flex;align-items:center;justify-content:center;color:var(--dsw-alias-label-caption);pointer-events:none;}
 .dpk-searchicon svg{display:block;width:12px;height:12px;}
-.dpk-searchinput{background:var(--dsw-alias-bg-layer-1);border:.5px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-primary);border-radius:var(--dsw-radius-sm,8px);padding:3px 24px 3px 23px;font:inherit;font-size:12px;line-height:20px;width:190px;max-width:100%;transition:border-color .16s ease,box-shadow .16s ease;}
+.dpk-searchinput{background:var(--dsw-alias-bg-layer-1);border:.5px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-primary);border-radius:var(--dsw-radius-sm,8px);padding:3px 24px 3px 23px;font:inherit;font-size:12px;line-height:20px;width:100%;min-width:0;max-width:280px;transition:border-color .16s ease,box-shadow .16s ease;}
 .dpk-searchinput:focus{outline:1px solid var(--dsw-alias-brand-primary);outline-offset:0;}
 .dpk-searchinput::placeholder{color:var(--dsw-alias-label-caption);}
 .dpk-searchclear{position:absolute;right:3px;width:17px;height:17px;border:none;border-radius:var(--dsw-radius-sm,4px);padding:0;background:0 0;color:var(--dsw-alias-label-tertiary);cursor:pointer;font:inherit;font-size:13px;line-height:17px;display:inline-flex;align-items:center;justify-content:center;}
@@ -908,7 +908,10 @@ window.__ModuleLoader__.load({
 .dpk-op.is-skipped{color:var(--dsw-alias-label-tertiary);}
 .dpk-batchbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
 /* 视图切换 + 排序控件（P1 双视图）：常驻工具行，右对齐；批量运行中仍可切视图/排序 */
-.dpk-viewbar{display:flex;align-items:center;gap:8px;margin-bottom:8px;justify-content:flex-end;}
+.dpk-subbar{display:flex;align-items:flex-start;gap:12px;margin-bottom:8px;min-width:0;}
+.dpk-subbar .dpk-hint{margin:0;flex:1 1 auto;min-width:0;}
+.dpk-subbar .dpk-banner{margin:0;flex:1 1 auto;min-width:0;}
+.dpk-viewbar{display:flex;align-items:center;gap:8px;margin-left:auto;justify-content:flex-end;flex-shrink:0;}
 .dpk-viewtoggle{display:inline-flex;border:1px solid var(--dsw-alias-border-l2);border-radius:var(--dsw-radius-sm,8px);overflow:hidden;}
 .dpk-viewtoggle .dpk-btn{border:0;border-radius:0;}
 .dpk-viewtoggle .dpk-btn + .dpk-btn{border-left:1px solid var(--dsw-alias-border-l2);}
@@ -2397,6 +2400,16 @@ function countChecks(plugins, kinds) {
       // 保持模块级「最近实时快照」与当前 snap 同步（含设置/忽略清单/启停态等所有就地更新），
       // 供页签切换重挂载时无缝恢复；带 fromCache 的旧缓存不覆盖它。
       React.useEffect(() => { if (snap && !snap.fromCache) lastFreshSnapshot = snap; }, [snap]);
+      // 折叠分组时内容变矮 → 宿主滚动条消失 → 页面内容区变宽横移。
+      // 给本页的滚动祖先固定预留滚动条槽位（scrollbar-gutter:stable），彻底消掉这个左右晃。
+      React.useEffect(() => {
+        let el = document.querySelector('.dpk-root');
+        while (el && el !== document.documentElement) {
+          const oy = getComputedStyle(el).overflowY;
+          if (oy === 'auto' || oy === 'scroll') { el.style.scrollbarGutter = 'stable'; break; }
+          el = el.parentElement;
+        }
+      }, []);
       // 分组检查状态：{ npm: {status, counts, error, connErr, firstErrorNote}, github: {...} }
       const [checkState, setCheckState] = React.useState({});
       const [saving, setSaving] = React.useState(false);
@@ -5111,15 +5124,19 @@ function countChecks(plugins, kinds) {
         banner ? h('div', { className: `dpk-banner${banner.ok ? ' is-ok' : ''}` }, banner.text) : null,
         // 检查结果行：有失败时升级为警示横幅（含首条原因与连接类提示），全成才显示普通统计
         // 检查进行中不显示统计（此时分组各自在跑，数字还是上一轮的）
-        checkInfo && !checkInfo.checking
-          ? (checkInfo.error > 0
-            ? h('div', { className: 'dpk-banner' },
-              t('checkDoneFail', { fail: checkInfo.error }),
-              checkInfo.firstErrorNote ? h('div', null, t('checkErrDetail', { note: checkInfo.firstErrorNote })) : null,
-              checkInfo.connErr ? h('div', null, t('checkConnHint')) : null,
-            )
-            : h('div', { className: 'dpk-hint' }, t('checkDone', checkInfo)))
-          : null,
+        // 与视图切换条（分组/列表 + 排序）合并为一行：左结果、右切换，省一行竖向空间
+        h('div', { className: 'dpk-subbar' },
+          checkInfo && !checkInfo.checking
+            ? (checkInfo.error > 0
+              ? h('div', { className: 'dpk-banner' },
+                t('checkDoneFail', { fail: checkInfo.error }),
+                checkInfo.firstErrorNote ? h('div', null, t('checkErrDetail', { note: checkInfo.firstErrorNote })) : null,
+                checkInfo.connErr ? h('div', null, t('checkConnHint')) : null,
+              )
+              : h('div', { className: 'dpk-hint' }, t('checkDone', checkInfo)))
+            : null,
+          viewBar,
+        ),
         err ? h('div', { className: 'dpk-err' }, err) : null,
         // 有缓存但正在刷新：说明当前显示的是上次结果（避免把旧数据误当最新）
         loading && snap?.fromCache
@@ -5127,7 +5144,6 @@ function countChecks(plugins, kinds) {
             time: snap.cachedAt ? new Date(snap.cachedAt).toLocaleString() : '',
           }))
           : null,
-        viewBar,
         batchBar,
         batchProgress,
         loading && !snap
