@@ -167,6 +167,7 @@ window.__ModuleLoader__.load({
         queueNeedBuilds: '该包需要批准构建脚本（approvedBuilds）；先在系统插件管理器里装一次以批准，再回来重试。',
         // ---- 详情视图（P3）----
         detailOpen: '查看详情',
+        rowDetail: '详情',
         detailTitle: '插件详情',
         detailClose: '关闭',
         detailSectionBasic: '基本信息',
@@ -187,7 +188,7 @@ window.__ModuleLoader__.load({
         detailCopyPath: '复制路径',
         detailLoading: '正在加载详情…',
         detailLoadFailed: '加载详情失败：{error}',
-        detailNoSettings: '该插件没有可配置项',
+        detailNoSettings: '这个插件没有宿主设置表单（部分插件把设置页做成插件内自定义组件，keeper 读不到，可到系统插件页的包详情里查看）。',
         detailSettingsHint: '改动保存后立即生效；配置为 secrets 的字段只写不回显。',
         detailSave: '保存',
         detailDiscard: '放弃',
@@ -530,6 +531,7 @@ window.__ModuleLoader__.load({
         queueNeedBuilds: 'This package requires build-script approval (approvedBuilds); install it once in the system plugin manager to approve, then retry here.',
         // ---- detail view (P3) ----
         detailOpen: 'View details',
+        rowDetail: 'Details',
         detailTitle: 'Plugin details',
         detailClose: 'Close',
         detailSectionBasic: 'Basics',
@@ -550,7 +552,7 @@ window.__ModuleLoader__.load({
         detailCopyPath: 'Copy path',
         detailLoading: 'Loading details…',
         detailLoadFailed: 'Failed to load details: {error}',
-        detailNoSettings: 'This plugin has no configurable settings',
+        detailNoSettings: 'This plugin has no host settings form. Some plugins render a custom settings page inside their own bundle — keeper cannot read that; open it from the system Plugins page.',
         detailSettingsHint: 'Changes apply on save; secret fields are write-only.',
         detailSave: 'Save',
         detailDiscard: 'Discard',
@@ -2162,6 +2164,14 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
           entry.version ? h('span', { className: 'dpk-ver', 'data-tip': `v${entry.version}` }, highlightText(`v${entry.version}`, terms)) : null,
           badgeText ? h('span', { className: 'dpk-badge' }, badgeText) : null,
           h('div', { className: 'dpk-rowops' },
+            // 明确的详情入口：名字可点这条对用户不直观，行内常驻一个「详情」按钮
+            h('button', {
+              className: 'dpk-btn is-mini dpk-detailbtn',
+              type: 'button',
+              'aria-label': `${t('detailOpen')}：${entry.name}`,
+              'data-tip': t('detailOpen'),
+              onClick: (e) => { e.stopPropagation(); onOpenDetail?.(entry); },
+            }, t('rowDetail')),
             // 时间徽标（列表视图）：更新 > 版本变更 > 安装，取最近一条；hover 给绝对时间
             showTime ? timeBadgeOf(entry) : null,
             checkBadgeOf(entry),
