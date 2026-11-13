@@ -1392,30 +1392,46 @@ export class PluginKeeperService extends TypertRemoteService {
 
   // ---------- 后台安装队列（P2）RPC ----------
 
-  /** 入队一个 npm 包（可带 @版本）。先做快查（已装/已在队列），再交给串行 worker。 */
+  /**
+   * 入队一个安装请求：npm 包名（可带 @版本）或 GitHub 形态（owner/repo、URL、github: 前缀，可带 #ref）。
+   * 先做快查（已装/已在队列），再交给串行 worker；GitHub spec 在此归一，worker 直接喂 installBundle。
+   */
   async installEnqueue(input) {
     const raw = typeof input?.name === 'string' ? input.name.trim() : '';
-    if (!raw || raw.startsWith('-')) return { ok: false, code: 'bad-name', error: '请输入 npm 包名（可带 @版本）' };
-    if (!NPM_SPEC_RE.test(raw)) {
-      return { ok: false, code: 'bad-name', error: '不是合法的 npm 包名；GitHub 地址请用「设置 → 从 GitHub 安装」入口' };
+    if (!raw || raw.startsWith('-')) return { ok: false, code: 'bad-name', error: '请输入 npm 包名或 GitHub 地址' };
+    let name = null;
+    let spec = null;
+    let githubKey = null;
+    if (NPM_SPEC_RE.test(raw)) {
+      name = raw.split('@').slice(0, raw.startsWith('@') ? 2 : 1).join('@');
+      spec = raw;
+    } else {
+      const g = tryNormalizeGithubSpec(raw);
+      if (!g) {
+        return { ok: false, code: 'bad-name', error: '不是合法的 npm 包名或 GitHub 地址' };
+      }
+      name = g.spec;
+      spec = g.spec;
+      githubKey = `${g.owner}/${g.repo}`;
     }
-    const name = raw.split('@').slice(0, raw.startsWith('@') ? 2 : 1).join('@');
     // 已在队列（同名排队/安装中 → 拒绝重复入队）
     const dup = installQueue.find((it) => it.name === name && INSTALL_QUEUE_ACTIVE.has(it.status));
     if (dup) return { ok: false, code: 'queued', error: `${name} 已在队列中` };
-    // 已装同名包（采集快照即可，不必全量盘点）：提示走行内更新
+    // 已装同名包（采集快照即可，不必全量盘点）：提示走行内更新；GitHub 来源按 owner/repo 比对
     try {
       const { plugins } = await collectInventory();
-      const inst = plugins.find((p) => p.name === name);
+      const inst = githubKey
+        ? plugins.find((p) => p.source?.kind === 'github' && (p.source?.repo ?? '') === githubKey)
+        : plugins.find((p) => p.name === name);
       if (inst) {
-        return { ok: false, code: 'already-installed', error: `${name}@${inst.version} 已安装（如需更新请用行内「更新」）` };
+        return { ok: false, code: 'already-installed', error: `${inst.name}@${inst.version ?? ''} 已安装（如需更新请用行内「更新」）` };
       }
     } catch { /* 盘点失败不拦入队，让 installBundle 自己报错 */ }
     installQueueSeq += 1;
     const item = {
       id: `q${installQueueSeq}`,
       name,
-      spec: raw,
+      spec,
       status: 'queued',
       requestId: null,
       queuedAt: new Date().toISOString(),

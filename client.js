@@ -150,6 +150,13 @@ window.__ModuleLoader__.load({
         queuePlaceholder: 'npm 包名，可带 @版本；回车连续加入',
         queueAdd: '加入队列',
         queueHint: '加入后台队列后即可关掉本面板继续操作，安装串行进行。',
+        iqTabNpm: 'npm 包',
+        iqTabGithub: 'GitHub',
+        queuePlaceholderGithub: 'GitHub 地址或 owner/repo，可带 #分支',
+        queueHintGithub: '支持 owner/repo、github.com 链接与 github: 前缀；加入后台队列串行安装。',
+        installMenuNpm: 'npm 包',
+        installMenuGithub: 'GitHub 仓库',
+        installMenuAria: '选择安装来源',
         queueEmpty: '队列为空',
         queueStatusQueued: '排队中',
         queueStatusRunning: '安装中',
@@ -500,6 +507,13 @@ window.__ModuleLoader__.load({
         queuePlaceholder: 'npm package name, optional @version — Enter to add continuously',
         queueAdd: 'Add to queue',
         queueHint: 'Installs run serially in the background; you can close this panel and keep working.',
+        iqTabNpm: 'npm package',
+        iqTabGithub: 'GitHub',
+        queuePlaceholderGithub: 'GitHub URL or owner/repo, optional #ref',
+        queueHintGithub: 'Accepts owner/repo, github.com links, and the github: prefix; installs run serially.',
+        installMenuNpm: 'npm package',
+        installMenuGithub: 'GitHub repository',
+        installMenuAria: 'Choose install source',
         queueEmpty: 'Queue is empty',
         queueStatusQueued: 'Queued',
         queueStatusRunning: 'Installing',
@@ -908,6 +922,15 @@ window.__ModuleLoader__.load({
 .dpk-queueerr{font-size:11px;line-height:16px;color:var(--dsw-alias-state-error-primary);overflow-wrap:anywhere;}
 .dpk-queueops{display:flex;gap:6px;flex:none;flex-wrap:wrap;justify-content:flex-end;}
 .dpk-queuenotice{display:flex;align-items:center;justify-content:space-between;gap:8px;}
+
+/* 安装分体按钮（对齐官方「添加插件」）+ 弹框类型 tabs */
+.dpk-splitbtn{display:inline-flex;align-items:stretch;}
+.dpk-splitbtn .dpk-splitmain{border-top-right-radius:0;border-bottom-right-radius:0;}
+.dpk-splitbtn .dpk-splitcaret{border-top-left-radius:0;border-bottom-left-radius:0;padding-left:9px;padding-right:9px;display:inline-flex;align-items:center;justify-content:center;box-shadow:inset 1px 0 0 rgba(255,255,255,.28);}
+.dpk-queuetabs{display:inline-flex;align-self:flex-start;border:1px solid var(--dsw-alias-border-l2,var(--dsw-alias-border-l3));border-radius:var(--dsw-radius-md,8px);overflow:hidden;}
+.dpk-queuetab{border:0;background:0 0;color:var(--dsw-alias-label-secondary);font:inherit;font-size:12px;line-height:20px;padding:4px 16px;cursor:pointer;}
+.dpk-queuetab+.dpk-queuetab{border-left:1px solid var(--dsw-alias-border-l2,var(--dsw-alias-border-l3));}
+.dpk-queuetab.is-active{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-brand-primary);font-weight:600;}
 
 /* ---------- 详情视图（P3）：基本信息表 + 设置项控件 + 操作区 ---------- */
 /* 设置项两列网格：JSON/密钥等长控件占整行 */
@@ -1904,6 +1927,14 @@ function countChecks(plugins, kinds) {
       }),
     );
 
+    // 下拉 caret（分体安装按钮右段；点击弹出来源菜单）
+    const CARET_ICON = h('svg', { viewBox: '0 0 16 16', width: 12, height: 12, 'aria-hidden': true },
+      h('path', {
+        d: 'M4 6l4 4 4-4',
+        fill: 'none', stroke: 'currentColor', strokeWidth: 1.6, strokeLinecap: 'round', strokeLinejoin: 'round',
+      }),
+    );
+
     const COPY_ICON = h('svg', { viewBox: '0 0 16 16', width: 11, height: 11, 'aria-hidden': true },
       h('rect', { x: 5.75, y: 5.75, width: 7.5, height: 7.5, rx: 1.5, fill: 'none', stroke: 'currentColor', strokeWidth: 1.4 }),
       h('path', {
@@ -2351,6 +2382,63 @@ function countChecks(plugins, kinds) {
       );
     }
 
+    // 安装来源小菜单：贴 caret 分体按钮下方，列出 npm / GitHub 两种来源。
+    // 复用 IgnorePop 的三层表面模式（backing / material / 内容）；点外部 / Esc / 滚动自动关闭；
+    // 点在触发按钮上不关（交给按钮自己的 onClick 做开合切换，避免先关后开的闪跳）。
+    function InstallSourcePop({ pop, onPick, onClose }) {
+      const ref = React.useRef(null);
+      const pickRef = React.useRef(onPick);
+      pickRef.current = onPick;
+      React.useEffect(() => {
+        if (!pop) return undefined;
+        const onKey = (e) => {
+          if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); onClose?.(); }
+        };
+        const onDown = (e) => {
+          if (ref.current && ref.current.contains(e.target)) return;
+          if (pop.anchor?.contains?.(e.target)) return;
+          onClose?.();
+        };
+        window.addEventListener('keydown', onKey, true);
+        document.addEventListener('mousedown', onDown, true);
+        window.addEventListener('scroll', onClose, true);
+        window.addEventListener('blur', onClose);
+        try { ref.current?.querySelector('.dpk-ignorepop-item:not(:disabled)')?.focus?.(); } catch { /* 忽略 */ }
+        return () => {
+          window.removeEventListener('keydown', onKey, true);
+          document.removeEventListener('mousedown', onDown, true);
+          window.removeEventListener('scroll', onClose, true);
+          window.removeEventListener('blur', onClose);
+          try { pop.anchor?.focus?.(); } catch { /* 忽略 */ }
+        };
+      }, [pop, onClose]);
+      if (!pop) return null;
+      return h('div', {
+        ref,
+        className: 'dpk-ignorepop dpk-installsrclist',
+        role: 'menu',
+        'aria-label': t('installMenuAria'),
+        style: { left: pop.left, top: pop.top },
+      },
+        h('div', { className: 'dpk-ignorepop-layer dpk-ignorepop-backing' }),
+        h('div', { className: 'dpk-ignorepop-layer dpk-ignorepop-material' }),
+        h('div', { className: 'dpk-ignorepop-list' },
+          h('button', {
+            className: 'dpk-ignorepop-item',
+            type: 'button',
+            role: 'menuitem',
+            onClick: (e) => { e.stopPropagation(); pickRef.current?.('npm'); },
+          }, t('installMenuNpm'), h('small', null, 'pkg@1.2.3')),
+          h('button', {
+            className: 'dpk-ignorepop-item',
+            type: 'button',
+            role: 'menuitem',
+            onClick: (e) => { e.stopPropagation(); pickRef.current?.('github'); },
+          }, t('installMenuGithub'), h('small', null, 'owner/repo')),
+        ),
+      );
+    }
+
     function PluginKeeperSection() {
       // 首屏缓存：挂载即用上次结果渲染（0 等待），随后 RPC 覆盖。
       // cacheRef 让 loading 初值知道「有没有缓存可用」。
@@ -2593,6 +2681,19 @@ function countChecks(plugins, kinds) {
       const [installNotices, setInstallNotices] = React.useState([]); // {id, ok, text}
       const [installInputFlash, setInstallInputFlash] = React.useState(null); // 入队失败的行内提示 {text}
       const [installDraft, setInstallDraft] = React.useState('');
+      // 安装来源：npm / GitHub（localStorage 持久化；caret 菜单预选、弹框 tabs 切换）
+      const [installType, setInstallType] = React.useState(() => {
+        try { return window.localStorage.getItem('dpk.installType') === 'github' ? 'github' : 'npm'; } catch { return 'npm'; }
+      });
+      const switchInstallType = React.useCallback((v) => {
+        const next = v === 'github' ? 'github' : 'npm';
+        setInstallType(next);
+        try { window.localStorage.setItem('dpk.installType', next); } catch { /* 忽略 */ }
+      }, []);
+      const [installMenu, setInstallMenu] = React.useState(null); // {left, top, anchor}
+      const installMenuRef = React.useRef(null);
+      installMenuRef.current = installMenu;
+      const installCaretRef = React.useRef(null);
       const installInputRef = React.useRef(null);
       // 状态变化检测：上一次见到的 {id: status}，用来在条目结束时弹 notice + 刷列表
       const queueSeenRef = React.useRef(new Map());
@@ -3222,6 +3323,14 @@ function countChecks(plugins, kinds) {
       }, []);
 
       const closeIgnorePop = React.useCallback(() => setIgnorePop(null), []);
+
+      // 安装来源菜单的开合与预选（caret 分体按钮用）
+      const closeInstallMenu = React.useCallback(() => setInstallMenu(null), []);
+      const pickInstallSource = React.useCallback((kind) => {
+        setInstallMenu(null);
+        switchInstallType(kind);
+        setInstallPanelOpen(true);
+      }, [switchInstallType]);
 
       // 气泡贴着触发按钮定位；批量时若部分行没有检查结果，版本粒度给出跳过提示
       const openIgnorePop = React.useCallback((names, anchor) => {
@@ -4479,7 +4588,24 @@ function countChecks(plugins, kinds) {
           onClose: () => setInstallPanelOpen(false),
         },
           h('div', { className: 'dpk-mtitle' }, t('queueTitle')),
-          h('div', { className: 'dpk-hint' }, t('queueHint')),
+          // ---- 类型 tabs：npm / GitHub，切换输入占位与说明 ----
+          h('div', { className: 'dpk-queuetabs', role: 'tablist', 'aria-label': t('installMenuAria') },
+            h('button', {
+              className: `dpk-queuetab${installType === 'npm' ? ' is-active' : ''}`,
+              type: 'button',
+              role: 'tab',
+              'aria-selected': installType === 'npm' ? 'true' : 'false',
+              onClick: () => switchInstallType('npm'),
+            }, t('iqTabNpm')),
+            h('button', {
+              className: `dpk-queuetab${installType === 'github' ? ' is-active' : ''}`,
+              type: 'button',
+              role: 'tab',
+              'aria-selected': installType === 'github' ? 'true' : 'false',
+              onClick: () => switchInstallType('github'),
+            }, t('iqTabGithub')),
+          ),
+          h('div', { className: 'dpk-hint' }, installType === 'github' ? t('queueHintGithub') : t('queueHint')),
           // ---- 输入行：回车/按钮都可入队，入队成功清空输入框方便连续输 ----
           h('div', { className: 'dpk-setrow' },
             h('input', {
@@ -4488,7 +4614,7 @@ function countChecks(plugins, kinds) {
               type: 'text',
               spellCheck: false,
               autoComplete: 'off',
-              placeholder: t('queuePlaceholder'),
+              placeholder: installType === 'github' ? t('queuePlaceholderGithub') : t('queuePlaceholder'),
               value: installDraft,
               onChange: (e) => setInstallDraft(e.target.value),
               onKeyDown: (e) => { if (e.key === 'Enter') { e.preventDefault(); void doInstallEnqueue(); } },
@@ -4733,6 +4859,7 @@ function countChecks(plugins, kinds) {
         detailModal,
         settingsModal,
         h(IgnorePop, { pop: ignorePop, onPick: doPickIgnore, onClose: closeIgnorePop }),
+        h(InstallSourcePop, { pop: installMenu, onPick: pickInstallSource, onClose: closeInstallMenu }),
         // 隐藏的文件选择器（导入入口）
         h('input', {
           ref: importFileRef,
@@ -4805,12 +4932,6 @@ function countChecks(plugins, kinds) {
                 n: (installQueueItems ?? []).filter((it) => it.status !== 'cancelled' && it.status !== 'failed').length || 1,
               }))
               : null,
-            h('button', {
-              className: 'dpk-btn is-primary is-big',
-              type: 'button',
-              disabled: loading || checking || batchRunning,
-              onClick: () => setInstallPanelOpen(true),
-            }, t('installQueueBtn')),
             h('span', { className: 'dpk-lastcheck' }, lastCheckText),
             h('button', {
               className: 'dpk-btn is-big',
@@ -4826,6 +4947,36 @@ function countChecks(plugins, kinds) {
               disabled: loading || checking,
               onClick: () => { void load(); },
             }, REFRESH_ICON),
+            // 官方样式：主按钮 + caret 分体；caret 弹出来源菜单（npm / GitHub 预选类型）
+            h('div', { className: 'dpk-splitbtn' },
+              h('button', {
+                className: 'dpk-btn is-primary is-big dpk-splitmain',
+                type: 'button',
+                disabled: loading || checking || batchRunning,
+                onClick: () => setInstallPanelOpen(true),
+              }, t('installQueueBtn')),
+              h('button', {
+                ref: installCaretRef,
+                className: 'dpk-btn is-primary is-big dpk-splitcaret',
+                type: 'button',
+                'aria-label': t('installMenuAria'),
+                'aria-haspopup': 'menu',
+                'aria-expanded': installMenu ? 'true' : 'false',
+                disabled: loading || checking || batchRunning,
+                onClick: () => {
+                  if (installMenuRef.current) { setInstallMenu(null); return; }
+                  const anchor = installCaretRef.current;
+                  if (!anchor) return;
+                  const rect = anchor.getBoundingClientRect();
+                  const w = 200;
+                  const hh = 88;
+                  const left = Math.max(8, Math.min(rect.left, window.innerWidth - w - 8));
+                  const below = rect.bottom + 6;
+                  const top = below + hh > window.innerHeight - 8 ? Math.max(8, rect.top - hh - 6) : below;
+                  setInstallMenu({ left, top, anchor });
+                },
+              }, CARET_ICON),
+            ),
           ),
         ),
         // 安装队列 notice（页内横幅，可手动关；成功的 12s 自动消失）
