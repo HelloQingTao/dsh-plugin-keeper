@@ -189,6 +189,12 @@ window.__ModuleLoader__.load({
         detailLoading: '正在加载详情…',
         detailLoadFailed: '加载详情失败：{error}',
         detailNoSettings: '这个插件没有宿主设置表单（部分插件把设置页做成插件内自定义组件，keeper 读不到，可到系统插件页的包详情里查看）。',
+        detailRepo: '仓库',
+        detailSectionRepoHint: '打开该插件的源码仓库',
+        detailOpenOfficial: '在系统插件页打开',
+        detailOpenOfficialFail: '没能在系统插件页定位到该插件，请手动打开「插件」页 → Installed 查看。',
+        footerGithub: 'GitHub',
+        footerIssues: '有任何问题或建议，欢迎提 Issue',
         detailSettingsHint: '改动保存后立即生效；配置为 secrets 的字段只写不回显。',
         detailSave: '保存',
         detailDiscard: '放弃',
@@ -308,7 +314,7 @@ window.__ModuleLoader__.load({
         copyFail: '复制失败',
         // ---- 显示位置 ----
         showInSettings: '在设置页也显示「插件运维」',
-        showInSettingsHint: '关闭时仅在「插件」面板的页签中显示；改动在重新进入页面后生效。',
+        showInSettingsHint: '关闭时仅在「插件」面板的页签中显示。',
         showInSettingsSaved: '已保存',
         collapseGroupsByDefault: '进入时默认折叠分组',
         collapseGroupsByDefaultHint: '打开「插件运维」时自动折叠所有来源分组；改动在重新进入页面后生效。',
@@ -553,6 +559,12 @@ window.__ModuleLoader__.load({
         detailLoading: 'Loading details…',
         detailLoadFailed: 'Failed to load details: {error}',
         detailNoSettings: 'This plugin has no host settings form. Some plugins render a custom settings page inside their own bundle — keeper cannot read that; open it from the system Plugins page.',
+        detailRepo: 'Repository',
+        detailSectionRepoHint: 'Open this plugin source repository',
+        detailOpenOfficial: 'Open in Plugins page',
+        detailOpenOfficialFail: 'Could not locate it on the Plugins page — open Plugins → Installed manually.',
+        footerGithub: 'GitHub',
+        footerIssues: 'Questions or ideas? Open an issue',
         detailSettingsHint: 'Changes apply on save; secret fields are write-only.',
         detailSave: 'Save',
         detailDiscard: 'Discard',
@@ -672,7 +684,7 @@ window.__ModuleLoader__.load({
         copyFail: 'Copy failed',
         // ---- 显示位置 ----
         showInSettings: 'Also show "Plugin Ops" in Settings',
-        showInSettingsHint: 'When off, the panel only appears as a tab under Plugins; the change applies after re-entering the page.',
+        showInSettingsHint: 'When off, the panel only appears as a tab under Plugins.',
         showInSettingsSaved: 'Saved',
         collapseGroupsByDefault: 'Collapse groups by default on entry',
         collapseGroupsByDefaultHint: 'When on, the "Plugin Ops" panel opens with all source groups collapsed; the change applies after re-entering the page.',
@@ -943,6 +955,13 @@ window.__ModuleLoader__.load({
 .dpk-textarea{font-family:${MONO};font-size:11px;line-height:16px;resize:vertical;padding:6px 10px;}
 .dpk-detailfoot{display:flex;justify-content:flex-end;gap:8px;}
 .dpk-detailacts{display:flex;gap:8px;flex-wrap:wrap;}
+.dpk-link{color:var(--dsw-alias-state-business-primary);text-decoration:none;overflow-wrap:anywhere;}
+.dpk-link:hover{text-decoration:underline;text-underline-offset:2px;}
+.dpk-link:focus-visible{outline:1px solid var(--dsw-alias-state-business-primary);outline-offset:1px;border-radius:var(--dsw-radius-sm,4px);}
+.dpk-dnoform{display:flex;flex-direction:column;align-items:flex-start;gap:8px;}
+.dpk-footer{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:20px;padding-top:10px;border-top:.5px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-tertiary);font-size:12px;line-height:18px;}
+.dpk-footdot{opacity:.6;}
+.dpk-footitem{font-variant-numeric:tabular-nums;}
 .dpk-name.is-link{cursor:pointer;}
 .dpk-name.is-link:hover{color:var(--dsw-alias-brand-primary);text-decoration:underline;text-underline-offset:2px;}
 .dpk-name.is-link:focus-visible{outline:1px solid var(--dsw-alias-brand-primary);outline-offset:1px;border-radius:var(--dsw-radius-sm,4px);}
@@ -1897,7 +1916,17 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
 
 
     // 用当前清单实时算：忽略决定、或远端换版本导致忽略失效，数字都立刻跟着变。
-    function countChecks(plugins, kinds) {
+    const KEEPER_REPO = 'https://github.com/HelloQingTao/dsh-plugin-keeper';
+const KEEPER_ISSUES = `${KEEPER_REPO}/issues`;
+
+/** 仓库地址展示成 host/owner/repo 形式（省掉协议与 .git 尾巴）。 */
+function repoLabelOf(url) {
+  const text = String(url ?? '');
+  const m = /^https?:\/\/(?:www\.)?(.+)$/.exec(text);
+  return (m ? m[1] : text).replace(/\/$/, '');
+}
+
+function countChecks(plugins, kinds) {
       let update = 0;
       let latest = 0;
       let error = 0;
@@ -2724,6 +2753,40 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
         setUninstallArm(false);
       }, []);
 
+      /**
+       * 跳到系统「插件」页的 Installed 页签并定位该插件（官方页与我们是同一页面的两个页签）。
+       * 官方行结构属内部实现，定位失败给明确指引，别让按钮变成死路。
+       */
+      const openInOfficialPage = (name) => {
+        const ours = new Set([TEXT.zh.sectionTitle, TEXT.en.sectionTitle]);
+        const installedTab = [...document.querySelectorAll('[role="tab"]')]
+          .find((el) => !ours.has((el.textContent ?? '').trim()));
+        if (!installedTab) {
+          setDetailFlash({ ok: false, text: t('detailOpenOfficialFail') });
+          return;
+        }
+        installedTab.click();
+        let tries = 0;
+        const locate = () => {
+          tries += 1;
+          const buttons = [...document.querySelectorAll('button')];
+          const hit = buttons.find((b) => (b.textContent ?? '').trim() === name);
+          if (hit) {
+            hit.scrollIntoView({ block: 'center' });
+            hit.click();
+            setDetailFlash(null);
+            return;
+          }
+          // 第三方插件可能被「More」分组折叠：先展开一次再重试
+          if (tries === 1) {
+            buttons.find((b) => /^(More|更多)$/.test((b.textContent ?? '').trim()))?.click();
+          }
+          if (tries < 6) setTimeout(locate, 250);
+          else setDetailFlash({ ok: false, text: t('detailOpenOfficialFail') });
+        };
+        setTimeout(locate, 250);
+      };
+
       const openDetail = React.useCallback((entry) => {
         const name = entry && entry.name ? entry.name : '';
         if (!name) return;
@@ -3066,6 +3129,7 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
         const r = await callSaveSettings({ showInSettings: value });
         if (r?.ok) {
           setShowInSettings(r.showInSettings === true);
+          applyShowInSettingsSection?.(r.showInSettings === true);
           setLocationFlash('ok');
           setSnap((s) => (s ? { ...s, settings: { ...(s.settings ?? {}), showInSettings: r.showInSettings === true } } : s));
         } else {
@@ -4806,6 +4870,16 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
                   entry?.times?.versionChangedAt
                     ? factRow(t('detailVersionChanged'), absTime(entry.times.versionChangedAt))
                     : null,
+                  entry?.repoUrl
+                    ? factRow(t('detailRepo'),
+                        h('a', {
+                          className: 'dpk-link',
+                          href: entry.repoUrl,
+                          target: '_blank',
+                          rel: 'noreferrer noopener',
+                          'data-tip': t('detailSectionRepoHint'),
+                        }, repoLabelOf(entry.repoUrl)))
+                    : null,
                   entry?.installedPath
                     ? factRow(t('detailPath'), h('code', { className: 'dpk-path' }, entry.installedPath),
                         h('button', {
@@ -4824,7 +4898,13 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
                 h('div', { className: 'dpk-gtitle' }, t('detailSectionSettings')),
                 !detail || detail.loading ? null
                   : namespaces.length === 0
-                    ? h('div', { className: 'dpk-hint' }, t('detailNoSettings'))
+                    ? h('div', { className: 'dpk-dnoform' },
+                        h('div', { className: 'dpk-hint' }, t('detailNoSettings')),
+                        h('button', {
+                          className: 'dpk-btn is-mini',
+                          type: 'button',
+                          onClick: () => openInOfficialPage(detailName),
+                        }, t('detailOpenOfficial')))
                     : namespaces.map((view) => h('div', { className: 'dpk-nsblock', key: view.ns },
                         namespaces.length > 1 ? h('div', { className: 'dpk-nsname' }, view.ns) : null,
                         Object.keys(view.schemaTree.dict).map((key) => fieldRow(view, key)),
@@ -4882,6 +4962,26 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
           ? batch.results?.findLast((r) => r.name === entry.name) ?? null
           : null,
       });
+
+      // 底部统一说明区：版本 + 仓库 + 提 issue 引导（各设置项不再重复这类说明）
+      const keeperVersion = plugins.find((p) => p.name === 'dsh-plugin-keeper')?.version ?? null;
+      const footer = h('div', { className: 'dpk-footer' },
+        keeperVersion ? h('span', { className: 'dpk-footitem' }, `dsh-plugin-keeper v${keeperVersion}`) : null,
+        h('span', { className: 'dpk-footdot' }, '·'),
+        h('a', {
+          className: 'dpk-link',
+          href: KEEPER_REPO,
+          target: '_blank',
+          rel: 'noreferrer noopener',
+        }, t('footerGithub')),
+        h('span', { className: 'dpk-footdot' }, '·'),
+        h('a', {
+          className: 'dpk-link',
+          href: KEEPER_ISSUES,
+          target: '_blank',
+          rel: 'noreferrer noopener',
+        }, t('footerIssues')),
+      );
 
       return h('div', { className: 'dpk-root' },
         confirmModal,
@@ -5112,6 +5212,7 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
         ledger,
         lastBatchLine,
         autoDismissFold,
+        footer,
       );
     }
 
@@ -5350,6 +5451,14 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
      */
     let registerSettingsSection = null;
 
+    /**
+     * 设置页入口的即时开关（模块级引用）。
+     *
+     * 用户取消「在设置页也显示」时，已注册的页签要立刻撤掉 —— 不能等重新进入页面，
+     * 否则会出现「勾掉了还在」的错觉。由 mountSection 注入实现。
+     */
+    let applyShowInSettingsSection = null;
+
     /** 读取「在设置页也显示」开关（宿主半是唯一真值来源）。 */
     async function readShowInSettings() {
       try {
@@ -5387,10 +5496,17 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
             },
             PluginKeeperSection,
           );
+          // 调试可见性：分区被 shell 挂载/卸载时留痕（定位「取消勾选后导航仍在」类问题）
+          console.debug('[dsh-plugin-keeper] settings.section register ->', showInSettingsFlag);
         } catch (e) {
           // 理论上只在类型未声明时发生；留调试级日志兜底
           console.debug('[dsh-plugin-keeper] settings.section register deferred:', e?.message ?? e);
         }
+      };
+      // 开关切换时即时生效：置位后重新走一遍 register()（false 会顺手销毁已注册页签）
+      applyShowInSettingsSection = (value) => {
+        showInSettingsFlag = value === true;
+        register();
       };
       // 暴露给「开关查询回来后补注册」用（槽类型已声明时立即生效）
       registerSettingsSection = () => {

@@ -1053,6 +1053,22 @@ async function patchInsertedNames() {
   return set;
 }
 
+/**
+ * 从 package.json 提取可直接点开的仓库 / 主页地址。
+ * 归一化 git+https / git@host:owner/repo.git / #readme 后缀等写法。
+ */
+function repoUrlOf(meta) {
+  const raw = typeof meta?.repository === 'string' ? meta.repository : meta?.repository?.url;
+  const homepage = typeof meta?.homepage === 'string' ? meta.homepage : null;
+  let url = String(raw ?? homepage ?? '').trim();
+  if (!url) return null;
+  url = url.replace(/^git\+/, '').replace(/\.git(#.*)?$/, '').replace(/#.*$/, '');
+  const ssh = /^git@([^:]+):(.+)$/.exec(url);
+  if (ssh) url = `https://${ssh[1]}/${ssh[2]}`;
+  if (!/^https?:\/\//.test(url)) return null;
+  return url;
+}
+
 async function collectInventory() {
   const errors = [];
   const dir = serviceBridge?.profile?.dir ?? null;
@@ -1087,6 +1103,7 @@ async function collectInventory() {
       installedPath: join(dir, 'node_modules', ...name.split('/')),
       hasClient: Boolean(meta.dsh?.client),
       hasPatch: Boolean(meta.dsh?.bundle?.patch),
+      repoUrl: repoUrlOf(meta),
     };
   })).filter(Boolean);
 
