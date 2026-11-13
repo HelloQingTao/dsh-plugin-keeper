@@ -845,7 +845,7 @@ window.__ModuleLoader__.load({
 .dpk-rows{border:.5px solid var(--dsw-alias-border-l2);border-radius:var(--dsw-radius-md,12px);overflow:hidden;}
 .dpk-row{display:block;padding:10px 14px;min-width:0;transition:background-color .12s ease;}
 .dpk-rowmain{display:flex;align-items:center;gap:10px;min-width:0;min-height:32px;}
-.dpk-rowdesc{color:var(--dsw-alias-label-tertiary);font-size:12px;line-height:17px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:3px;} /* 描述顶格：从行内容左缘（与勾选框/头像同一左边线）起排，填满头像下方空间 */
+.dpk-rowdesc{color:var(--dsw-alias-label-tertiary);font-size:12px;line-height:17px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-left:24px;margin-top:3px;} /* 24=cb14+gap10，描述与头像左缘对齐（不缩到包名下） */
 .dpk-onlyup{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--dsw-alias-label-secondary);cursor:pointer;white-space:nowrap;}
 .dpk-onlyup input{accent-color:var(--dsw-alias-brand-primary);margin:0;width:13px;height:13px;}
 /* 搜索框 + 只看可更新：同一组筛选控件 */
