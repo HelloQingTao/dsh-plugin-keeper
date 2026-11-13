@@ -793,6 +793,10 @@ window.__ModuleLoader__.load({
 .dpk-tbgroup{display:flex;align-items:center;gap:8px;white-space:nowrap;}
 /* 工具栏按钮按最长文案预留宽度：加载态文案「刷新中…」比「刷新」宽，若不定宽会把整组挤到下一行造成闪烁 */
 .dpk-tbgroup .dpk-btn{min-width:5.8em;text-align:center;}
+.dpk-tbgroup .dpk-btn.dpk-iconbtn{min-width:0;width:26px;padding:0;justify-content:center;}
+.dpk-iconbtn.is-busy svg{animation:dpk-spin .9s linear infinite;}
+@keyframes dpk-spin{to{transform:rotate(360deg);}}
+@media (prefers-reduced-motion:reduce){.dpk-iconbtn.is-busy svg{animation:none;}}
 .dpk-summary{color:var(--dsw-alias-label-secondary);font-size:12px;min-width:0;flex-shrink:0;white-space:nowrap;}
 .dpk-spacer{flex:1;}
 .dpk-btn{border:1px solid var(--dsw-alias-border-l2);background:0 0;color:var(--dsw-alias-label-primary);border-radius:var(--dsw-radius-sm,8px);padding:3px 11px;font:inherit;font-size:12px;line-height:20px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:4px;transition:background-color .16s ease,border-color .16s ease,color .16s ease,transform .08s ease;}
@@ -848,7 +852,7 @@ window.__ModuleLoader__.load({
 /* 装完引导横幅：文字 + 手动刷新按钮纵向排列（不做自动整页刷新） */
 .dpk-banner.is-guide{display:flex;flex-direction:column;align-items:flex-start;gap:6px;}
 .dpk-group{display:flex;flex-direction:column;gap:4px;min-width:0;}
-.dpk-ghead{display:flex;align-items:center;gap:7px;cursor:pointer;user-select:none;padding:4px 6px;margin:-2px -4px;border-radius:var(--dsw-radius-sm,8px);transition:background-color .12s ease;}
+.dpk-ghead{display:flex;align-items:center;gap:7px;cursor:pointer;user-select:none;padding:5px 6px;margin:6px -4px 2px;border-radius:var(--dsw-radius-sm,8px);transition:background-color .12s ease;}
 .dpk-ghead:hover{background:var(--dsw-alias-interactive-bg-hover);}
 .dpk-ghead:hover .dpk-gtitle{color:var(--dsw-alias-brand-primary);}
 /* 收纳三角：内联 SVG（字符 ▸/▾ 在 9px 下几乎不可见）。
@@ -858,12 +862,12 @@ window.__ModuleLoader__.load({
 .dpk-garrow:hover{background:var(--dsw-alias-interactive-bg-hover);}
 .dpk-garrow svg{display:block;width:12px;height:12px;fill:currentColor;}
 .dpk-garrow:focus-visible{outline:1px solid var(--dsw-alias-brand-primary);outline-offset:1px;}
-.dpk-gtitle{font-size:13px;font-weight:600;color:var(--dsw-alias-label-primary);transition:color .12s;}
-.dpk-gcount{font-size:11px;color:var(--dsw-alias-label-caption);}
+.dpk-gtitle{font-size:15px;font-weight:700;color:var(--dsw-alias-label-primary);transition:color .12s;}
+.dpk-gcount{font-size:12px;color:var(--dsw-alias-label-caption);margin-left:2px;}
 .dpk-rows{border:.5px solid var(--dsw-alias-border-l2);border-radius:var(--dsw-radius-md,12px);overflow:hidden;}
-.dpk-row{display:block;padding:8px 12px;min-width:0;transition:background-color .12s ease;}
-.dpk-rowmain{display:flex;align-items:center;gap:10px;min-width:0;height:22px;}
-.dpk-rowdesc{color:var(--dsw-alias-label-tertiary);font-size:11px;line-height:16px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-left:24px;margin-top:2px;}
+.dpk-row{display:block;padding:10px 14px;min-width:0;transition:background-color .12s ease;}
+.dpk-rowmain{display:flex;align-items:center;gap:10px;min-width:0;height:26px;}
+.dpk-rowdesc{color:var(--dsw-alias-label-tertiary);font-size:12px;line-height:17px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-left:95px;margin-top:3px;}
 .dpk-onlyup{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--dsw-alias-label-secondary);cursor:pointer;white-space:nowrap;}
 .dpk-onlyup input{accent-color:var(--dsw-alias-brand-primary);margin:0;width:13px;height:13px;}
 /* 搜索框 + 只看可更新：同一组筛选控件 */
@@ -890,7 +894,7 @@ window.__ModuleLoader__.load({
 .dpk-cb:disabled{cursor:default;opacity:.35;}
 .dpk-dot{width:5px;height:5px;border-radius:50%;background:var(--dsw-alias-label-caption);flex:none;}
 .dpk-dot.on{background:var(--dsw-alias-state-success-primary);}
-.dpk-name{font-family:${MONO};font-size:12.5px;white-space:nowrap;flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;}
+.dpk-name{font-family:${MONO};font-size:13px;font-weight:600;white-space:nowrap;flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;}
 .dpk-ver{font-family:${MONO};font-size:11px;color:var(--dsw-alias-label-tertiary);white-space:nowrap;flex:none;max-width:16ch;overflow:hidden;text-overflow:ellipsis;}
 .dpk-badge{font-size:10px;line-height:16px;padding:0 7px;border-radius:999px;border:.5px solid var(--dsw-alias-border-l1);background:0 0;color:var(--dsw-alias-label-tertiary);white-space:nowrap;flex:none;}
 .dpk-open{display:inline-flex;align-items:center;justify-content:center;width:18px;height:18px;flex:none;border:none;border-radius:var(--dsw-radius-sm,4px);padding:0;background:0 0;color:var(--dsw-alias-label-caption);cursor:pointer;text-decoration:none;transition:color .12s,background .12s;}
@@ -913,12 +917,15 @@ window.__ModuleLoader__.load({
 .dpk-subbar .dpk-banner{margin:0;flex:1 1 auto;min-width:0;}
 .dpk-subbar .dpk-summary{margin:0;flex:1 1 auto;min-width:0;}
 .dpk-viewbar{display:flex;align-items:center;gap:8px;margin-left:auto;justify-content:flex-end;flex-shrink:0;}
-.dpk-viewtoggle{display:inline-flex;border:1px solid var(--dsw-alias-border-l2);border-radius:var(--dsw-radius-sm,8px);overflow:hidden;}
-.dpk-viewtoggle .dpk-btn{border:0;border-radius:0;}
-.dpk-viewtoggle .dpk-btn + .dpk-btn{border-left:1px solid var(--dsw-alias-border-l2);}
-.dpk-viewtoggle .dpk-btn.is-active{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-state-business-primary,var(--dsw-alias-brand-primary));font-weight:600;}
+.dpk-viewtoggle{display:inline-flex;gap:2px;border:none;background:var(--dsw-alias-interactive-bg-hover);border-radius:999px;padding:2px;}
+.dpk-viewtoggle .dpk-btn{border:0;border-radius:999px;background:transparent;min-width:0;padding:1px 10px;}
+.dpk-viewtoggle .dpk-btn + .dpk-btn{border-left:0;}
+.dpk-viewtoggle .dpk-btn.is-active{background:var(--dsw-alias-bg-layer-1);color:var(--dsw-alias-label-primary);font-weight:600;box-shadow:var(--dsw-elevation-soft,0 1px 3px rgba(0,0,0,.14));}
 .dpk-sortsel{border:1px solid var(--dsw-alias-border-l2);background:0 0;color:var(--dsw-alias-label-primary);border-radius:var(--dsw-radius-sm,8px);padding:1px 6px;font:inherit;font-size:11px;line-height:18px;cursor:pointer;}
 .dpk-sortsel:hover{background:var(--dsw-alias-interactive-bg-hover);}
+/* 行首图标 tile：对齐官方插件列表（首字母圆角方块），色相由名字哈希稳定映射；
+   半透明底 + 亮字，明暗主题都成立 */
+.dpk-tile{width:32px;height:32px;border-radius:var(--dsw-radius-md,10px);flex:none;display:inline-flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;font-family:${MONO};user-select:none;}
 /* 行内时间徽标：弱化小字；更新=主题蓝，版本变更=警示黄，安装=三级灰 */
 .dpk-rowtime{font-size:11px;line-height:18px;color:var(--dsw-alias-label-tertiary);flex:none;white-space:nowrap;}
 .dpk-rowtime.is-upd{color:var(--dsw-alias-state-business-primary,var(--dsw-alias-brand-primary));}
@@ -2047,6 +2054,14 @@ function countChecks(plugins, kinds) {
       }),
     );
 
+    // 刷新（循环箭头，描边 SVG；加载中由 .is-busy 加旋转动画）
+    const REFRESH_ICON = h('svg', { viewBox: '0 0 16 16', width: 13, height: 13, 'aria-hidden': true },
+      h('path', {
+        d: 'M13.1 8a5.1 5.1 0 1 1-1.5-3.6M13.1 2.6v2.6h-2.6',
+        fill: 'none', stroke: 'currentColor', strokeWidth: 1.4, strokeLinecap: 'round', strokeLinejoin: 'round',
+      }),
+    );
+
     const COPY_ICON = h('svg', { viewBox: '0 0 16 16', width: 11, height: 11, 'aria-hidden': true },
       h('rect', { x: 5.75, y: 5.75, width: 7.5, height: 7.5, rx: 1.5, fill: 'none', stroke: 'currentColor', strokeWidth: 1.4 }),
       h('path', {
@@ -2139,6 +2154,9 @@ function countChecks(plugins, kinds) {
         rowProps.className += ' is-clickable';
         rowProps.onClick = () => onToggle(entry.name);
       }
+      // 行首 tile：官方 ★、其余取包名第一个可读字符；色相由全名哈希稳定生成
+      const tileLetter = entry.official ? '\u2605' : (entry.name.replace(/^@[^/]+\//, '')[0] || '?').toUpperCase();
+      const tileHue = [...entry.name].reduce((a, c) => (a * 31 + c.charCodeAt(0)) % 360, 7);
       const chip = opStatus
         ? h('span', {
           className: `dpk-op is-${opStatus.status}`,
@@ -2158,6 +2176,12 @@ function countChecks(plugins, kinds) {
             onChange: () => onToggle(entry.name),
             onClick: (e) => e.stopPropagation(),
           }),
+          h('span', {
+            className: 'dpk-tile',
+            // 名字哈希 → 固定色相：同一插件永远同色，视觉锚点
+            style: { background: `hsl(${tileHue} 60% 50% / .16)`, color: `hsl(${tileHue} 65% 58%)` },
+            'aria-hidden': 'true',
+          }, tileLetter),
           h('span', { className: `dpk-dot${entry.started && enabled !== false ? ' on' : ''}` }),
           // 名字可点开详情（基本信息 + 设置项 + 操作）；行本身点击仍是勾选，故这里拦下冒泡
           h('span', {
@@ -5091,11 +5115,13 @@ function countChecks(plugins, kinds) {
               onClick: () => { void doCheck(); },
             }, checking ? t('checking') : t('checkBtn')),
             h('button', {
-              className: 'dpk-btn',
+              className: `dpk-btn dpk-iconbtn${loading ? ' is-busy' : ''}`,
               type: 'button',
+              'aria-label': t('refresh'),
+              'data-tip': loading ? t('refreshing') : t('refresh'),
               disabled: loading || checking,
               onClick: () => { void load(); },
-            }, loading ? t('refreshing') : t('refresh')),
+            }, REFRESH_ICON),
           ),
         ),
         // 安装队列 notice（页内横幅，可手动关；成功的 12s 自动消失）
