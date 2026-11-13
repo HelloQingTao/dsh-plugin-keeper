@@ -1398,31 +1398,44 @@ export class PluginKeeperService extends TypertRemoteService {
    */
   async installEnqueue(input) {
     const raw = typeof input?.name === 'string' ? input.name.trim() : '';
-    if (!raw || raw.startsWith('-')) return { ok: false, code: 'bad-name', error: '请输入 npm 包名或 GitHub 地址' };
+    if (!raw || raw.startsWith('-')) return { ok: false, code: 'bad-name', error: '请输入 npm 包名、GitHub 地址或本地路径' };
     let name = null;
     let spec = null;
     let githubKey = null;
+    let localKey = null;
     if (NPM_SPEC_RE.test(raw)) {
       name = raw.split('@').slice(0, raw.startsWith('@') ? 2 : 1).join('@');
       spec = raw;
     } else {
-      const g = tryNormalizeGithubSpec(raw);
-      if (!g) {
-        return { ok: false, code: 'bad-name', error: '不是合法的 npm 包名或 GitHub 地址' };
+      // 路径形态（/、~/、./、../、盘符、file:/link:）不进 GitHub 归一，直接走本地分支
+      const looksLikePath = /^(\/|~\/|\.{1,2}\/|[a-zA-Z]:[\\/]|file:|link:)/.test(raw);
+      const g = looksLikePath ? null : tryNormalizeGithubSpec(raw);
+      if (g) {
+        name = g.spec;
+        spec = g.spec;
+        githubKey = `${g.owner}/${g.repo}`;
+      } else {
+        // 本地目录 / .tgz：归一成 link:/file: spec（同 normalizeLocalSpec 口径）
+        const loc = await this.normalizeLocalSpec({ raw });
+        if (!loc?.ok) {
+          return { ok: false, code: 'bad-name', error: '不是合法的 npm 包名、GitHub 地址或本地路径' };
+        }
+        name = loc.name ?? loc.spec;
+        spec = loc.spec;
+        localKey = loc.spec.replace(/^(file|link):/i, '');
       }
-      name = g.spec;
-      spec = g.spec;
-      githubKey = `${g.owner}/${g.repo}`;
     }
     // 已在队列（同名排队/安装中 → 拒绝重复入队）
     const dup = installQueue.find((it) => it.name === name && INSTALL_QUEUE_ACTIVE.has(it.status));
     if (dup) return { ok: false, code: 'queued', error: `${name} 已在队列中` };
-    // 已装同名包（采集快照即可，不必全量盘点）：提示走行内更新；GitHub 来源按 owner/repo 比对
+    // 已装同名包（采集快照即可，不必全量盘点）：提示走行内更新；GitHub 按 owner/repo、本地按安装路径比对
     try {
       const { plugins } = await collectInventory();
       const inst = githubKey
         ? plugins.find((p) => p.source?.kind === 'github' && (p.source?.repo ?? '') === githubKey)
-        : plugins.find((p) => p.name === name);
+        : (localKey
+          ? plugins.find((p) => (p.localPath ?? '') === localKey || p.name === name)
+          : plugins.find((p) => p.name === name));
       if (inst) {
         return { ok: false, code: 'already-installed', error: `${inst.name}@${inst.version ?? ''} 已安装（如需更新请用行内「更新」）` };
       }
