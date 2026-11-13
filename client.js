@@ -793,7 +793,11 @@ window.__ModuleLoader__.load({
 .dpk-tbgroup{display:flex;align-items:center;gap:8px;white-space:nowrap;}
 /* 工具栏按钮按最长文案预留宽度：加载态文案「刷新中…」比「刷新」宽，若不定宽会把整组挤到下一行造成闪烁 */
 .dpk-tbgroup .dpk-btn{min-width:5.8em;text-align:center;}
-.dpk-tbgroup .dpk-btn.dpk-iconbtn{min-width:0;width:26px;padding:0;justify-content:center;}
+.dpk-tbgroup .dpk-btn.dpk-iconbtn{min-width:0;width:28px;height:28px;padding:0;justify-content:center;}
+.dpk-btn.is-big{min-width:0;padding:5px 16px;font-size:12.5px;line-height:20px;border-radius:10px;}
+.dpk-tbgroup .dpk-btn.is-big{min-width:0;}
+.dpk-tile.is-img{background:var(--dsw-alias-bg-layer-2);overflow:hidden;}
+.dpk-tile.is-img img{width:100%;height:100%;object-fit:cover;display:block;}
 .dpk-iconbtn.is-busy svg{animation:dpk-spin .9s linear infinite;}
 @keyframes dpk-spin{to{transform:rotate(360deg);}}
 @media (prefers-reduced-motion:reduce){.dpk-iconbtn.is-busy svg{animation:none;}}
@@ -946,7 +950,17 @@ window.__ModuleLoader__.load({
 .dpk-queuenotice{display:flex;align-items:center;justify-content:space-between;gap:8px;}
 
 /* ---------- 详情视图（P3）：基本信息表 + 设置项控件 + 操作区 ---------- */
-.dpk-modal.is-detail{width:560px;}
+/* 设置项两列网格：JSON/密钥等长控件占整行 */
+.dpk-dgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 18px;}
+.dpk-dfield{display:flex;flex-direction:column;gap:5px;min-width:0;}
+.dpk-dfield.is-wide{grid-column:1/-1;}
+/* 布尔字段：自绘开关（贴宿主开关形态：胶囊 + 滑块） */
+.dpk-toggle{position:relative;width:34px;height:20px;border-radius:999px;border:none;background:var(--dsw-alias-interactive-bg-hover);cursor:pointer;padding:0;flex:none;transition:background .15s ease;}
+.dpk-toggle::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:var(--dsw-alias-bg-layer-1);box-shadow:0 1px 2px rgba(0,0,0,.22);transition:transform .15s ease;}
+.dpk-toggle.is-on{background:var(--dsw-alias-brand-primary);}
+.dpk-toggle.is-on::after{transform:translateX(14px);}
+.dpk-toggle:disabled{opacity:.4;cursor:default;}
+.dpk-toggle:focus-visible{outline:1px solid var(--dsw-alias-brand-primary);outline-offset:1px;}
 .dpk-dhead{display:flex;align-items:center;gap:8px;min-width:0;}
 .dpk-dname{font-family:${MONO};font-size:13px;font-weight:600;color:var(--dsw-alias-label-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .dpk-dfacts{display:flex;flex-direction:column;gap:4px;}
@@ -957,7 +971,6 @@ window.__ModuleLoader__.load({
 .dpk-path{font-family:${MONO};font-size:11px;color:var(--dsw-alias-label-secondary);overflow-wrap:anywhere;}
 .dpk-nsblock{display:flex;flex-direction:column;gap:10px;border:1px solid var(--dsw-alias-border-l1);border-radius:var(--dsw-radius-md,8px);padding:10px 12px;}
 .dpk-nsname{font-family:${MONO};font-size:11px;color:var(--dsw-alias-label-tertiary);}
-.dpk-dfield{display:flex;flex-direction:column;gap:5px;}
 .dpk-dfieldhead{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;}
 .dpk-fieldtag{font-size:10px;line-height:14px;padding:0 5px;border-radius:999px;color:var(--dsw-alias-state-business-primary,var(--dsw-alias-brand-primary));border:.5px solid var(--dsw-alias-state-business-primary,var(--dsw-alias-brand-primary));}
 .dpk-fielddesc{font-size:11px;line-height:16px;color:var(--dsw-alias-label-tertiary);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%;}
@@ -1010,6 +1023,7 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
 .dpk-switch input{accent-color:var(--dsw-alias-brand-primary);margin:0;width:13px;height:13px;}
 /* 导出弹框：比确认框宽（要列清单） */
 .dpk-modal.is-wide{width:520px;}
+.dpk-modal.is-detail{width:720px;box-sizing:border-box;max-height:min(78vh,760px);overflow:auto;}
 /* 设置项较多：限制高度并让内容滚动，其余外观完全沿用 dpk-modal */
 .dpk-modal.is-settings{max-height:min(80vh,720px);overflow:auto;}
 .dpk-cfglist{display:flex;flex-direction:column;gap:6px;max-height:260px;overflow:auto;}
@@ -2124,6 +2138,33 @@ function countChecks(plugins, kinds) {
       }, flash === 'ok' ? CHECK_ICON : COPY_ICON);
     }
 
+    // 从仓库地址提取 GitHub owner（用于 https://github.com/<owner>.png 头像，免 API）
+    function githubOwnerOf(url) {
+      const m = /github\.com\/([A-Za-z0-9-]{1,39})/i.exec(String(url || ''));
+      return m ? m[1] : '';
+    }
+    // 行首图标：插件自己的 GitHub 头像优先；没有/加载失败回退首字母字符 tile（色相随名字哈希固定）
+    function PluginTile({ entry }) {
+      const owner = githubOwnerOf(entry.repoUrl || entry.source?.repo);
+      const [imgFail, setImgFail] = React.useState(false);
+      React.useEffect(() => { setImgFail(false); }, [owner]);
+      if (owner && !imgFail) {
+        return h('span', { className: 'dpk-tile is-img' },
+          h('img', {
+            src: `https://github.com/${owner}.png?size=64`,
+            alt: '',
+            onError: () => setImgFail(true),
+          }));
+      }
+      const letter = entry.official ? '\u2605' : (entry.name.replace(/^@[^/]+\//, '')[0] || '?').toUpperCase();
+      const hue = [...entry.name].reduce((a, c) => (a * 31 + c.charCodeAt(0)) % 360, 7);
+      return h('span', {
+        className: 'dpk-tile',
+        style: { background: `hsl(${hue} 60% 50% / .16)`, color: `hsl(${hue} 65% 58%)` },
+        'aria-hidden': 'true',
+      }, letter);
+    }
+
     function Row({ entry, checked, disabled, onToggle, opStatus, onUpdate, onCancelUpdate, queued, onIgnore, onRestore, busy, updateDisabled, terms, showTime, onOpenDetail }) {
       const gk = groupKeyOf(entry);
       const srcKind = entry.source?.kind;
@@ -2155,8 +2196,6 @@ function countChecks(plugins, kinds) {
         rowProps.onClick = () => onToggle(entry.name);
       }
       // 行首 tile：官方 ★、其余取包名第一个可读字符；色相由全名哈希稳定生成
-      const tileLetter = entry.official ? '\u2605' : (entry.name.replace(/^@[^/]+\//, '')[0] || '?').toUpperCase();
-      const tileHue = [...entry.name].reduce((a, c) => (a * 31 + c.charCodeAt(0)) % 360, 7);
       const chip = opStatus
         ? h('span', {
           className: `dpk-op is-${opStatus.status}`,
@@ -2176,28 +2215,13 @@ function countChecks(plugins, kinds) {
             onChange: () => onToggle(entry.name),
             onClick: (e) => e.stopPropagation(),
           }),
-          h('span', {
-            className: 'dpk-tile',
-            // 名字哈希 → 固定色相：同一插件永远同色，视觉锚点
-            style: { background: `hsl(${tileHue} 60% 50% / .16)`, color: `hsl(${tileHue} 65% 58%)` },
-            'aria-hidden': 'true',
-          }, tileLetter),
+          h(PluginTile, { entry }),
           h('span', { className: `dpk-dot${entry.started && enabled !== false ? ' on' : ''}` }),
           // 名字可点开详情（基本信息 + 设置项 + 操作）；行本身点击仍是勾选，故这里拦下冒泡
+          // 详情入口统一走行尾「详情」按钮；包名恢复纯展示（避免双重入口歧义）
           h('span', {
-            className: 'dpk-name is-link',
-            role: 'button',
-            tabIndex: 0,
-            'aria-label': `${t('detailOpen')}：${entry.name}`,
-            // repo 不上行内（与包名重复且挤压按钮）；悬停同时给出全名与来源
+            className: 'dpk-name',
             'data-tip': repoLabel ? `${entry.name} · ${repoLabel}` : entry.name,
-            onClick: (e) => { e.stopPropagation(); onOpenDetail?.(entry); },
-            onKeyDown: (e) => {
-              if (e.key !== 'Enter' && e.key !== ' ') return;
-              e.preventDefault();
-              e.stopPropagation();
-              onOpenDetail?.(entry);
-            },
           }, highlightText(entry.name, terms)),
           // 名字后面：复制可直接安装的名称（npm → name@version，github → github:owner/repo#ref）
           h(CopyIcon, {
@@ -4777,12 +4801,14 @@ function countChecks(plugins, kinds) {
               const desc = schemaFieldDesc(node);
               let control = null;
               if (kind === 'bool') {
-                control = h('input', {
-                  type: 'checkbox',
-                  className: 'dpk-cb',
-                  checked: text === 'true',
+                control = h('button', {
+                  className: `dpk-toggle${text === 'true' ? ' is-on' : ''}`,
+                  type: 'button',
+                  role: 'switch',
+                  'aria-checked': text === 'true',
+                  'aria-label': key,
                   disabled: !writable,
-                  onChange: (e) => setDetailDraft(dk, node, e.target.checked ? 'true' : 'false'),
+                  onClick: () => setDetailDraft(dk, node, text === 'true' ? 'false' : 'true'),
                 });
               } else if (kind === 'const') {
                 control = h('span', { className: 'dpk-hint' }, text);
@@ -4814,7 +4840,7 @@ function countChecks(plugins, kinds) {
                   onChange: (e) => setDetailDraft(dk, node, e.target.value),
                 });
               }
-              return h('div', { className: 'dpk-dfield', key: dk },
+              return h('div', { className: `dpk-dfield${kind === 'json' || secret ? ' is-wide' : ''}`, key: dk },
                 h('div', { className: 'dpk-dfieldhead' },
                   h('span', { className: 'dpk-setlabel' }, key),
                   userSet ? h('span', { className: 'dpk-fieldtag' }, t('detailUserSet')) : null,
@@ -4945,7 +4971,7 @@ function countChecks(plugins, kinds) {
                         }, t('detailOpenOfficial')))
                     : namespaces.map((view) => h('div', { className: 'dpk-nsblock', key: view.ns },
                         namespaces.length > 1 ? h('div', { className: 'dpk-nsname' }, view.ns) : null,
-                        Object.keys(view.schemaTree.dict).map((key) => fieldRow(view, key)),
+                        h('div', { className: 'dpk-dgrid' }, Object.keys(view.schemaTree.dict).map((key) => fieldRow(view, key))),
                         h('div', { className: 'dpk-detailfoot' },
                           h('button', {
                             className: 'dpk-btn is-primary',
@@ -5102,14 +5128,14 @@ function countChecks(plugins, kinds) {
               }))
               : null,
             h('button', {
-              className: 'dpk-btn',
+              className: 'dpk-btn is-primary is-big',
               type: 'button',
               disabled: loading || checking || batchRunning,
               onClick: () => setInstallPanelOpen(true),
             }, t('installQueueBtn')),
             h('span', { className: 'dpk-lastcheck' }, lastCheckText),
             h('button', {
-              className: 'dpk-btn is-primary',
+              className: 'dpk-btn is-big',
               type: 'button',
               disabled: checking || loading || checkableCount === 0,
               onClick: () => { void doCheck(); },
