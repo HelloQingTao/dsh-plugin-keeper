@@ -148,6 +148,8 @@ window.__ModuleLoader__.load({
         installQueueBtn: '+ 安装插件',
         queueTitle: '安装队列',
         iqPanelTitle: '安装插件',
+        iqInputHint: '支持 npm 包名或 GitHub 仓库地址（owner/repo），安装会进入后台队列串行执行。',
+        iqTrustWarn: '请确认插件来源可信。插件在本机以你的权限运行，来源不明的插件可能损坏 dsh 或泄露你的数据。',
         queuePlaceholderAny: '例如 dsh-plugin-keeper 或 owner/repo',
         iqSubmit: '安装',
         installMenuNpm: 'npm 包',
@@ -501,6 +503,8 @@ window.__ModuleLoader__.load({
         installQueueBtn: '+ Install plugin',
         queueTitle: 'Install queue',
         iqPanelTitle: 'Install plugin',
+        iqInputHint: 'Accepts an npm package name or a GitHub repo (owner/repo); installs run serially in the background.',
+        iqTrustWarn: 'Only install plugins you trust. Plugins run on this machine with your permissions, and unknown sources may harm dsh or leak your data.',
         queuePlaceholderAny: 'e.g. dsh-plugin-keeper or owner/repo',
         iqSubmit: 'Install',
         installMenuNpm: 'npm package',
@@ -818,6 +822,7 @@ window.__ModuleLoader__.load({
 .dpk-savederr{font-size:11px;color:var(--dsw-alias-state-error-primary);}
 .dpk-err{color:var(--dsw-alias-state-error-primary);font-size:12px;}
 .dpk-banner{font-size:11px;color:var(--dsw-alias-state-warn-primary);line-height:18px;overflow-wrap:anywhere;}
+.dpk-trustwarn{margin-top:10px;padding:10px 12px;border-radius:var(--dsw-radius-md,8px);background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-label-secondary);font-size:12px;line-height:19px;}
 .dpk-banner.is-ok{color:var(--dsw-alias-state-success-primary);}
 /* 装完引导横幅：文字 + 手动刷新按钮纵向排列（不做自动整页刷新） */
 .dpk-banner.is-guide{display:flex;flex-direction:column;align-items:flex-start;gap:6px;}
@@ -4569,6 +4574,7 @@ function countChecks(plugins, kinds) {
           onClose: () => setInstallPanelOpen(false),
         },
           h('div', { className: 'dpk-mtitle' }, t('iqPanelTitle')),
+          h('div', { className: 'dpk-hint' }, t('iqInputHint')),
           // ---- 单输入自动识别 npm/GitHub（宿主归一），回车也可入队 ----
           h('div', { className: 'dpk-setrow dpk-iqrow' },
             h('input', {
@@ -4583,6 +4589,8 @@ function countChecks(plugins, kinds) {
               onKeyDown: (e) => { if (e.key === 'Enter') { e.preventDefault(); void doInstallEnqueue(); } },
             }),
           ),
+          // ---- 来源可信警告（对齐官方安装弹框） ----
+          h('div', { className: 'dpk-banner dpk-trustwarn' }, t('iqTrustWarn')),
           installInputFlash
             ? h('div', { className: 'dpk-banner' }, installInputFlash.text)
             : null,
