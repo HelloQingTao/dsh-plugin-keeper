@@ -830,7 +830,7 @@ window.__ModuleLoader__.load({
 .dpk-gcount{font-size:12px;color:var(--dsw-alias-label-caption);margin-left:2px;}
 .dpk-rows{border:.5px solid var(--dsw-alias-border-l2);border-radius:var(--dsw-radius-md,12px);overflow:hidden;}
 .dpk-row{display:block;padding:10px 14px;min-width:0;transition:background-color .12s ease;}
-.dpk-rowmain{display:flex;align-items:center;gap:10px;min-width:0;height:26px;}
+.dpk-rowmain{display:flex;align-items:center;gap:10px;min-width:0;min-height:32px;}
 .dpk-rowdesc{color:var(--dsw-alias-label-tertiary);font-size:12px;line-height:17px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-left:95px;margin-top:3px;}
 .dpk-onlyup{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--dsw-alias-label-secondary);cursor:pointer;white-space:nowrap;}
 .dpk-onlyup input{accent-color:var(--dsw-alias-brand-primary);margin:0;width:13px;height:13px;}
@@ -1971,12 +1971,104 @@ function countChecks(plugins, kinds) {
       const m = /github\.com\/([A-Za-z0-9-]{1,39})/i.exec(String(url || ''));
       return m ? m[1] : '';
     }
-    // 行首图标：插件自己的 GitHub 头像优先；没有/加载失败回退首字母字符 tile（色相随名字哈希固定）
+
+    // 头像缓存：owner → { d:dataUrl, u:CDN 直链, t:成功时间, nf:最近失败时间 }，localStorage 持久化。
+    // 取图路径：缓存 dataUrl/CDN 直链（7 天内零网络请求）→ 直链过期走 api.github.com 解析
+    // （GET 直连可用、带 CORS 头）→ avatars.githubusercontent.com 走 CORS fetch 收进 dataUrl；
+    // 任一步失败只记负缓存（1 天内不再打网络），当次会话回退 <img> 直连渲染。
+    const AVATAR_KEY = 'dpk.' + 'avatarCache.v1';
+    const AVATAR_TTL = 7 * 864e5;
+    const AVATAR_NEG_TTL = 864e5;
+    const AVATAR_MAX = 100;
+    let avatarCache = null; // Map owner → rec
+    function avatarCacheMap() {
+      if (avatarCache) return avatarCache;
+      avatarCache = new Map();
+      try {
+        const raw = localStorage.getItem(AVATAR_KEY);
+        if (raw) {
+          const obj = JSON.parse(raw);
+          for (const [owner, rec] of Object.entries(obj || {})) {
+            if (rec && typeof rec === 'object') avatarCache.set(owner, rec);
+          }
+        }
+      } catch { /* 坏缓存按空处理 */ }
+      return avatarCache;
+    }
+    function avatarCacheSave() {
+      try {
+        const entries = [...avatarCache.entries()]
+          .sort((a, b) => (a[1].t || a[1].nf || 0) - (b[1].t || b[1].nf || 0)).slice(-AVATAR_MAX);
+        avatarCache = new Map(entries);
+        localStorage.setItem(AVATAR_KEY, JSON.stringify(Object.fromEntries(entries)));
+      } catch { /* 写失败（隐私模式/超限）只用内存态 */ }
+    }
+    const blobToDataUrl = (blob) => new Promise((resolve, reject) => {
+      const fr = new FileReader();
+      fr.onload = () => resolve(String(fr.result));
+      fr.onerror = () => reject(new Error('read fail'));
+      fr.readAsDataURL(blob);
+    });
+    // 有缓存就用（含过期旧图——先用着，刷新在后台做），没有返回 ''
+    function avatarCachedSrcOf(owner) {
+      if (!owner) return '';
+      const rec = avatarCacheMap().get(owner);
+      return rec && (rec.d || rec.u) ? (rec.d || rec.u) : '';
+    }
+    const avatarResolving = new Set(); // 同一会话同一 owner 只跑一次后台解析
+    async function resolveAvatar(owner) {
+      if (!owner || avatarResolving.has(owner)) return;
+      const rec = avatarCacheMap().get(owner);
+      if (rec && rec.d && Date.now() - rec.t < AVATAR_TTL) return; // 新鲜，不打网络
+      if (!rec?.d && !rec?.u && rec?.nf && Date.now() - rec.nf < AVATAR_NEG_TTL) return; // 近期失败
+      avatarResolving.add(owner);
+      try {
+        let cdnUrl = rec?.u || '';
+        if (!cdnUrl || !rec?.t || Date.now() - rec.t >= AVATAR_TTL) {
+          const res = await fetch(`https://api.github.com/users/${encodeURIComponent(owner)}`, {
+            headers: { Accept: 'application/vnd.github+json' },
+          });
+          if (!res.ok) throw new Error(`api ${res.status}`);
+          const json = await res.json();
+          cdnUrl = String(json?.avatar_url || '');
+          if (!cdnUrl) throw new Error('no avatar_url');
+        }
+        avatarCacheMap().set(owner, { ...(avatarCacheMap().get(owner) || {}), u: cdnUrl, t: Date.now() });
+        avatarCacheSave();
+        try {
+          const sep = cdnUrl.includes('?') ? '&' : '?';
+          const imgRes = await fetch(`${cdnUrl}${sep}size=64`, { mode: 'cors' });
+          if (!imgRes.ok) throw new Error(`cdn ${imgRes.status}`);
+          const dataUrl = await blobToDataUrl(await imgRes.blob());
+          avatarCacheMap().set(owner, { u: cdnUrl, d: dataUrl, t: Date.now() });
+        } catch {
+          // CDN 收不进 dataUrl（CORS 变动）也无所谓：直链仍可用且带长缓存头
+          avatarCacheMap().set(owner, { ...(avatarCacheMap().get(owner) || {}), u: cdnUrl, t: Date.now() });
+        }
+        avatarCacheSave();
+      } catch {
+        avatarCacheMap().set(owner, { ...(avatarCacheMap().get(owner) || {}), nf: Date.now() });
+        avatarCacheSave();
+      } finally {
+        avatarResolving.delete(owner);
+      }
+    }
+
+    // 行首图标：插件自己的 GitHub 头像优先（localStorage 缓存，7 天内零请求）；
+    // 没有/拉取失败回退首字母字符 tile（色相随名字哈希固定）
     function PluginTile({ entry }) {
       const owner = githubOwnerOf(entry.repoUrl || entry.source?.repo);
       const [imgFail, setImgFail] = React.useState(false);
       React.useEffect(() => { setImgFail(false); }, [owner]);
+      const cached = avatarCachedSrcOf(owner);
+      if (owner && cached) {
+        return h('span', { className: 'dpk-tile is-img' },
+          h('img', { src: cached, alt: '' }));
+      }
       if (owner && !imgFail) {
+        // 无缓存：直连渲染（img 不受 CORS 限制，今天就能看到图），同时后台解析进缓存，
+        // 成功后下次打开走缓存零请求
+        void resolveAvatar(owner);
         return h('span', { className: 'dpk-tile is-img' },
           h('img', {
             src: `https://github.com/${owner}.png?size=64`,
