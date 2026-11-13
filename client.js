@@ -868,10 +868,10 @@ window.__ModuleLoader__.load({
 .dpk-onlyup input{accent-color:var(--dsw-alias-brand-primary);margin:0;width:13px;height:13px;}
 /* 搜索框 + 只看可更新：同一组筛选控件 */
 .dpk-filters{display:flex;align-items:center;gap:10px;flex-wrap:nowrap;min-width:110px;flex:0 1 auto;}
-.dpk-search{position:relative;display:inline-flex;align-items:center;min-width:0;flex:0 1 190px;}
+.dpk-search{position:relative;display:inline-flex;align-items:center;min-width:0;flex:0 1 240px;}
 .dpk-searchicon{position:absolute;left:7px;display:inline-flex;align-items:center;justify-content:center;color:var(--dsw-alias-label-caption);pointer-events:none;}
 .dpk-searchicon svg{display:block;width:12px;height:12px;}
-.dpk-searchinput{background:var(--dsw-alias-bg-layer-1);border:.5px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-primary);border-radius:var(--dsw-radius-sm,8px);padding:3px 24px 3px 23px;font:inherit;font-size:12px;line-height:20px;width:100%;min-width:0;max-width:280px;transition:border-color .16s ease,box-shadow .16s ease;}
+.dpk-searchinput{background:var(--dsw-alias-bg-layer-1);border:.5px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-primary);border-radius:var(--dsw-radius-sm,8px);padding:3px 24px 3px 23px;font:inherit;font-size:12px;line-height:20px;width:100%;min-width:0;max-width:340px;transition:border-color .16s ease,box-shadow .16s ease;}
 .dpk-searchinput:focus{outline:1px solid var(--dsw-alias-brand-primary);outline-offset:0;}
 .dpk-searchinput::placeholder{color:var(--dsw-alias-label-caption);}
 .dpk-searchclear{position:absolute;right:3px;width:17px;height:17px;border:none;border-radius:var(--dsw-radius-sm,4px);padding:0;background:0 0;color:var(--dsw-alias-label-tertiary);cursor:pointer;font:inherit;font-size:13px;line-height:17px;display:inline-flex;align-items:center;justify-content:center;}
@@ -908,9 +908,10 @@ window.__ModuleLoader__.load({
 .dpk-op.is-skipped{color:var(--dsw-alias-label-tertiary);}
 .dpk-batchbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;}
 /* 视图切换 + 排序控件（P1 双视图）：常驻工具行，右对齐；批量运行中仍可切视图/排序 */
-.dpk-subbar{display:flex;align-items:flex-start;gap:12px;margin-bottom:8px;min-width:0;}
+.dpk-subbar{display:flex;align-items:center;gap:12px;margin-bottom:8px;min-width:0;}
 .dpk-subbar .dpk-hint{margin:0;flex:1 1 auto;min-width:0;}
 .dpk-subbar .dpk-banner{margin:0;flex:1 1 auto;min-width:0;}
+.dpk-subbar .dpk-summary{margin:0;flex:1 1 auto;min-width:0;}
 .dpk-viewbar{display:flex;align-items:center;gap:8px;margin-left:auto;justify-content:flex-end;flex-shrink:0;}
 .dpk-viewtoggle{display:inline-flex;border:1px solid var(--dsw-alias-border-l2);border-radius:var(--dsw-radius-sm,8px);overflow:hidden;}
 .dpk-viewtoggle .dpk-btn{border:0;border-radius:0;}
@@ -5017,16 +5018,7 @@ function countChecks(plugins, kinds) {
           },
         }),
         h('div', { className: 'dpk-toolbar' },
-          plugins.length > 0
-            ? h('span', { className: 'dpk-summary' }, t('summary', {
-              total: plugins.length,
-              official: counts.official,
-              npm: counts.npm,
-              github: counts.github,
-              local: counts.local,
-            }))
-            : (!loading && !err ? h('span', { className: 'dpk-summary' }, t('noPlugins')) : null),
-          // 筛选控件组：搜索框 + 「只看可更新」（两个条件叠加生效）
+          // 筛选控件组：搜索框 + 「只看可更新」（两个条件叠加生效）；统计挪到下一行信息区
           h('div', { className: 'dpk-filters' },
             h('div', { className: 'dpk-search' },
               h('span', { className: 'dpk-searchicon' }, SEARCH_ICON),
@@ -5122,9 +5114,7 @@ function countChecks(plugins, kinds) {
           ))
           : null,
         banner ? h('div', { className: `dpk-banner${banner.ok ? ' is-ok' : ''}` }, banner.text) : null,
-        // 检查结果行：有失败时升级为警示横幅（含首条原因与连接类提示），全成才显示普通统计
-        // 检查进行中不显示统计（此时分组各自在跑，数字还是上一轮的）
-        // 与视图切换条（分组/列表 + 排序）合并为一行：左结果、右切换，省一行竖向空间
+        // 信息行：左 = 检查结果（刚检查完）/ 插件统计（常态），右 = 视图切换（分组/列表 + 排序）
         h('div', { className: 'dpk-subbar' },
           checkInfo && !checkInfo.checking
             ? (checkInfo.error > 0
@@ -5134,7 +5124,15 @@ function countChecks(plugins, kinds) {
                 checkInfo.connErr ? h('div', null, t('checkConnHint')) : null,
               )
               : h('div', { className: 'dpk-hint' }, t('checkDone', checkInfo)))
-            : null,
+            : (plugins.length > 0
+              ? h('span', { className: 'dpk-summary' }, t('summary', {
+                total: plugins.length,
+                official: counts.official,
+                npm: counts.npm,
+                github: counts.github,
+                local: counts.local,
+              }))
+              : (!loading && !err ? h('span', { className: 'dpk-summary' }, t('noPlugins')) : null)),
           viewBar,
         ),
         err ? h('div', { className: 'dpk-err' }, err) : null,
