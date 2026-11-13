@@ -169,9 +169,7 @@ window.__ModuleLoader__.load({
         detailOpen: '查看详情',
         rowDetail: '详情',
         detailTitle: '插件详情',
-        detailClose: '关闭',
         detailSectionBasic: '基本信息',
-        detailSectionSettings: '设置项',
         detailSectionActions: '操作',
         detailVersion: '版本',
         detailState: '状态',
@@ -183,32 +181,14 @@ window.__ModuleLoader__.load({
         detailVersionChanged: '版本变更',
         detailPath: '安装位置',
         detailDesc: '描述',
-        detailNoDesc: '（无描述）',
         detailNone: '—',
         detailCopyPath: '复制路径',
         detailLoading: '正在加载详情…',
         detailLoadFailed: '加载详情失败：{error}',
-        detailNoSettings: '这个插件没有宿主设置表单（部分插件把设置页做成插件内自定义组件，keeper 读不到，可到系统插件页的包详情里查看）。',
         detailRepo: '仓库',
         detailSectionRepoHint: '打开该插件的源码仓库',
-        detailOpenOfficial: '在系统插件页打开',
-        detailOpenOfficialFail: '没能在系统插件页定位到该插件，请手动打开「插件」页 → Installed 查看。',
         footerGithub: 'GitHub',
         footerIssues: '有任何问题或建议，欢迎提 Issue',
-        detailSettingsHint: '改动保存后立即生效；配置为 secrets 的字段只写不回显。',
-        detailSave: '保存',
-        detailDiscard: '放弃',
-        detailSaving: '保存中…',
-        detailSaved: '✅ 设置已保存',
-        detailSaveFailed: '保存失败：{error}',
-        detailConflict: '保存失败：配置已被其他窗口修改，已重新载入最新值，请重试',
-        detailResetField: '恢复默认值',
-        detailUserSet: '已自定义',
-        detailSecretSet: '已设置（留空表示不修改）',
-        detailSecretUnset: '未设置',
-        detailJsonField: '（对象/数组，用 JSON 编辑）',
-        detailInvalidJson: 'JSON 格式不正确',
-        detailInvalidNumber: '需要数字',
         detailActionUpdate: '更新到最新',
         detailActionEnable: '启用',
         detailActionDisable: '停用',
@@ -539,9 +519,7 @@ window.__ModuleLoader__.load({
         detailOpen: 'View details',
         rowDetail: 'Details',
         detailTitle: 'Plugin details',
-        detailClose: 'Close',
         detailSectionBasic: 'Basics',
-        detailSectionSettings: 'Settings',
         detailSectionActions: 'Actions',
         detailVersion: 'Version',
         detailState: 'State',
@@ -553,32 +531,14 @@ window.__ModuleLoader__.load({
         detailVersionChanged: 'Version changed',
         detailPath: 'Install path',
         detailDesc: 'Description',
-        detailNoDesc: '(no description)',
         detailNone: '—',
         detailCopyPath: 'Copy path',
         detailLoading: 'Loading details…',
         detailLoadFailed: 'Failed to load details: {error}',
-        detailNoSettings: 'This plugin has no host settings form. Some plugins render a custom settings page inside their own bundle — keeper cannot read that; open it from the system Plugins page.',
         detailRepo: 'Repository',
         detailSectionRepoHint: 'Open this plugin source repository',
-        detailOpenOfficial: 'Open in Plugins page',
-        detailOpenOfficialFail: 'Could not locate it on the Plugins page — open Plugins → Installed manually.',
         footerGithub: 'GitHub',
         footerIssues: 'Questions or ideas? Open an issue',
-        detailSettingsHint: 'Changes apply on save; secret fields are write-only.',
-        detailSave: 'Save',
-        detailDiscard: 'Discard',
-        detailSaving: 'Saving…',
-        detailSaved: '✅ Settings saved',
-        detailSaveFailed: 'Save failed: {error}',
-        detailConflict: 'Save failed: configuration changed elsewhere — reloaded the latest values, please retry',
-        detailResetField: 'Reset to default',
-        detailUserSet: 'customized',
-        detailSecretSet: 'set (leave empty to keep)',
-        detailSecretUnset: 'not set',
-        detailJsonField: '(object/array, edit as JSON)',
-        detailInvalidJson: 'Invalid JSON',
-        detailInvalidNumber: 'Number expected',
         detailActionUpdate: 'Update to latest',
         detailActionEnable: 'Enable',
         detailActionDisable: 'Disable',
@@ -951,16 +911,7 @@ window.__ModuleLoader__.load({
 
 /* ---------- 详情视图（P3）：基本信息表 + 设置项控件 + 操作区 ---------- */
 /* 设置项两列网格：JSON/密钥等长控件占整行 */
-.dpk-dgrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 18px;}
-.dpk-dfield{display:flex;flex-direction:column;gap:5px;min-width:0;}
-.dpk-dfield.is-wide{grid-column:1/-1;}
 /* 布尔字段：自绘开关（贴宿主开关形态：胶囊 + 滑块） */
-.dpk-toggle{position:relative;width:34px;height:20px;border-radius:999px;border:none;background:var(--dsw-alias-interactive-bg-hover);cursor:pointer;padding:0;flex:none;transition:background .15s ease;}
-.dpk-toggle::after{content:"";position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:var(--dsw-alias-bg-layer-1);box-shadow:0 1px 2px rgba(0,0,0,.22);transition:transform .15s ease;}
-.dpk-toggle.is-on{background:var(--dsw-alias-brand-primary);}
-.dpk-toggle.is-on::after{transform:translateX(14px);}
-.dpk-toggle:disabled{opacity:.4;cursor:default;}
-.dpk-toggle:focus-visible{outline:1px solid var(--dsw-alias-brand-primary);outline-offset:1px;}
 .dpk-dhead{display:flex;align-items:center;gap:8px;min-width:0;}
 .dpk-dname{font-family:${MONO};font-size:13px;font-weight:600;color:var(--dsw-alias-label-primary);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .dpk-dfacts{display:flex;flex-direction:column;gap:4px;}
@@ -969,15 +920,6 @@ window.__ModuleLoader__.load({
 .dpk-factvalue{color:var(--dsw-alias-label-secondary);min-width:0;overflow-wrap:anywhere;}
 .dpk-factdesc{color:var(--dsw-alias-label-secondary);}
 .dpk-path{font-family:${MONO};font-size:11px;color:var(--dsw-alias-label-secondary);overflow-wrap:anywhere;}
-.dpk-nsblock{display:flex;flex-direction:column;gap:10px;border:1px solid var(--dsw-alias-border-l1);border-radius:var(--dsw-radius-md,8px);padding:10px 12px;}
-.dpk-nsname{font-family:${MONO};font-size:11px;color:var(--dsw-alias-label-tertiary);}
-.dpk-dfieldhead{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;}
-.dpk-fieldtag{font-size:10px;line-height:14px;padding:0 5px;border-radius:999px;color:var(--dsw-alias-state-business-primary,var(--dsw-alias-brand-primary));border:.5px solid var(--dsw-alias-state-business-primary,var(--dsw-alias-brand-primary));}
-.dpk-fielddesc{font-size:11px;line-height:16px;color:var(--dsw-alias-label-tertiary);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:100%;}
-.dpk-dfieldbody{display:flex;align-items:center;gap:8px;}
-.dpk-dfieldctl{min-width:0;flex:1 1 auto;}
-.dpk-textarea{font-family:${MONO};font-size:11px;line-height:16px;resize:vertical;padding:6px 10px;}
-.dpk-detailfoot{display:flex;justify-content:flex-end;gap:8px;}
 .dpk-detailacts{display:flex;gap:8px;flex-wrap:wrap;}
 .dpk-link{color:var(--dsw-alias-state-business-primary);text-decoration:none;overflow-wrap:anywhere;}
 .dpk-link:hover{text-decoration:underline;text-underline-offset:2px;}
@@ -1221,7 +1163,6 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
 
     let rpcFace = null; // remote.dsh-plugin-keeper face，由装配段注入
     let pmFace = null; // remote.pluginManager（官方）face，批量操作直接调用
-    let settingsFace = null; // remote.settings（官方）face，详情视图读写各插件设置项
 
     // ---------- 安装进度：订阅宿主真实事件流，不做假进度 ----------
     // installBundle 带 requestId 后，宿主会 emit：
@@ -1828,120 +1769,7 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
       return null;
     }
 
-    // ---------- 详情视图（P3）：设置项 schema 复原与字段读取 ----------
-    // 宿主 settings.describe() 给的 schema 是 schemastery 的 {uid, refs} 信封
-    // （refs[uid] → {type, meta, value?, dict?, inner?, list?, sKey?}，嵌套处存 uid）。
-    // 这里按宿主 Schema.from 的口径把引用接回树，得到可遍历的纯对象树。
-    function reviveSchema(json) {
-      if (!json || typeof json !== 'object' || !json.refs || json.uid === undefined) return null;
-      const refs = {};
-      for (const [uid, node] of Object.entries(json.refs)) refs[uid] = { ...node };
-      const get = (uid) => refs[String(uid)] ?? null;
-      for (const node of Object.values(refs)) {
-        if (node.sKey !== undefined) node.sKey = get(node.sKey);
-        if (node.inner !== undefined) node.inner = get(node.inner);
-        if (Array.isArray(node.list)) node.list = node.list.map((x) => (x && typeof x === 'object' ? x : get(x)));
-        if (node.dict && typeof node.dict === 'object') {
-          node.dict = Object.fromEntries(Object.entries(node.dict).map(([k, v]) => [k, v && typeof v === 'object' ? v : get(v)]));
-        }
-      }
-      return get(json.uid);
-    }
-
-    // schema 字段的展示类型：bool/num/str/enum/const/json/unknown
-    function schemaFieldKind(node) {
-      if (!node || typeof node !== 'object') return 'unknown';
-      const type = node.type;
-      if (type === 'boolean') return 'bool';
-      if (type === 'number' || type === 'natural' || type === 'percent') return 'num';
-      if (type === 'string' || type === 'date' || type === 'regExp') return 'str';
-      if (type === 'const') return 'const';
-      if (type === 'union') {
-        const list = Array.isArray(node.list) ? node.list : [];
-        return list.length > 0 && list.every((n) => n && n.type === 'const') ? 'enum' : 'json';
-      }
-      return 'json';
-    }
-
-    // 字段描述文本：meta.description 可能是字符串，也可能是按语言分桶的对象
-    function schemaFieldDesc(node) {
-      const desc = node?.meta?.description;
-      if (typeof desc === 'string') return desc;
-      if (desc && typeof desc === 'object') {
-        const lang = localeId();
-        const exact = desc[lang];
-        if (typeof exact === 'string' && exact) return exact;
-        for (const v of Object.values(desc)) if (typeof v === 'string' && v) return v;
-      }
-      return '';
-    }
-
-    // 默认值：schemastery 的对象节点 meta.default 只有 {}，真正的默认值在各子字段上，
-    // 所以对象字段要递归合并子字段默认值（JSON 编辑器才有意义可展示）。
-    function schemaFieldDefault(node, depth = 0) {
-      if (!node) return undefined;
-      const meta = node.meta || {};
-      const hasDefault = Object.prototype.hasOwnProperty.call(meta, 'default');
-      if (node.type === 'object' && node.dict && depth < 4) {
-        const out = hasDefault && meta.default && typeof meta.default === 'object' ? { ...meta.default } : {};
-        for (const [key, child] of Object.entries(node.dict)) {
-          if (out[key] !== undefined) continue;
-          const d = schemaFieldDefault(child, depth + 1);
-          if (d !== undefined) out[key] = d;
-        }
-        return out;
-      }
-      return hasDefault ? meta.default : undefined;
-    }
-
-    // 字段当前值：settings.describe 给的是脱敏后的 resolved 值，缺省时退回 schema 默认值
-    function namespaceFieldValue(view, key) {
-      const value = view && view.value && typeof view.value === 'object' ? view.value[key] : undefined;
-      const node = view && view.schemaTree && view.schemaTree.dict ? view.schemaTree.dict[key] : null;
-      return value !== undefined ? value : schemaFieldDefault(node);
-    }
-
-    // secrets 字段：宿主只回 {path,set}，不回明文；写入时留空表示不修改
-    function isSecretPath(view, key) {
-      const node = view && view.schemaTree && view.schemaTree.dict ? view.schemaTree.dict[key] : null;
-      if (node && node.meta && node.meta.role === 'secret') return true;
-      return Array.isArray(view && view.secrets)
-        && view.secrets.some((s) => Array.isArray(s && s.path) && s.path.length === 1 && s.path[0] === key);
-    }
-
-    // 字段初始展示文本（草稿基线）：布尔与对象各按各自编辑器口径序列化
-    function fieldTextOf(node, value) {
-      const kind = schemaFieldKind(node);
-      if (kind === 'bool') return value ? 'true' : 'false';
-      if (kind === 'json') {
-        try { return JSON.stringify(value ?? schemaFieldDefault(node) ?? null, null, 2); } catch { return String(value ?? ''); }
-      }
-      if (value === undefined || value === null) return '';
-      return String(value);
-    }
-
-    // 草稿文本 → 提交值；返回 {ok:false,error} 表示当前输入不合法
-    function parseFieldText(node, text) {
-      const kind = schemaFieldKind(node);
-      if (kind === 'bool') return { ok: true, value: text === 'true' };
-      if (kind === 'enum') {
-        // union(const...) 的选项带真实类型（可能是数字/布尔），提交时还原原始值
-        const hit = (node.list || []).find((x) => x && String(x.value) === text);
-        return { ok: true, value: hit ? hit.value : text };
-      }
-      if (kind === 'num') {
-        const n = Number(text);
-        return Number.isFinite(n) ? { ok: true, value: n } : { ok: false, error: 'number' };
-      }
-      if (kind === 'json') {
-        try { return { ok: true, value: JSON.parse(text) }; } catch { return { ok: false, error: 'json' }; }
-      }
-      return { ok: true, value: text };
-    }
-
-
-    // 用当前清单实时算：忽略决定、或远端换版本导致忽略失效，数字都立刻跟着变。
-    const KEEPER_REPO = 'https://github.com/HelloQingTao/dsh-plugin-keeper';
+const KEEPER_REPO = 'https://github.com/HelloQingTao/dsh-plugin-keeper';
 const KEEPER_ISSUES = `${KEEPER_REPO}/issues`;
 
 /** 仓库地址展示成 host/owner/repo 形式（省掉协议与 .git 尾巴）。 */
@@ -2763,178 +2591,40 @@ function countChecks(plugins, kinds) {
       }, []);
 
       // ---------- 详情视图（P3）：基本信息 + 设置项 + 操作 ----------
-      // 设置项数据面 = 官方 settings remote（describe 读 schema/值、mutate 按路径写），
-      // 插件 → namespace 的映射 = pluginManager.listBundles() 的 rows[].rowId（官方详情页同口径）。
-      // 这里不复用 primitives 的 SettingsForm（宿主内部 API、脆），自绘控件 + 路径 op。
       const [detailName, setDetailName] = React.useState(null);
-      const [detail, setDetail] = React.useState(null); // {loading,error,bundle,namespaces,writable}
-      const [detailDrafts, setDetailDrafts] = React.useState({}); // 'ns|key' → 草稿文本
-      const [detailErrors, setDetailErrors] = React.useState({}); // 'ns|key' → i18n key
-      const [detailSaving, setDetailSaving] = React.useState(false);
+      const [detail, setDetail] = React.useState(null); // {loading,error,bundle}
       const [detailBusy, setDetailBusy] = React.useState(false);
       const [detailFlash, setDetailFlash] = React.useState(null); // {ok,text}
       const [uninstallArm, setUninstallArm] = React.useState(false); // 卸载二次确认（按钮二次点击）
 
       const loadDetail = React.useCallback(async (name) => {
-        setDetail((prev) => (prev ? { ...prev, loading: true, error: null } : { loading: true, error: null, bundle: null, namespaces: [], writable: false }));
+        setDetail((prev) => (prev ? { ...prev, loading: true, error: null } : { loading: true, error: null, bundle: null }));
         try {
-          const [bundlesRaw, descRaw] = await Promise.all([
-            pmFace && pmFace.listBundles ? pmFace.listBundles() : null,
-            settingsFace && settingsFace.describe ? settingsFace.describe() : null,
-          ]);
+          const bundlesRaw = pmFace && pmFace.listBundles ? await pmFace.listBundles() : null;
           const bundles = unwrapEnvelope(bundlesRaw);
-          const desc = unwrapEnvelope(descRaw);
           const bundle = Array.isArray(bundles) ? bundles.find((b) => b && b.name === name) || null : null;
-          // settings 命名空间 = Loader entry 的 options.id，官方详情页按 rowId 匹配
-          // （bundle 的 row 在 patch 里以 include 形式落成 "include:<rowId>" 的 entryId，两者并不相同）；
-          // entryId 一并纳入兜底，最后退到包名。
-          const entryIds = new Set();
-          for (const r of (bundle && Array.isArray(bundle.rows) ? bundle.rows : [])) {
-            if (r && r.rowId) entryIds.add(r.rowId);
-            if (r && r.entryId) entryIds.add(r.entryId);
-          }
-          if (!entryIds.size) entryIds.add(name);
-          const namespaces = (desc && Array.isArray(desc.namespaces) ? desc.namespaces : [])
-            .filter((v) => v && entryIds.has(v.ns))
-            .map((v) => ({ ...v, schemaTree: reviveSchema(v.schema) }))
-            .filter((v) => v.schemaTree && v.schemaTree.type === 'object' && v.schemaTree.dict && Object.keys(v.schemaTree.dict).length > 0);
-          setDetail({ loading: false, error: null, bundle, namespaces, writable: Boolean(desc && desc.writable) });
-          setDetailDrafts({});
-          setDetailErrors({});
+          setDetail({ loading: false, error: null, bundle });
         } catch (e) {
-          setDetail({ loading: false, error: String((e && e.message) || e), bundle: null, namespaces: [], writable: false });
+          setDetail({ loading: false, error: String((e && e.message) || e), bundle: null });
         }
       }, []);
 
       const closeDetail = React.useCallback(() => {
         setDetailName(null);
         setDetail(null);
-        setDetailDrafts({});
-        setDetailErrors({});
         setDetailFlash(null);
         setUninstallArm(false);
       }, []);
-
-      /**
-       * 跳到系统「插件」页的 Installed 页签并定位该插件（官方页与我们是同一页面的两个页签）。
-       * 官方行结构属内部实现，定位失败给明确指引，别让按钮变成死路。
-       */
-      const openInOfficialPage = (name) => {
-        const ours = new Set([TEXT.zh.sectionTitle, TEXT.en.sectionTitle]);
-        const installedTab = [...document.querySelectorAll('[role="tab"]')]
-          .find((el) => !ours.has((el.textContent ?? '').trim()));
-        if (!installedTab) {
-          setDetailFlash({ ok: false, text: t('detailOpenOfficialFail') });
-          return;
-        }
-        installedTab.click();
-        let tries = 0;
-        const locate = () => {
-          tries += 1;
-          const buttons = [...document.querySelectorAll('button')];
-          const hit = buttons.find((b) => (b.textContent ?? '').trim() === name);
-          if (hit) {
-            hit.scrollIntoView({ block: 'center' });
-            hit.click();
-            setDetailFlash(null);
-            return;
-          }
-          // 第三方插件可能被「More」分组折叠：先展开一次再重试
-          if (tries === 1) {
-            buttons.find((b) => /^(More|更多)$/.test((b.textContent ?? '').trim()))?.click();
-          }
-          if (tries < 6) setTimeout(locate, 250);
-          else setDetailFlash({ ok: false, text: t('detailOpenOfficialFail') });
-        };
-        setTimeout(locate, 250);
-      };
 
       const openDetail = React.useCallback((entry) => {
         const name = entry && entry.name ? entry.name : '';
         if (!name) return;
         setDetailName(name);
         setDetail(null);
-        setDetailDrafts({});
-        setDetailErrors({});
         setDetailFlash(null);
         setUninstallArm(false);
         void loadDetail(name);
       }, [loadDetail]);
-
-      // 草稿：只存用户动过的字段；保存时与基线比较，未变的字段不发 op
-      const setDetailDraft = React.useCallback((dk, node, text) => {
-        setDetailDrafts((prev) => ({ ...prev, [dk]: text }));
-        const parsed = parseFieldText(node, text);
-        setDetailErrors((prev) => {
-          const next = { ...prev };
-          if (!parsed.ok) next[dk] = parsed.error === 'json' ? 'detailInvalidJson' : 'detailInvalidNumber';
-          else delete next[dk];
-          return next;
-        });
-        setDetailFlash(null);
-      }, []);
-
-      const resetDetailField = React.useCallback((view, key) => {
-        const node = view.schemaTree.dict[key];
-        const dk = `${view.ns}|${key}`;
-        setDetailDrafts((prev) => {
-          const next = { ...prev };
-          delete next[dk];
-          return next;
-        });
-        setDetailErrors((prev) => {
-          const next = { ...prev };
-          delete next[dk];
-          return next;
-        });
-        setDetailFlash(null);
-        return fieldTextOf(node, namespaceFieldValue(view, key));
-      }, []);
-
-      const saveDetailSettings = React.useCallback(async (view) => {
-        const ops = [];
-        const bad = [];
-        const dict = (view && view.schemaTree && view.schemaTree.dict) || {};
-        for (const key of Object.keys(dict)) {
-          const node = dict[key];
-          const dk = `${view.ns}|${key}`;
-          if (!Object.prototype.hasOwnProperty.call(detailDrafts, dk)) continue;
-          const text = detailDrafts[dk];
-          if (isSecretPath(view, key)) {
-            // secret 只写不读：留空 = 不修改
-            if (typeof text === 'string' && text !== '') ops.push({ op: 'set', path: [key], value: text });
-            continue;
-          }
-          const parsed = parseFieldText(node, text);
-          if (!parsed.ok) { bad.push(key); continue; }
-          if (text === fieldTextOf(node, namespaceFieldValue(view, key))) continue;
-          ops.push({ op: 'set', path: [key], value: parsed.value });
-        }
-        if (bad.length) {
-          setDetailFlash({ ok: false, text: t('detailSaveFailed', { error: bad.join(', ') }) });
-          return;
-        }
-        if (!ops.length) {
-          setDetailFlash({ ok: true, text: t('detailSaved') });
-          return;
-        }
-        setDetailSaving(true);
-        try {
-          unwrapEnvelopeStrict(await settingsFace.mutate(view.ns, ops, view.revision));
-          setDetailFlash({ ok: true, text: t('detailSaved') });
-          await loadDetail(detailName); // 重新拉：拿新 revision 与生效后的值
-        } catch (e) {
-          const code = String((e && (e.code || e.type || e.message)) || '');
-          if (/conflict/i.test(code)) {
-            setDetailFlash({ ok: false, text: t('detailConflict') });
-            await loadDetail(detailName);
-          } else {
-            setDetailFlash({ ok: false, text: t('detailSaveFailed', { error: code || String(e) }) });
-          }
-        } finally {
-          setDetailSaving(false);
-        }
-      }, [detailDrafts, detailName, loadDetail, t]);
 
       const detailSetEnabled = React.useCallback(async (bundle, enabled) => {
         const rows = bundle && Array.isArray(bundle.rows) ? bundle.rows : [];
@@ -4758,13 +4448,11 @@ function countChecks(plugins, kinds) {
         : null;
 
       // ---------- 详情视图渲染 ----------
-      // 基本信息用人话表格；设置项按 namespace 分区、字段自绘控件；操作区只放当前可用的动作。
+      // 基本信息用人话表格；操作区只放当前可用的动作（设置项展示与配置已移除）。
       const detailModal = !detailName ? null
         : (() => {
             const entry = plugins.find((p) => p.name === detailName) ?? null;
             const bundle = detail && detail.bundle ? detail.bundle : null;
-            const namespaces = (detail && detail.namespaces) || [];
-            const writable = Boolean(detail && detail.writable) && !detailSaving;
             const absTime = (iso) => {
               if (typeof iso !== 'string' || !iso) return t('detailNone');
               const d = new Date(iso);
@@ -4783,82 +4471,6 @@ function countChecks(plugins, kinds) {
             const stateText = entry
               ? (entry.enabled === false ? t('stateDisabled') : entry.started ? t('detailRunning') : t('detailStopped'))
               : t('detailNone');
-            const nsDirty = (ns) => Object.keys(detailDrafts).some((k) => k.startsWith(`${ns}|`));
-            const fieldRow = (view, key) => {
-              const node = view.schemaTree.dict[key];
-              const dk = `${view.ns}|${key}`;
-              const kind = schemaFieldKind(node);
-              const secret = isSecretPath(view, key);
-              const hasDraft = Object.prototype.hasOwnProperty.call(detailDrafts, dk);
-              const baseText = secret ? '' : fieldTextOf(node, namespaceFieldValue(view, key));
-              const text = hasDraft ? detailDrafts[dk] : baseText;
-              const err = detailErrors[dk] ? t(detailErrors[dk]) : null;
-              const userSet = Boolean(view.user && typeof view.user === 'object'
-                && Object.prototype.hasOwnProperty.call(view.user, key));
-              const secretRec = secret
-                ? (view.secrets || []).find((x) => Array.isArray(x && x.path) && x.path.length === 1 && x.path[0] === key)
-                : null;
-              const desc = schemaFieldDesc(node);
-              let control = null;
-              if (kind === 'bool') {
-                control = h('button', {
-                  className: `dpk-toggle${text === 'true' ? ' is-on' : ''}`,
-                  type: 'button',
-                  role: 'switch',
-                  'aria-checked': text === 'true',
-                  'aria-label': key,
-                  disabled: !writable,
-                  onClick: () => setDetailDraft(dk, node, text === 'true' ? 'false' : 'true'),
-                });
-              } else if (kind === 'const') {
-                control = h('span', { className: 'dpk-hint' }, text);
-              } else if (kind === 'enum') {
-                const opts = (node.list || []).map((x) => (x ? String(x.value) : ''));
-                control = h('select', {
-                  className: 'dpk-input dpk-dfieldctl',
-                  value: text,
-                  disabled: !writable,
-                  onChange: (e) => setDetailDraft(dk, node, e.target.value),
-                }, opts.map((v) => h('option', { key: v, value: v }, v)));
-              } else if (kind === 'json') {
-                control = h('textarea', {
-                  className: 'dpk-input dpk-dfieldctl dpk-textarea',
-                  rows: Math.min(8, Math.max(3, String(text).split('\n').length)),
-                  spellCheck: false,
-                  value: text,
-                  disabled: !writable,
-                  onChange: (e) => setDetailDraft(dk, node, e.target.value),
-                });
-              } else {
-                control = h('input', {
-                  className: 'dpk-input dpk-dfieldctl',
-                  type: 'text',
-                  spellCheck: false,
-                  value: secret && !hasDraft ? '' : text,
-                  placeholder: secret ? (secretRec && secretRec.set ? t('detailSecretSet') : t('detailSecretUnset')) : undefined,
-                  disabled: !writable,
-                  onChange: (e) => setDetailDraft(dk, node, e.target.value),
-                });
-              }
-              return h('div', { className: `dpk-dfield${kind === 'json' || secret ? ' is-wide' : ''}`, key: dk },
-                h('div', { className: 'dpk-dfieldhead' },
-                  h('span', { className: 'dpk-setlabel' }, key),
-                  userSet ? h('span', { className: 'dpk-fieldtag' }, t('detailUserSet')) : null,
-                  kind === 'json' ? h('span', { className: 'dpk-fielddesc' }, t('detailJsonField')) : null,
-                  desc ? h('span', { className: 'dpk-fielddesc', 'data-tip': desc }, desc) : null,
-                  hasDraft && !secret
-                    ? h('button', {
-                        className: 'dpk-btn is-mini',
-                        type: 'button',
-                        disabled: detailSaving,
-                        onClick: () => { resetDetailField(view, key); },
-                      }, t('detailResetField'))
-                    : null,
-                ),
-                h('div', { className: 'dpk-dfieldbody' }, control),
-                err ? h('div', { className: 'dpk-savederr' }, err) : null,
-              );
-            };
             const actions = [];
             const canIgnore = Boolean(entry) && !entry.official
               && (entry.source?.kind === 'npm' || entry.source?.kind === 'github');
@@ -4956,32 +4568,6 @@ function countChecks(plugins, kinds) {
                     ? factRow(t('detailDesc'), h('span', { className: 'dpk-factdesc' }, entry.description))
                     : null,
                 ),
-              ),
-              // ---- 设置项 ----
-              h('div', { className: 'dpk-setsec' },
-                h('div', { className: 'dpk-gtitle' }, t('detailSectionSettings')),
-                !detail || detail.loading ? null
-                  : namespaces.length === 0
-                    ? h('div', { className: 'dpk-dnoform' },
-                        h('div', { className: 'dpk-hint' }, t('detailNoSettings')),
-                        h('button', {
-                          className: 'dpk-btn is-mini',
-                          type: 'button',
-                          onClick: () => openInOfficialPage(detailName),
-                        }, t('detailOpenOfficial')))
-                    : namespaces.map((view) => h('div', { className: 'dpk-nsblock', key: view.ns },
-                        namespaces.length > 1 ? h('div', { className: 'dpk-nsname' }, view.ns) : null,
-                        h('div', { className: 'dpk-dgrid' }, Object.keys(view.schemaTree.dict).map((key) => fieldRow(view, key))),
-                        h('div', { className: 'dpk-detailfoot' },
-                          h('button', {
-                            className: 'dpk-btn is-primary',
-                            type: 'button',
-                            disabled: detailSaving || !nsDirty(view.ns),
-                            onClick: () => { void saveDetailSettings(view); },
-                          }, detailSaving ? t('detailSaving') : t('detailSave')),
-                        ),
-                      )),
-                h('div', { className: 'dpk-hint' }, t('detailSettingsHint')),
               ),
               // ---- 操作 ----
               h('div', { className: 'dpk-setsec' },
@@ -5649,11 +5235,10 @@ function countChecks(plugins, kinds) {
         const disposeRemote = await ctx.remote.$mount(TYPERT_REMOTE);
         ctx.effect(() => () => { void disposeRemote(); }, 'dsh-plugin-keeper remote mount');
         await ctx.inject(
-          ['slots', 'remote', 'remote.dsh-plugin-keeper', 'remote.pluginManager', 'remote.settings'],
+          ['slots', 'remote', 'remote.dsh-plugin-keeper', 'remote.pluginManager'],
           (rctx) => {
             rpcFace = rctx.remote?.['dsh-plugin-keeper'] ?? null;
             pmFace = rctx.remote?.pluginManager ?? null;
-            settingsFace = rctx.remote?.settings ?? null;
             // 插件页 Tab：恒有（默认入口）
             rctx.effect(() => mountPluginsTab(rctx), 'dsh-plugin-keeper plugins tab');
             // 设置页 section：按「在设置页也显示」开关决定（默认关）。
