@@ -931,6 +931,8 @@ window.__ModuleLoader__.load({
 .dpk-queuetab{border:0;background:0 0;color:var(--dsw-alias-label-secondary);font:inherit;font-size:12px;line-height:20px;padding:4px 16px;cursor:pointer;}
 .dpk-queuetab+.dpk-queuetab{border-left:1px solid var(--dsw-alias-border-l2,var(--dsw-alias-border-l3));}
 .dpk-queuetab.is-active{background:var(--dsw-alias-interactive-bg-hover);color:var(--dsw-alias-brand-primary);font-weight:600;}
+/* 安装弹框输入行：输入框撑满行宽（右侧不留空） */
+.dpk-setrow.dpk-iqrow .dpk-input{min-width:0;flex:1 1 280px;}
 
 /* ---------- 详情视图（P3）：基本信息表 + 设置项控件 + 操作区 ---------- */
 /* 设置项两列网格：JSON/密钥等长控件占整行 */
@@ -4607,7 +4609,7 @@ function countChecks(plugins, kinds) {
           ),
           h('div', { className: 'dpk-hint' }, installType === 'github' ? t('queueHintGithub') : t('queueHint')),
           // ---- 输入行：回车/按钮都可入队，入队成功清空输入框方便连续输 ----
-          h('div', { className: 'dpk-setrow' },
+          h('div', { className: 'dpk-setrow dpk-iqrow' },
             h('input', {
               ref: installInputRef,
               className: 'dpk-input',
