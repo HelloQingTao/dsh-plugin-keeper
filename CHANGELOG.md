@@ -1,5 +1,41 @@
 # Changelog
 
+## 0.3.10 (2026-11-14)
+
+### 中文
+
+- **新增：分组 / 列表双视图** — 插件列表可切换「分组」与「列表」两种视图，并可按安装时间或更新时间排序。
+- **新增：后台安装队列** — 安装任务在后台依次执行，面板底部显示安装进度与完成通知。
+- **新增：插件详情视图** — 点击行内常驻的「详情」按钮，查看插件基本信息并执行操作。
+- **新增：仓库与反馈入口** — 页脚提供 GitHub / 反馈入口，详情页可跳转仓库、一键打开系统插件页。
+- **新增：安装弹框支持双来源与本地路径** — 安装入口改为分体按钮，支持 npm 包名、GitHub 来源，以及本地目录 / .tgz 文件路径。
+- **新增：更新改为原地升级** — 更新时原地替换版本、不卸载插件，失败自动回滚并给出可读的失败原因。
+- **修复：代理不通时自动直连兜底** — 面板代理连不上 GitHub 时，更新与安装会自动改用直连重试，不再直接失败；两者都不通时给出明确提示。
+- **修复：测试代理如实显示** — 区分「代理可用」与「代理不可用 · 直连可用」，不再把直连成功误报为代理可用。
+- **修复：列表行对齐与图标** — 插件描述的缩进与对齐统一，行首图标垂直居中，GitHub 头像稳定显示。
+- **修复：工具栏与分组布局** — 工具栏与检查结果在同一行显示，折叠分组时列表不再横向移位。
+- **修复：安装弹框细节** — 输入行撑满整行，并补充来源说明与可信提示。
+- **优化：详情视图精简** — 详情只保留基本信息与操作，不再内嵌设置项。
+- **优化：列表行更简洁** — 行内不再重复显示相对时间，「最新 / 可更新」徽标紧邻「详情」按钮；安装时间仍在详情页查看。
+- **优化：整体视觉对齐官方** — 列表、头部布局、详情与安装弹框的视觉与官方插件列表统一。
+
+### English
+
+- **New: grouped / list views** — The plugin list can switch between Grouped and List views, and sort by install or update time.
+- **New: background install queue** — Installs run in a background queue with progress and completion notices at the bottom of the panel.
+- **New: plugin detail view** — A persistent 'Details' button on each row opens the plugin's basic info and actions.
+- **New: repository and feedback links** — Footer links to GitHub / feedback; the detail view can open the repo and jump to the system plugins page.
+- **New: install dialog with two sources and local paths** — The install entry is now a split button, accepting npm package names, GitHub sources, and a local directory or .tgz path.
+- **New: in-place update** — Updating now replaces the version in place without uninstalling; failures roll back automatically and report a readable reason.
+- **Fixed: direct fallback when the proxy fails** — When the proxy cannot reach GitHub, updates and installs retry over a direct connection instead of failing outright, and clearly report when neither works.
+- **Fixed: honest proxy test** — Distinguishes 'proxy available' from 'proxy unavailable · direct works', no longer reporting a direct success as a proxy success.
+- **Fixed: list row alignment and icons** — Consistent description indentation, vertically centered row icons, and reliable GitHub avatars.
+- **Fixed: toolbar and group layout** — Toolbar and check result share one row; collapsing a group no longer shifts the list sideways.
+- **Fixed: install dialog details** — The input spans the full row, with source hints and a trust warning.
+- **Improved: leaner detail view** — The detail view keeps only basic info and actions, without inline settings.
+- **Improved: tidier list rows** — No duplicate relative time in the row; the status badge (latest / updatable) sits next to 'Details', and install time stays on the detail page.
+- **Improved: visuals aligned with the official list** — List, header layout, detail and install dialog now match the official plugin list.
+
 ## 0.3.9 (2026-11-11)
 
 ### 中文

@@ -546,7 +546,31 @@ async function pumpInstallQueue() {
       item.startedAt = new Date().toISOString();
       item.requestId = `dpkq-${Date.now().toString(36)}-${randomBytes(4).toString('hex')}`;
       try {
-        const r = await pluginManagerRef?.installBundle(item.spec, { enabled: true, requestId: item.requestId });
+        let r;
+        try {
+          r = await pluginManagerRef?.installBundle(item.spec, { enabled: true, requestId: item.requestId });
+        } catch (e1) {
+          // 连接/代理类失败 → 摘代理直连兜底重试一次（面板代理坏了也能装）
+          const effective = isConnectError(e1) ? await effectiveProxyUrl() : '';
+          if (!effective) throw e1;
+          console.log(`[dsh-plugin-keeper] install ${item.name} 代理失败，摘代理直连兜底重试`);
+          const retryId = `dpkq-${Date.now().toString(36)}-${randomBytes(4).toString('hex')}`;
+          item.requestId = retryId;
+          try {
+            r = await withDirectProxyRelease(() => pluginManagerRef?.installBundle(item.spec, { enabled: true, requestId: retryId }));
+          } catch (e2) {
+            // 直连这一趟其实装上了（半成功/已存在）→ 按成功处理
+            const meta2 = await readJsonSafe(join(serviceBridge?.profile?.dir ?? '', 'node_modules', ...item.name.split('/'), 'package.json'));
+            if (typeof meta2?.version === 'string') {
+              r = { application: 'restart', target: item.name };
+            } else {
+              const connectFail = isConnectError(e2);
+              const err = new Error(connectFail ? 'GitHub 直连与代理均不通，请检查网络或代理设置' : friendlyInstallError(e2));
+              err.code = connectFail ? 'unreachable' : (typeof e2?.code === 'string' ? e2.code : null);
+              throw err;
+            }
+          }
+        }
         item.application = typeof r?.application === 'string' ? r.application : null;
         item.target = typeof r?.target === 'string' ? r.target : item.name;
         const meta = await readJsonSafe(join(
@@ -792,6 +816,49 @@ async function applyProxyPolicy(stateOverride) {
 
 function proxyStatus() {
   return { ...lastProxyStatus };
+}
+
+// ---------- 安装/更新通道的「代理失败 → 直连兜底」 ----------
+
+const CONNECT_FAIL_RE = /econn|etimedout|enotfound|eai_again|network|proxy|tunnel|socket hang up|fetch failed|client error|\b50[234]\b|connect.*fail|unsuccessful/i;
+
+/** 一次 pnpm add 的结果是否属「连接/代理」类失败（值得摘代理直连重试）。 */
+function isConnectFailure(r) {
+  if (!r) return false;
+  if (r.exitCode === 0 && r.timedOut !== true) return false;
+  if (r.timedOut === true) return true;
+  if (r.kind === 'network' || r.kind === 'timeout') return true;
+  return CONNECT_FAIL_RE.test(String(r?.output ?? r?.error ?? ''));
+}
+
+/** 抛出的错误是否属「连接/代理」类（installBundle 失败路径用）。 */
+function isConnectError(e) {
+  const code = typeof e?.code === 'string' ? e.code : '';
+  if (code === 'network' || code === 'timeout') return true;
+  return CONNECT_FAIL_RE.test(String(e?.message ?? e));
+}
+
+/** 当前配置的生效代理 URL；未配置返回 ''。 */
+async function effectiveProxyUrl() {
+  try {
+    const state = await readState();
+    return composeProxyUrl(state.proxyUrl, state.proxyUser, state.proxyPass);
+  } catch {
+    return '';
+  }
+}
+
+/**
+ * 摘掉面板代理、以直连跑一段安装逻辑，跑完 finally 必按落盘配置恢复代理策略。
+ * 只用于连接类失败后的兜底重试（安装/更新已串行，不会与别的安装并发改 env）。
+ */
+async function withDirectProxyRelease(run) {
+  releaseInstallProxy(serviceBridge?.profile);
+  try {
+    return await run();
+  } finally {
+    try { await applyProxyPolicy(); } catch { /* 恢复失败不影响本次结果判定 */ }
+  }
 }
 
 // ---------- 代理连通性测试（host 半区，凭据绝不回浏览器） ----------
@@ -1614,7 +1681,7 @@ export class PluginKeeperService extends TypertRemoteService {
     // API 检查：先按面板代理测，失败则回退直连兜底（同 git 的智能降级策略）。
     const apiCheck = (async () => {
       const viaProxy = await probeHttp('https://api.github.com/rate_limit', proxyDispatcher);
-      if (viaProxy.ok) return viaProxy;
+      if (viaProxy.ok) return { ...viaProxy, viaProxy: true };
       const directDispatcher = probeDispatcherDirect();
       try {
         const viaDirect = await probeHttp('https://api.github.com/rate_limit', directDispatcher);
@@ -1638,6 +1705,10 @@ export class PluginKeeperService extends TypertRemoteService {
     try { proxyHost = effective ? new URL(effective).host : ''; } catch { /* 保持空 */ }
     return done({
       ok: checks[0].ok === true,
+      // proxyOk 专门表示「代理本身是否真的能到 GitHub」：api 靠直连兜底成功时 viaDirect=true → proxyOk=false，
+      // 前端据此把顶部从「代理可用」改成「代理不可用 · 直连可用」，不再假绿。
+      proxyOk: api.ok === true && api.viaDirect !== true,
+      gitProxyOk: gitCheck.ok === true && gitCheck.viaDirect !== true,
       installOk: checks[1].ok === true,
       mode: effective ? (candidate.proxyUser ? 'proxy-with-auth' : 'proxy') : 'system-default',
       proxyHost,
@@ -2121,29 +2192,56 @@ export class PluginKeeperService extends TypertRemoteService {
       }
       return await spawnPnpmAdd(rawSpec, dir);
     };
+    const isOk = (r) => r && r.exitCode === 0 && r.timedOut !== true;
+    const finishOk = async (r) => {
+      const meta = await readJsonSafe(join(dir, 'node_modules', ...name.split('/'), 'package.json'));
+      const installed = typeof meta?.version === 'string' ? meta.version : null;
+      await recordUpdate(name, installed); // ② 时间台账：更新落账（失败不影响升级结果）
+      console.log(`[dsh-plugin-keeper] inplace update ok: ${name} ${deps[name]} -> ${installed ?? rawSpec}${r?.__viaDirect ? ' (直连兜底)' : ''}`);
+      return { ok: true, status: 'restart', name, to: installed, spec: rawSpec, viaDirect: r?.__viaDirect === true };
+    };
 
     let last = null;
-    for (let attempt = 1; attempt <= 2; attempt += 1) {
-      try {
-        const r = await runOnce(randomBytes(8).toString('hex'));
-        const exit = typeof r?.exitCode === 'number' ? r.exitCode : 1;
-        const timedOut = r?.timedOut === true;
-        if (exit === 0 && !timedOut) {
-          const meta = await readJsonSafe(join(dir, 'node_modules', ...name.split('/'), 'package.json'));
-          const installed = typeof meta?.version === 'string' ? meta.version : null;
-          await recordUpdate(name, installed); // ② 时间台账：更新落账（失败不影响升级结果）
-          console.log(`[dsh-plugin-keeper] inplace update ok: ${name} ${deps[name]} -> ${installed ?? rawSpec}`);
-          return { ok: true, status: 'restart', name, to: installed, spec: rawSpec };
+    let bothFailed = false;
+    // 尝试 1：按当前（代理）策略跑
+    try {
+      const r = await runOnce(randomBytes(8).toString('hex'));
+      if (isOk(r)) return await finishOk(r);
+      last = r;
+    } catch (e) {
+      last = { error: String(e?.message ?? e) };
+    }
+
+    // 连接/代理类失败 → 摘代理直连兜底重试一次（面板代理坏了也能更新）
+    if (isConnectFailure(last)) {
+      const effective = await effectiveProxyUrl();
+      if (effective) {
+        await restore();
+        console.log(`[dsh-plugin-keeper] update ${name} 代理失败，摘代理直连兜底重试`);
+        try {
+          const r2 = await withDirectProxyRelease(() => runOnce(randomBytes(8).toString('hex')));
+          if (isOk(r2)) return await finishOk({ ...r2, __viaDirect: true });
+          last = r2; bothFailed = true;
+        } catch (e) {
+          last = { error: String(e?.message ?? e) }; bothFailed = true;
         }
-        last = r;
+      }
+    }
+
+    // 非连接类失败：原自愈再试一次（仍按代理策略）
+    if (!bothFailed) {
+      await restore();
+      try {
+        const r3 = await runOnce(randomBytes(8).toString('hex'));
+        if (isOk(r3)) return await finishOk(r3);
+        last = r3;
       } catch (e) {
         last = { error: String(e?.message ?? e) };
       }
-      // 首次失败先回滚，再自愈重试一次（网络抖动/竞态常见）
-      if (attempt === 1) await restore();
     }
+
     await restore();
-    const code = classifyPnpmFailure(last);
+    const code = bothFailed ? 'unreachable' : classifyPnpmFailure(last);
     console.log(`[dsh-plugin-keeper] inplace update failed: ${name} code=${code} out=${String(last?.output ?? last?.error ?? '').slice(0, 400)}`);
     return { ok: false, code, name };
   }

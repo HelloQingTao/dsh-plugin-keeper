@@ -119,6 +119,7 @@ window.__ModuleLoader__.load({
         testProxyTesting: '测试中…',
         testProxyRunning: '测试中，已等待 {n}s；git 链路经代理通常需 10~25 秒，代理不通会自动回退直连兜底。',
         testProxyOk: '代理可用',
+        testProxyOkDirect: '代理不可用 · 直连可用（可正常安装/更新）',
         testProxyFail: '代理不可用',
         testInstallOk: '安装链路（git）正常',
         testInstallFail: '安装链路（git）未通过：可能超时或 TLS 握手失败，代理本身仍可用',
@@ -243,6 +244,7 @@ window.__ModuleLoader__.load({
         opFailedGeneric: '操作失败，请重试',
         errUpdateFailed: '更新失败，请稍后重试',
         errNetwork: '网络连接失败，请检查网络或代理后重试',
+        errUnreachable: 'GitHub 直连与代理均不通，请检查网络或代理设置',
         errNotFound: '找不到该版本，可能已被撤回',
         errBlocked: '该版本刚发布，暂不可安装，请稍后再试',
         errIncompatible: '该版本与当前 dsh 不兼容',
@@ -474,6 +476,7 @@ window.__ModuleLoader__.load({
         testProxyTesting: 'Testing…',
         testProxyRunning: 'Testing, waited {n}s; the git path through a proxy usually takes 10–25s, and falls back to a direct connection if the proxy is unreachable.',
         testProxyOk: 'Proxy reachable',
+        testProxyOkDirect: 'Proxy unreachable · direct OK (install/update will use direct)',
         testProxyFail: 'Proxy unreachable',
         testInstallOk: 'Install path (git) OK',
         testInstallFail: 'Install path (git) failed: timeout or TLS handshake; the proxy itself still works',
@@ -598,6 +601,7 @@ window.__ModuleLoader__.load({
         opFailedGeneric: 'Operation failed, please retry',
         errUpdateFailed: 'Update failed, please try again later',
         errNetwork: 'Network error — check your network or proxy and retry',
+        errUnreachable: 'Cannot reach GitHub via proxy or direct — check your network or proxy settings',
         errNotFound: 'Version not found (it may have been unpublished)',
         errBlocked: 'This version was just published — please try again later',
         errIncompatible: 'This version is incompatible with the current dsh',
@@ -1314,6 +1318,7 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
       switch (String(code || '').toLowerCase()) {
         case 'network':
         case 'timeout': return t('errNetwork');
+        case 'unreachable': return t('errUnreachable');
         case 'not-found':
         case 'no-matching-version': return t('errNotFound');
         case 'blocked':
@@ -2192,6 +2197,8 @@ function countChecks(plugins, kinds) {
           entry.version ? h('span', { className: 'dpk-ver', 'data-tip': `v${entry.version}` }, highlightText(`v${entry.version}`, terms)) : null,
           badgeText ? h('span', { className: 'dpk-badge' }, badgeText) : null,
           h('div', { className: 'dpk-rowops' },
+            // 检查状态徽标（最新/可更新/失败…）常驻「详情」左侧；行内相对时间徽标按要求不再渲染。
+            checkBadgeOf(entry),
             // 明确的详情入口：名字可点这条对用户不直观，行内常驻一个「详情」按钮
             h('button', {
               className: 'dpk-btn is-mini dpk-detailbtn',
@@ -2200,9 +2207,6 @@ function countChecks(plugins, kinds) {
               'data-tip': t('detailOpen'),
               onClick: (e) => { e.stopPropagation(); onOpenDetail?.(entry); },
             }, t('rowDetail')),
-            // 时间徽标（列表视图）：更新 > 版本变更 > 安装，取最近一条；hover 给绝对时间
-            showTime ? timeBadgeOf(entry) : null,
-            checkBadgeOf(entry),
             queued
               ? h('button', {
                 className: 'dpk-btn is-mini is-danger',
@@ -2719,7 +2723,7 @@ function countChecks(plugins, kinds) {
                 pushInstallNotice(true, text);
                 void load({ silent: true }); // 新插件入列，静默补刷
               } else if (it.status === 'failed') {
-                pushInstallNotice(false, t('queueNoticeFailed', { name: it.name, error: it.error ?? '?' }));
+                pushInstallNotice(false, t('queueNoticeFailed', { name: it.name, error: it.code === 'unreachable' ? t('errUnreachable') : (it.error ?? '?') }));
               }
             }
             queueSeenRef.current = nextSeen;
@@ -4132,7 +4136,7 @@ function countChecks(plugins, kinds) {
           testing ? h('div', { className: 'dpk-hint' }, h(TestTimer)) : null,
           proxyTest ? h('div', { className: 'dpk-hint' },
             h('div', { className: proxyTest.ok ? 'dpk-savedok' : 'dpk-savederr' },
-              `${proxyTest.ok ? t('testProxyOk') : t('testProxyFail')} · ${proxyTest.mode ?? ''}${proxyTest.proxyHost ? ` · ${t('proxyVia', { host: proxyTest.proxyHost })}` : ''} · ${proxyTest.elapsedMs ?? 0}ms${proxyTest.error ? ` — ${proxyTest.error}` : ''}`),
+              `${proxyTest.ok ? (proxyTest.proxyOk === false ? t('testProxyOkDirect') : t('testProxyOk')) : t('testProxyFail')} · ${proxyTest.mode ?? ''}${proxyTest.proxyHost ? ` · ${t('proxyVia', { host: proxyTest.proxyHost })}` : ''} · ${proxyTest.elapsedMs ?? 0}ms${proxyTest.error ? ` — ${proxyTest.error}` : ''}`),
             ...(Array.isArray(proxyTest.checks) ? [h('div', {
               className: proxyTest.installOk ? 'dpk-savedok' : 'dpk-savederr',
             }, proxyTest.installOk
@@ -4605,9 +4609,9 @@ function countChecks(plugins, kinds) {
                   typeof it.installedVersion === 'string' && it.status === 'done'
                     ? h('span', { className: 'dpk-queuever' }, `v${it.installedVersion}`)
                     : null,
-                  it.status === 'failed' && it.error
+                  it.status === 'failed' && (it.code === 'unreachable' || it.error)
                     ? h('div', { className: 'dpk-queueerr' },
-                      it.error,
+                      it.code === 'unreachable' ? t('errUnreachable') : it.error,
                       /approve|build|script|批准/i.test(String(it.error))
                         ? h('div', { className: 'dpk-banner' }, t('queueNeedBuilds'))
                         : null,
