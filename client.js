@@ -155,6 +155,7 @@ window.__ModuleLoader__.load({
         iqSubmit: '安装',
         installMenuNpm: 'npm 包',
         installMenuGithub: 'GitHub 仓库',
+        installMenuLocal: '本地目录',
         installMenuAria: '选择安装来源',
         queueEmpty: '队列为空',
         queueStatusQueued: '排队中',
@@ -512,6 +513,7 @@ window.__ModuleLoader__.load({
         iqSubmit: 'Install',
         installMenuNpm: 'npm package',
         installMenuGithub: 'GitHub repository',
+        installMenuLocal: 'Local directory',
         installMenuAria: 'Choose install source',
         queueEmpty: 'Queue is empty',
         queueStatusQueued: 'Queued',
@@ -1046,6 +1048,22 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
       y = Math.max(8, y);
       tipEl.style.left = `${x}px`;
       tipEl.style.top = `${y}px`;
+    }
+
+    // 计算触发元素所在的可裁剪容器边界（最近 overflow 非 visible 的祖先），
+    // 用于把 position:fixed 弹层钳进容器内，避免溢出右侧/底部被裁掉。
+    function clipBoundsOf(el) {
+      let n = el?.parentElement ?? null;
+      const clips = (v) => Boolean(v) && v !== 'visible';
+      while (n && n !== document.documentElement) {
+        const cs = getComputedStyle(n);
+        if (clips(cs.overflowX) || clips(cs.overflowY)) {
+          const r = n.getBoundingClientRect();
+          return { left: r.left, top: r.top, right: r.right, bottom: r.bottom };
+        }
+        n = n.parentElement;
+      }
+      return { left: 0, top: 0, right: window.innerWidth, bottom: window.innerHeight };
     }
 
     // 就地刷新当前悬浮内容（元素原地更新 data-tip 后指针未离开、不会再触发 mouseover 的场景）
@@ -2418,7 +2436,7 @@ function countChecks(plugins, kinds) {
         className: 'dpk-ignorepop dpk-installsrclist',
         role: 'menu',
         'aria-label': t('installMenuAria'),
-        style: { left: pop.left, top: pop.top },
+        style: { left: pop.left, top: pop.top, width: pop.width },
       },
         h('div', { className: 'dpk-ignorepop-layer dpk-ignorepop-backing' }),
         h('div', { className: 'dpk-ignorepop-layer dpk-ignorepop-material' }),
@@ -2435,6 +2453,12 @@ function countChecks(plugins, kinds) {
             role: 'menuitem',
             onClick: (e) => { e.stopPropagation(); pickRef.current?.('github'); },
           }, t('installMenuGithub'), h('small', null, 'owner/repo')),
+          h('button', {
+            className: 'dpk-ignorepop-item',
+            type: 'button',
+            role: 'menuitem',
+            onClick: (e) => { e.stopPropagation(); pickRef.current?.('local'); },
+          }, t('installMenuLocal'), h('small', null, '/path/to/dir')),
         ),
       );
     }
@@ -3946,14 +3970,14 @@ function countChecks(plugins, kinds) {
             'aria-label': t('settingsTitle'),
             onClick: () => setSettingsOpen(true),
           }, t('settingsBtn')),
-          // 一键折叠/展开全部分组：图标复用分组头的收纳三角，无新增视觉
-          h('button', {
+          // 一键折叠/展开全部分组：只在分组视图有意义，列表视图无分组概念 → 隐藏
+          viewMode === 'group' ? h('button', {
             className: 'dpk-btn is-mini',
             type: 'button',
             'aria-label': allCollapsed ? t('expandAllGroups') : t('collapseAllGroups'),
             'data-tip': allCollapsed ? t('expandAllGroups') : t('collapseAllGroups'),
             onClick: () => setCollapsedGroups(allCollapsed ? new Set() : new Set(GROUP_ORDER)),
-          }, h('span', { className: 'dpk-garrow' }, h(CollapseArrow, { collapsed: allCollapsed }))),
+          }, h('span', { className: 'dpk-garrow' }, h(CollapseArrow, { collapsed: allCollapsed }))) : null,
         )
         : null;
 
@@ -4944,12 +4968,14 @@ function countChecks(plugins, kinds) {
                   const anchor = installCaretRef.current;
                   if (!anchor) return;
                   const rect = anchor.getBoundingClientRect();
-                  const w = 200;
-                  const hh = 88;
-                  const left = Math.max(8, Math.min(rect.left, window.innerWidth - w - 8));
+                  const w = 220;
+                  const hh = 132;
+                  const bounds = clipBoundsOf(anchor);
+                  // 右对齐到 caret 右边缘，再整体钳进可裁剪容器，避免弹层溢出右侧被挡
+                  const left = Math.max(bounds.left + 8, Math.min(rect.right - w, bounds.right - w - 8));
                   const below = rect.bottom + 6;
-                  const top = below + hh > window.innerHeight - 8 ? Math.max(8, rect.top - hh - 6) : below;
-                  setInstallMenu({ left, top, anchor });
+                  const top = below + hh > bounds.bottom - 8 ? Math.max(bounds.top + 8, rect.top - hh - 6) : below;
+                  setInstallMenu({ left, top, width: w, anchor });
                 },
               }, CARET_ICON),
             ),
