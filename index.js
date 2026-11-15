@@ -310,9 +310,19 @@ const STATE_DEFAULT = Object.freeze({
   onlyUpdatableByDefault: false,
   // 「进入时默认检查更新」：默认关（进入时不自动发检查请求）。
   checkOnEnter: false,
+  // 安装走哪个 npm 源：'' = 跟随 pnpm 自身配置；其余为具体 registry URL。
+  installRegistry: '',
   lastCheck: null,
   lastBatch: null,
 });
+
+/** 安装源：'' = 跟随 pnpm；否则必须是 http(s) 地址。非法值一律回落成 ''。 */
+export function normalizeInstallRegistry(value) {
+  if (typeof value !== 'string') return '';
+  const v = value.trim();
+  if (!v) return '';
+  return /^https?:\/\/\S+$/i.test(v) ? v : '';
+}
 
 /** 对外可见的设置：密码永不返回浏览器，只给一个 hasProxyPass 标记。 */
 export function publicProxySettings(state) {
@@ -324,6 +334,7 @@ export function publicProxySettings(state) {
     collapseGroupsByDefault: state?.collapseGroupsByDefault === true,
     onlyUpdatableByDefault: state?.onlyUpdatableByDefault === true,
     checkOnEnter: state?.checkOnEnter === true,
+    installRegistry: state?.installRegistry ?? '',
   };
 }
 
@@ -343,6 +354,7 @@ async function readState() {
     collapseGroupsByDefault: raw?.collapseGroupsByDefault === true,
     onlyUpdatableByDefault: raw?.onlyUpdatableByDefault === true,
     checkOnEnter: raw?.checkOnEnter === true,
+    installRegistry: normalizeInstallRegistry(raw?.installRegistry),
     lastCheck: raw?.lastCheck && typeof raw.lastCheck === 'object' ? raw.lastCheck : null,
     lastBatch: raw?.lastBatch && typeof raw.lastBatch === 'object' ? raw.lastBatch : null,
   };
@@ -512,6 +524,37 @@ function friendlyInstallError(e) {
   return msg;
 }
 
+/** 把宿主 installBundle 的 failure 结果（application:'failed' 时的 r.error）翻成用户可读原因。 */
+function describeInstallFailure(error) {
+  const code = typeof error?.code === 'string' ? error.code : null;
+  if (code === 'operation-error') {
+    const line = summarizeInstallOutput(String(error?.diagnostic ?? ''));
+    return { code: 'install-failed', message: line ? `安装失败：${line}` : '安装失败（pnpm 未给出明确原因）' };
+  }
+  if (code === 'incompatible-version') {
+    const list = Array.isArray(error?.incompatible) ? error.incompatible : [];
+    const detail = list.map((p) => `${p?.name ?? '?'}${p?.version ? '@' + p.version : ''}`).join('、');
+    return { code, message: `版本不兼容，无法安装：${detail || '与当前 dsh 运行时不匹配'}（可授权版本豁免或换兼容版本）` };
+  }
+  if (code === 'not-bundle') return { code, message: '该包不是 DSH 插件（package.json 缺少 dsh.bundle 声明）' };
+  if (code === 'already-installed') return { code, message: '该插件已在 profile 依赖中（重复安装被宿主拒绝，如需升级请用「更新」）' };
+  if (code === 'ambiguous-install') return { code, message: '安装结果不明确（依赖表里新增了 0 个或多个包），已回滚' };
+  if (code === 'invalid-spec') return { code, message: '安装地址/包名格式非法' };
+  if (code === 'unsupported-platform') return { code, message: '该插件不支持当前平台' };
+  if (code === 'unexpected-package') return { code, message: '装上的包与预期版本不符，已回滚' };
+  return { code: code ?? 'install-failed', message: code ? `安装失败（${code}）` : '安装失败（未知原因）' };
+}
+
+/** 从 pnpm/宿主输出里挑一行最能说明问题的话（网络/registry/peer/权限等），截断避免撑爆 UI。 */
+function summarizeInstallOutput(raw) {
+  const lines = String(raw ?? '').split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  if (lines.length === 0) return '';
+  const re = /(ERR_PNPM_\w+|EAI_AGAIN|ENOTFOUND|ECONNREFUSED|ECONNRESET|ETIMEDOUT|ERR_SOCKET|socket hang up|fetch failed|ETARGET|E404|E401|E403|404 Not Found|401 Unauthorized|403 Forbidden|peer dep|unmet peer|proxy|TLS|self-signed|certificate)/i;
+  const hit = [...lines].reverse().find((l) => re.test(l));
+  const pick = hit ?? lines[lines.length - 1];
+  return pick.length > 240 ? pick.slice(0, 240) + '…' : pick;
+}
+
 /** 台账补记安装：新装 → installedAt/updatedAt=now+锚版本；已有台账 → 走更新落账。 */
 async function recordInstall(name, version) {
   try {
@@ -548,7 +591,7 @@ async function pumpInstallQueue() {
       try {
         let r;
         try {
-          r = await pluginManagerRef?.installBundle(item.spec, { enabled: true, requestId: item.requestId });
+          r = await pluginManagerRef?.installBundle(item.spec, { enabled: true, requestId: item.requestId, ...(item.registry ? { registry: item.registry } : {}) });
         } catch (e1) {
           // 连接/代理类失败 → 摘代理直连兜底重试一次（面板代理坏了也能装）
           const effective = isConnectError(e1) ? await effectiveProxyUrl() : '';
@@ -557,7 +600,7 @@ async function pumpInstallQueue() {
           const retryId = `dpkq-${Date.now().toString(36)}-${randomBytes(4).toString('hex')}`;
           item.requestId = retryId;
           try {
-            r = await withDirectProxyRelease(() => pluginManagerRef?.installBundle(item.spec, { enabled: true, requestId: retryId }));
+            r = await withDirectProxyRelease(() => pluginManagerRef?.installBundle(item.spec, { enabled: true, requestId: retryId, ...(item.registry ? { registry: item.registry } : {}) }));
           } catch (e2) {
             // 直连这一趟其实装上了（半成功/已存在）→ 按成功处理
             const meta2 = await readJsonSafe(join(serviceBridge?.profile?.dir ?? '', 'node_modules', ...item.name.split('/'), 'package.json'));
@@ -573,21 +616,32 @@ async function pumpInstallQueue() {
         }
         item.application = typeof r?.application === 'string' ? r.application : null;
         item.target = typeof r?.target === 'string' ? r.target : item.name;
-        const meta = await readJsonSafe(join(
-          serviceBridge?.profile?.dir ?? '',
-          'node_modules',
-          ...item.name.split('/'),
-          'package.json',
-        ));
-        const installed = typeof meta?.version === 'string' ? meta.version : null;
-        if (!installed) {
-          // 装完却读不到包 → 安装没有真正完成（或 pm 缺失），按失败处理而不是假成功
+        if (item.application === 'cancelled') {
+          item.status = 'cancelled';
+        } else if (item.application === 'failed') {
+          // 宿主 installBundle 失败时不抛异常，而是返回 application:'failed' + error；
+          // 之前忽略它 → 真实原因（网络/版本不兼容等）被下面「读不到包」的通用文案掩盖。
+          const d = describeInstallFailure(r?.error);
           item.status = 'failed';
-          item.error = '安装后未在 profile 中找到该包（安装可能未完成）';
+          item.error = d.message;
+          item.code = d.code;
         } else {
-          item.installedVersion = installed;
-          await recordInstall(item.name, installed); // 时间台账：安装落账（失败不影响队列）
-          item.status = 'done';
+          const meta = await readJsonSafe(join(
+            serviceBridge?.profile?.dir ?? '',
+            'node_modules',
+            ...item.name.split('/'),
+            'package.json',
+          ));
+          const installed = typeof meta?.version === 'string' ? meta.version : null;
+          if (!installed) {
+            // 装完却读不到包 → 安装没有真正完成（或 pm 缺失），按失败处理而不是假成功
+            item.status = 'failed';
+            item.error = '安装后未在 profile 中找到该包（安装可能未完成）';
+          } else {
+            item.installedVersion = installed;
+            await recordInstall(item.name, installed); // 时间台账：安装落账（失败不影响队列）
+            item.status = 'done';
+          }
         }
       } catch (e) {
         if (/cancel/i.test(String(e?.message ?? e)) || e?.code === 'cancelled') {
@@ -1507,11 +1561,15 @@ export class PluginKeeperService extends TypertRemoteService {
         return { ok: false, code: 'already-installed', error: `${inst.name}@${inst.version ?? ''} 已安装（如需更新请用行内「更新」）` };
       }
     } catch { /* 盘点失败不拦入队，让 installBundle 自己报错 */ }
+    // 安装源快照：入队那一刻的配置（之后改设置不影响已在队列的条目）
+    const state = await readState().catch(() => STATE_DEFAULT);
+    const registry = normalizeInstallRegistry(typeof input?.registry === 'string' ? input.registry : state.installRegistry);
     installQueueSeq += 1;
     const item = {
       id: `q${installQueueSeq}`,
       name,
       spec,
+      registry: registry || null,
       status: 'queued',
       requestId: null,
       queuedAt: new Date().toISOString(),
@@ -1750,6 +1808,7 @@ export class PluginKeeperService extends TypertRemoteService {
     const collapseGroupsByDefault = typeof input?.collapseGroupsByDefault === 'boolean' ? input.collapseGroupsByDefault : null;
     const onlyUpdatableByDefault = typeof input?.onlyUpdatableByDefault === 'boolean' ? input.onlyUpdatableByDefault : null;
     const checkOnEnter = typeof input?.checkOnEnter === 'boolean' ? input.checkOnEnter : null;
+    const installRegistry = typeof input?.installRegistry === 'string' ? normalizeInstallRegistry(input.installRegistry) : null;
     await withStateLock(async () => {
       const state = await readState();
       await writeState({
@@ -1762,6 +1821,7 @@ export class PluginKeeperService extends TypertRemoteService {
         ...(collapseGroupsByDefault === null ? {} : { collapseGroupsByDefault }),
         ...(onlyUpdatableByDefault === null ? {} : { onlyUpdatableByDefault }),
         ...(checkOnEnter === null ? {} : { checkOnEnter }),
+        ...(installRegistry === null ? {} : { installRegistry }),
       });
     });
     const latest = await readState();

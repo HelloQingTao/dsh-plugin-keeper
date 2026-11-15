@@ -153,6 +153,13 @@ window.__ModuleLoader__.load({
         iqTrustWarn: '请确认插件来源可信。插件在本机以你的权限运行，来源不明的插件可能损坏 dsh 或泄露你的数据。',
         queuePlaceholderAny: '例如 dsh-plugin-keeper、owner/repo 或 /绝对路径',
         iqSubmit: '安装',
+        iqRegistryLabel: '镜像源',
+        iqRegistryDefault: '默认源',
+        iqRegistryOfficial: 'npm 官方源',
+        iqRegistryNpmmirror: '中国大陆镜像',
+        iqRegistryCustom: '自定义…',
+        iqRegistryCustomPlaceholder: 'https://registry.npmmirror.com/',
+        iqRegistryHint: '装不上时切「中国大陆镜像」再试',
         installMenuNpm: 'npm 包',
         installMenuGithub: 'GitHub 仓库',
         installMenuLocal: '本地目录',
@@ -511,6 +518,13 @@ window.__ModuleLoader__.load({
         iqTrustWarn: 'Only install plugins you trust. Plugins run on this machine with your permissions, and unknown sources may harm dsh or leak your data.',
         queuePlaceholderAny: 'e.g. dsh-plugin-keeper, owner/repo, or /absolute/path',
         iqSubmit: 'Install',
+        iqRegistryLabel: 'Registry',
+        iqRegistryDefault: 'Default source',
+        iqRegistryOfficial: 'npm official',
+        iqRegistryNpmmirror: 'China mainland mirror',
+        iqRegistryCustom: 'Custom…',
+        iqRegistryCustomPlaceholder: 'https://registry.npmmirror.com/',
+        iqRegistryHint: 'If an install fails, switch to the China mainland mirror and retry',
         installMenuNpm: 'npm package',
         installMenuGithub: 'GitHub repository',
         installMenuLocal: 'Local directory',
@@ -932,6 +946,8 @@ window.__ModuleLoader__.load({
 .dpk-splitbtn .dpk-splitcaret{border-top-left-radius:0;border-bottom-left-radius:0;padding-left:9px;padding-right:9px;display:inline-flex;align-items:center;justify-content:center;box-shadow:inset 1px 0 0 rgba(255,255,255,.28);}
 /* 安装弹框输入行：输入框撑满行宽（右侧不留空） */
 .dpk-setrow.dpk-iqrow .dpk-input{min-width:0;flex:1 1 auto;width:100%;padding:9px 14px;font-size:13px;}
+.dpk-setrow.dpk-iqrow .dpk-iqselect{min-width:0;flex:1 1 auto;width:auto;padding:9px 14px;font-size:13px;cursor:pointer;}
+.dpk-iqlabel{flex:0 0 auto;font-size:12px;color:var(--dsw-alias-label-secondary);}
 .dpk-iqsubmit{width:100%;justify-content:center;margin-top:10px;}
 
 /* ---------- 详情视图（P3）：基本信息表 + 设置项控件 + 操作区 ---------- */
@@ -1409,7 +1425,7 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
     }
     async function callInstallQueueState() {
       try {
-        const v = unwrapEnvelope(await rpcFace?.installQueueState?.({}));
+        const v = unwrapEnvelope(await rpcFace?.installQueueState?.());
         return v ?? { ok: false, error: 'no response' };
       } catch (e) {
         return { ok: false, error: String(e?.message ?? e) };
@@ -2705,6 +2721,9 @@ function countChecks(plugins, kinds) {
       const [installNotices, setInstallNotices] = React.useState([]); // {id, ok, text}
       const [installInputFlash, setInstallInputFlash] = React.useState(null); // 入队失败的行内提示 {text}
       const [installDraft, setInstallDraft] = React.useState('');
+      // 安装源：跟随宿主 installRegistry 设置；自定义时展开输入框
+      const [registryCustomOpen, setRegistryCustomOpen] = React.useState(false);
+      const [registryCustomValue, setRegistryCustomValue] = React.useState('');
       const [installMenu, setInstallMenu] = React.useState(null); // {left, top, anchor}
       const installMenuRef = React.useRef(null);
       installMenuRef.current = installMenu;
@@ -4594,6 +4613,23 @@ function countChecks(plugins, kinds) {
         );
       })();
 
+      // 安装源选项：与官方对齐（默认源 / npm 官方源 / 中国大陆镜像 / 自定义）
+      const INSTALL_REGISTRY_OPTIONS = [
+        { value: '', label: t('iqRegistryDefault') },
+        { value: 'https://registry.npmjs.org/', label: t('iqRegistryOfficial') },
+        { value: 'https://registry.npmmirror.com/', label: t('iqRegistryNpmmirror') },
+      ];
+      const savedRegistry = typeof snap?.settings?.installRegistry === 'string' ? snap.settings.installRegistry : '';
+      const registryKnown = savedRegistry === '' || INSTALL_REGISTRY_OPTIONS.some((o) => o.value === savedRegistry);
+      const doSetInstallRegistry = React.useCallback(async (value) => {
+        const r = await callSaveSettings({ installRegistry: value });
+        if (r?.ok) {
+          setSnap((s) => (s ? { ...s, settings: { ...(s.settings ?? {}), installRegistry: typeof r.installRegistry === 'string' ? r.installRegistry : '' } } : s));
+        } else {
+          setInstallInputFlash({ text: r?.error ?? t('saveFailed') });
+        }
+      }, []);
+
       // 安装队列面板：输入即入队（可连续输），条目状态轮询宿主半；面板可随时关掉，安装继续跑
       const installQueueModal = installPanelOpen
         ? h(Modal, {
@@ -4617,6 +4653,39 @@ function countChecks(plugins, kinds) {
               onKeyDown: (e) => { if (e.key === 'Enter') { e.preventDefault(); void doInstallEnqueue(); } },
             }),
           ),
+          // ---- 镜像源：默认 / 官方 / 中国大陆 / 自定义（对齐官方安装弹框） ----
+          h('div', { className: 'dpk-setrow dpk-iqrow' },
+            h('label', { className: 'dpk-iqlabel' }, t('iqRegistryLabel')),
+            h('select', {
+              className: 'dpk-iqselect',
+              value: registryKnown ? savedRegistry : '__custom__',
+              onChange: (e) => {
+                const v = e.target.value;
+                if (v === '__custom__') { setRegistryCustomOpen(true); return; }
+                setRegistryCustomOpen(false);
+                void doSetInstallRegistry(v);
+              },
+            },
+              INSTALL_REGISTRY_OPTIONS.map((o) => h('option', { key: o.value || 'default', value: o.value }, o.label)),
+              h('option', { key: 'custom', value: '__custom__' }, t('iqRegistryCustom')),
+            ),
+          ),
+          (registryCustomOpen || !registryKnown)
+            ? h('div', { className: 'dpk-setrow dpk-iqrow' },
+              h('input', {
+                className: 'dpk-input',
+                type: 'url',
+                spellCheck: false,
+                autoComplete: 'off',
+                placeholder: t('iqRegistryCustomPlaceholder'),
+                value: registryCustomValue || (registryKnown ? '' : savedRegistry),
+                onChange: (e) => setRegistryCustomValue(e.target.value),
+                onBlur: () => { const v = registryCustomValue.trim(); if (v) void doSetInstallRegistry(v); },
+                onKeyDown: (e) => { if (e.key === 'Enter') { e.preventDefault(); const v = registryCustomValue.trim(); if (v) void doSetInstallRegistry(v); } },
+              }),
+            )
+            : null,
+          h('div', { className: 'dpk-hint' }, t('iqRegistryHint')),
           // ---- 来源可信警告（对齐官方安装弹框） ----
           h('div', { className: 'dpk-banner dpk-trustwarn' }, t('iqTrustWarn')),
           installInputFlash
