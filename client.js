@@ -160,6 +160,17 @@ window.__ModuleLoader__.load({
         iqRegistryCustom: '自定义…',
         iqRegistryCustomPlaceholder: 'https://registry.npmmirror.com/',
         iqRegistryHint: '装不上时切「中国大陆镜像」再试',
+        iqRegistryToggle: '安装源',
+        iqGuideToggle: '插件安装引导和示例',
+        iqGuideHide: '收起引导',
+        iqGuideExampleLabel: '示例：',
+        iqGuideNpmTitle: 'npm 包名',
+        iqGuideNpmExample: 'dsh-plugin-keeper',
+        iqGuideGithubTitle: 'GitHub 仓库',
+        iqGuideGithubExample: 'owner/repo',
+        iqGuidePathTitle: '本地目录',
+        iqGuidePathExample: '/绝对路径',
+        iqGuideFill: '填入',
         installMenuNpm: 'npm 包',
         installMenuGithub: 'GitHub 仓库',
         installMenuLocal: '本地目录',
@@ -525,6 +536,17 @@ window.__ModuleLoader__.load({
         iqRegistryCustom: 'Custom…',
         iqRegistryCustomPlaceholder: 'https://registry.npmmirror.com/',
         iqRegistryHint: 'If an install fails, switch to the China mainland mirror and retry',
+        iqRegistryToggle: 'Registry',
+        iqGuideToggle: 'Install guide and examples',
+        iqGuideHide: 'Hide guide',
+        iqGuideExampleLabel: 'Example: ',
+        iqGuideNpmTitle: 'npm package name',
+        iqGuideNpmExample: 'dsh-plugin-keeper',
+        iqGuideGithubTitle: 'GitHub repository',
+        iqGuideGithubExample: 'owner/repo',
+        iqGuidePathTitle: 'Local directory',
+        iqGuidePathExample: '/absolute/path',
+        iqGuideFill: 'Use example',
         installMenuNpm: 'npm package',
         installMenuGithub: 'GitHub repository',
         installMenuLocal: 'Local directory',
@@ -944,11 +966,44 @@ window.__ModuleLoader__.load({
 .dpk-splitbtn{display:inline-flex;align-items:stretch;}
 .dpk-splitbtn .dpk-splitmain{border-top-right-radius:0;border-bottom-right-radius:0;}
 .dpk-splitbtn .dpk-splitcaret{border-top-left-radius:0;border-bottom-left-radius:0;padding-left:9px;padding-right:9px;display:inline-flex;align-items:center;justify-content:center;box-shadow:inset 1px 0 0 rgba(255,255,255,.28);}
-/* 安装弹框输入行：输入框撑满行宽（右侧不留空） */
-.dpk-setrow.dpk-iqrow .dpk-input{min-width:0;flex:1 1 auto;width:100%;padding:9px 14px;font-size:13px;}
-.dpk-setrow.dpk-iqrow .dpk-iqselect{min-width:0;flex:1 1 auto;width:auto;padding:9px 14px;font-size:13px;cursor:pointer;}
-.dpk-iqlabel{flex:0 0 auto;font-size:12px;color:var(--dsw-alias-label-secondary);}
-.dpk-iqsubmit{width:100%;justify-content:center;margin-top:10px;}
+/* ---------- 安装弹框（方向B：对齐官方 plugin-manager 安装弹框） ---------- */
+.dpk-iqdialog{width:min(560px,100%);}
+.dpk-iqdesc{margin:2px 0 12px;font-size:12px;line-height:18px;color:var(--dsw-alias-label-secondary);}
+.dpk-iqfield{display:flex;flex-direction:column;gap:6px;margin-bottom:12px;}
+.dpk-iqinput{width:100%;height:40px;padding:0 14px;box-sizing:border-box;border:.5px solid var(--dsw-alias-border-l4);border-radius:var(--dsw-radius-md,8px);outline:none;background:var(--dsw-alias-bg-layer-3);font:inherit;font-size:13px;color:var(--dsw-alias-label-primary);}
+.dpk-iqinput:focus{border-color:var(--dsw-alias-state-business-primary);box-shadow:inset 0 0 0 .5px var(--dsw-alias-state-business-primary);}
+/* 选项行：左「安装引导和示例」切换，右「安装源」药丸 */
+.dpk-iqopts{display:flex;align-items:center;justify-content:space-between;gap:8px 12px;flex-wrap:wrap;margin-bottom:12px;}
+.dpk-iqguidebtn{display:inline-flex;align-items:center;gap:4px;padding:0;border:0;background:none;font:inherit;font-size:12.5px;color:var(--dsw-alias-label-secondary);cursor:pointer;}
+.dpk-iqguidebtn:hover{color:var(--dsw-alias-label-primary);}
+.dpk-iqchev{display:inline-block;transition:transform 160ms ease;font-size:10px;line-height:1;}
+.dpk-iqchev.is-open{transform:rotate(180deg);}
+.dpk-iqregpill{position:relative;display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px;border:.5px solid var(--dsw-alias-border-l4);border-radius:var(--dsw-radius-md,8px);background:var(--dsw-alias-bg-layer-2);font-size:12.5px;color:var(--dsw-alias-label-secondary);}
+.dpk-iqregpill-label{color:var(--dsw-alias-label-secondary);}
+.dpk-iqregpill-chosen{font-weight:500;color:var(--dsw-alias-label-primary);}
+.dpk-iqregpill .dpk-iqchev{color:var(--dsw-alias-label-tertiary);}
+.dpk-iqregpill-select{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;font:inherit;}
+/* 引导：可填入的示例 */
+.dpk-iqguide{display:flex;flex-direction:column;gap:2px;padding:8px 14px;margin-bottom:12px;border:.5px solid var(--dsw-alias-border-l4);border-radius:var(--dsw-radius-lg,10px);background:var(--dsw-alias-bg-layer-1);}
+.dpk-iqguidelist{display:flex;flex-direction:column;gap:2px;margin:0;padding:0;list-style:none;}
+.dpk-iqguideitem{display:flex;align-items:center;gap:10px;padding:7px 0;}
+.dpk-iqguidemain{display:flex;flex:1;flex-direction:column;gap:1px;min-width:0;}
+.dpk-iqguidetitle{font-size:13px;font-weight:500;line-height:20px;color:var(--dsw-alias-label-primary);}
+.dpk-iqguideex{font-size:12px;line-height:20px;color:var(--dsw-alias-label-tertiary);overflow-wrap:anywhere;}
+.dpk-iqguideexlabel{color:var(--dsw-alias-label-tertiary);}
+.dpk-iqguideex code{font-family:var(--ds-font-family-code,monospace);}
+.dpk-iqhint{margin:-4px 0 10px;font-size:12px;line-height:18px;color:var(--dsw-alias-label-tertiary);}
+.dpk-iqflash{margin:0 0 10px;padding:8px 12px;border-radius:var(--dsw-radius-md,8px);background:var(--dsw-alias-state-error-tertiary,var(--dsw-alias-interactive-bg-hover));color:var(--dsw-alias-state-error-primary);font-size:12px;line-height:18px;}
+.dpk-iqempty{padding:10px 2px;font-size:12px;line-height:18px;color:var(--dsw-alias-label-tertiary);}
+.dpk-queuehead{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;}
+.dpk-queueerr{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.dpk-queuebuilds{margin-top:4px;font-size:11px;line-height:16px;color:var(--dsw-alias-label-secondary);}
+/* 底部：可信提示 + 整行主按钮 */
+.dpk-iqfooter{display:flex;flex-direction:column;gap:14px;margin-top:14px;padding-top:14px;border-top:.5px solid var(--dsw-alias-border-l2);}
+.dpk-iqsafety{display:flex;align-items:flex-start;gap:8px;padding:10px 12px;border-radius:var(--dsw-radius-md,8px);background:var(--dsw-alias-state-warn-tertiary,var(--dsw-alias-interactive-bg-hover));font-size:12px;line-height:18px;color:var(--dsw-alias-label-secondary);}
+.dpk-iqsafety-icon{flex:none;margin-top:1px;color:var(--dsw-alias-state-warn-primary,#e0a800);}
+.dpk-iqsafety-text{min-width:0;}
+.dpk-iqsubmit{width:100%;justify-content:center;}
 
 /* ---------- 详情视图（P3）：基本信息表 + 设置项控件 + 操作区 ---------- */
 /* 设置项两列网格：JSON/密钥等长控件占整行 */
@@ -2724,6 +2779,7 @@ function countChecks(plugins, kinds) {
       // 安装源：跟随宿主 installRegistry 设置；自定义时展开输入框
       const [registryCustomOpen, setRegistryCustomOpen] = React.useState(false);
       const [registryCustomValue, setRegistryCustomValue] = React.useState('');
+      const [iqGuideOpen, setIqGuideOpen] = React.useState(false); // 安装引导和示例：默认收起（对齐官方）
       const [installMenu, setInstallMenu] = React.useState(null); // {left, top, anchor}
       const installMenuRef = React.useRef(null);
       installMenuRef.current = installMenu;
@@ -4638,19 +4694,24 @@ function countChecks(plugins, kinds) {
       }, []);
 
       // 安装队列面板：输入即入队（可连续输），条目状态轮询宿主半；面板可随时关掉，安装继续跑
+      const IQ_GUIDE_ROWS = [
+        { title: t('iqGuideNpmTitle'), example: t('iqGuideNpmExample') },
+        { title: t('iqGuideGithubTitle'), example: t('iqGuideGithubExample') },
+        { title: t('iqGuidePathTitle'), example: t('iqGuidePathExample') },
+      ];
       const installQueueModal = installPanelOpen
         ? h(Modal, {
-          className: 'is-wide',
+          className: 'is-wide dpk-iqdialog',
           ariaLabel: t('iqPanelTitle'),
           onClose: () => setInstallPanelOpen(false),
         },
           h('div', { className: 'dpk-mtitle' }, t('iqPanelTitle')),
-          h('div', { className: 'dpk-hint' }, t('iqInputHint')),
-          // ---- 单输入自动识别 npm/GitHub（宿主归一），回车也可入队 ----
-          h('div', { className: 'dpk-setrow dpk-iqrow' },
+          h('div', { className: 'dpk-iqdesc' }, t('iqInputHint')),
+          // ---- 单输入自动识别 npm/GitHub/本地路径（宿主归一），回车也可入队 ----
+          h('div', { className: 'dpk-iqfield' },
             h('input', {
               ref: installInputRef,
-              className: 'dpk-input',
+              className: 'dpk-iqinput',
               type: 'text',
               spellCheck: false,
               autoComplete: 'off',
@@ -4660,27 +4721,62 @@ function countChecks(plugins, kinds) {
               onKeyDown: (e) => { if (e.key === 'Enter') { e.preventDefault(); void doInstallEnqueue(); } },
             }),
           ),
-          // ---- 镜像源：默认 / 官方 / 中国大陆 / 自定义（对齐官方安装弹框） ----
-          h('div', { className: 'dpk-setrow dpk-iqrow' },
-            h('label', { className: 'dpk-iqlabel' }, t('iqRegistryLabel')),
-            h('select', {
-              className: 'dpk-iqselect',
-              value: registryKnown ? savedRegistry : '__custom__',
-              onChange: (e) => {
-                const v = e.target.value;
-                if (v === '__custom__') { setRegistryCustomOpen(true); return; }
-                setRegistryCustomOpen(false);
-                void doSetInstallRegistry(v);
-              },
+          // ---- 选项行：左「安装引导和示例」切换，右「安装源」药丸（对齐官方） ----
+          h('div', { className: 'dpk-iqopts' },
+            h('button', {
+              className: 'dpk-iqguidebtn',
+              type: 'button',
+              'aria-expanded': iqGuideOpen ? 'true' : 'false',
+              onClick: () => setIqGuideOpen((v) => !v),
             },
-              INSTALL_REGISTRY_OPTIONS.map((o) => h('option', { key: o.value || 'default', value: o.value }, o.label)),
-              h('option', { key: 'custom', value: '__custom__' }, t('iqRegistryCustom')),
+              h('span', { className: 'dpk-iqchev' + (iqGuideOpen ? ' is-open' : '') }, '▾'),
+              t(iqGuideOpen ? 'iqGuideHide' : 'iqGuideToggle'),
+            ),
+            h('div', { className: 'dpk-iqregpill' },
+              h('span', { className: 'dpk-iqregpill-label' }, t('iqRegistryToggle')),
+              h('span', { className: 'dpk-iqregpill-chosen' }, ((INSTALL_REGISTRY_OPTIONS.find((o) => o.value === (registryKnown ? savedRegistry : '__custom__')) || {}).label) || t('iqRegistryCustom')),
+              h('select', {
+                className: 'dpk-iqregpill-select',
+                value: registryKnown ? savedRegistry : '__custom__',
+                onChange: (e) => {
+                  const v = e.target.value;
+                  if (v === '__custom__') { setRegistryCustomOpen(true); return; }
+                  setRegistryCustomOpen(false);
+                  void doSetInstallRegistry(v);
+                },
+              },
+                INSTALL_REGISTRY_OPTIONS.map((o) => h('option', { key: o.value || 'default', value: o.value }, o.label)),
+                h('option', { key: 'custom', value: '__custom__' }, t('iqRegistryCustom')),
+              ),
+              h('span', { className: 'dpk-iqchev' }, '▾'),
             ),
           ),
+          // ---- 引导：可填入的示例（npm 包名 / GitHub 仓库 / 本地目录） ----
+          iqGuideOpen
+            ? h('div', { className: 'dpk-iqguide' },
+              h('ol', { className: 'dpk-iqguidelist' },
+                IQ_GUIDE_ROWS.map((row, i) => h('li', { className: 'dpk-iqguideitem', key: i },
+                  h('div', { className: 'dpk-iqguidemain' },
+                    h('span', { className: 'dpk-iqguidetitle' }, row.title),
+                    h('span', { className: 'dpk-iqguideex' },
+                      h('span', { className: 'dpk-iqguideexlabel' }, t('iqGuideExampleLabel')),
+                      h('code', {}, row.example),
+                    ),
+                  ),
+                  h('button', {
+                    className: 'dpk-btn is-mini',
+                    type: 'button',
+                    onClick: () => { setInstallDraft(row.example); if (installInputRef.current) installInputRef.current.focus(); },
+                  }, t('iqGuideFill')),
+                )),
+              ),
+            )
+            : null,
+          // ---- 自定义安装源输入 ----
           (registryCustomOpen || !registryKnown)
-            ? h('div', { className: 'dpk-setrow dpk-iqrow' },
+            ? h('div', { className: 'dpk-iqfield' },
               h('input', {
-                className: 'dpk-input',
+                className: 'dpk-iqinput',
                 type: 'url',
                 spellCheck: false,
                 autoComplete: 'off',
@@ -4692,28 +4788,28 @@ function countChecks(plugins, kinds) {
               }),
             )
             : null,
-          h('div', { className: 'dpk-hint' }, t('iqRegistryHint')),
-          // ---- 来源可信警告（对齐官方安装弹框） ----
-          h('div', { className: 'dpk-banner dpk-trustwarn' }, t('iqTrustWarn')),
+          h('div', { className: 'dpk-iqhint' }, t('iqRegistryHint')),
           installInputFlash
-            ? h('div', { className: 'dpk-banner' }, installInputFlash.text)
+            ? h('div', { className: 'dpk-iqflash' }, installInputFlash.text)
             : null,
           // ---- 队列列表 ----
           h('div', { className: 'dpk-queuelist' },
             (installQueueItems ?? []).length === 0
-              ? h('div', { className: 'dpk-hint' }, t('queueEmpty'))
+              ? h('div', { className: 'dpk-iqempty' }, t('queueEmpty'))
               : (installQueueItems ?? []).map((it) => h('div', { className: 'dpk-queuerow', key: it.id },
                 h('div', { className: 'dpk-queuemain' },
-                  h('span', { className: 'dpk-queuename' }, it.name),
-                  h('span', { className: `dpk-queuebadge is-${it.status}` }, t(`queueStatus${it.status.charAt(0).toUpperCase()}${it.status.slice(1)}`)),
-                  typeof it.installedVersion === 'string' && it.status === 'done'
-                    ? h('span', { className: 'dpk-queuever' }, `v${it.installedVersion}`)
-                    : null,
+                  h('div', { className: 'dpk-queuehead' },
+                    h('span', { className: 'dpk-queuename' }, it.name),
+                    h('span', { className: `dpk-queuebadge is-${it.status}` }, t(`queueStatus${it.status.charAt(0).toUpperCase()}${it.status.slice(1)}`)),
+                    typeof it.installedVersion === 'string' && it.status === 'done'
+                      ? h('span', { className: 'dpk-queuever' }, `v${it.installedVersion}`)
+                      : null,
+                  ),
                   it.status === 'failed' && (it.code === 'unreachable' || it.error)
                     ? h('div', { className: 'dpk-queueerr' },
                       it.code === 'unreachable' ? t('errUnreachable') : it.error,
                       /approve|build|script|批准/i.test(String(it.error))
-                        ? h('div', { className: 'dpk-banner' }, t('queueNeedBuilds'))
+                        ? h('div', { className: 'dpk-queuebuilds' }, t('queueNeedBuilds'))
                         : null,
                     )
                     : null,
@@ -4731,13 +4827,19 @@ function countChecks(plugins, kinds) {
                 ),
               )),
           ),
-          // ---- 安装按钮：官方样式整行大按钮（说明不放，回车也可入队） ----
-          h('button', {
-            className: 'dpk-btn is-primary is-big dpk-iqsubmit',
-            type: 'button',
-            disabled: !installDraft.trim(),
-            onClick: () => { void doInstallEnqueue(); },
-          }, t('iqSubmit')),
+          // ---- 底部：可信提示 + 整行主按钮（对齐官方安装弹框） ----
+          h('div', { className: 'dpk-iqfooter' },
+            h('div', { className: 'dpk-iqsafety' },
+              h('span', { className: 'dpk-iqsafety-icon', 'aria-hidden': 'true' }, '⚠'),
+              h('span', { className: 'dpk-iqsafety-text' }, t('iqTrustWarn')),
+            ),
+            h('button', {
+              className: 'dpk-btn is-primary dpk-iqsubmit',
+              type: 'button',
+              disabled: !installDraft.trim(),
+              onClick: () => { void doInstallEnqueue(); },
+            }, t('iqSubmit')),
+          ),
         )
         : null;
 
