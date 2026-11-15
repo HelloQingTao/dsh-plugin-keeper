@@ -20,6 +20,7 @@
  */
 
 import { readFile, writeFile, chmod, copyFile, mkdir, readdir, rm, stat, realpath } from 'node:fs/promises';
+import { loadQueueFile, saveQueueFile } from './install-queue-store.js';
 import { readFileSync, existsSync } from 'node:fs';
 import { spawn } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
@@ -504,8 +505,9 @@ async function reconcileTimes(plugins) {
 
 // ---------- 后台安装队列（P2）----------
 // 为什么要宿主半排队：并发 pnpm 对同一 profile 危险（与原地升级/导入互踩），浏览器关掉
-// 面板/切页签后安装也要继续跑。队列只存内存（重启即清空，安装结果以盘点为准）。
-// 串行 worker：同一时刻只跑一个 installBundle，跑完自动接队头。
+// 面板/切页签后安装也要继续跑。队列落盘到 $DSH_HOME/plugin-keeper-install-queue.json：
+// 重启后历史记录（尤其失败项）仍保留，只有用户手动「移除」才消失；重启前未跑完的条目
+// 统一落成「因 dsh 重启中断」，不会自动重跑。串行 worker：同一时刻只跑一个 installBundle。
 
 const NPM_SPEC_RE = /^(@[a-z0-9-~][a-z0-9-._~]*\/)?[a-z0-9-~][a-z0-9-._~]*(@[^/\s@]+)?$/;
 const INSTALL_QUEUE_ACTIVE = new Set(['queued', 'running']);
@@ -516,6 +518,43 @@ let installWorkerActive = false;
 
 function queueItemsView() {
   return installQueue.map((it) => ({ ...it }));
+}
+
+/** 安装队列历史落盘路径（与 plugin-keeper.json 同目录）。 */
+function queuePathOf() {
+  const home = serviceBridge?.profile?.home
+    || process.env.DSH_HOME
+    || join(homedir(), '.dsh');
+  return join(home, 'plugin-keeper-install-queue.json');
+}
+
+let installQueueLoadPromise = null;
+
+/** 把队列整体写盘（委托 install-queue-store：临时文件 + rename 原子替换）。 */
+async function persistInstallQueue() {
+  try {
+    await saveQueueFile(queuePathOf(), installQueue);
+  } catch (e) {
+    console.log(`[dsh-plugin-keeper] persist install queue failed: ${String(e?.message ?? e)}`);
+  }
+}
+
+/** 首次访问队列时从盘上恢复历史；重启前未跑完的条目落成「中断失败」，不自动重跑。 */
+function loadInstallQueue() {
+  if (!installQueueLoadPromise) {
+    installQueueLoadPromise = (async () => {
+      const items = await loadQueueFile(queuePathOf());
+      if (items.length === 0) return;
+      for (const it of items) {
+        installQueue.push(it);
+        const m = /^q(\d+)$/.exec(it.id);
+        if (m) installQueueSeq = Math.max(installQueueSeq, Number(m[1]));
+      }
+      // 把归一化后的状态写回（中断条目已落成 failed）
+      await persistInstallQueue();
+    })();
+  }
+  return installQueueLoadPromise;
 }
 
 function friendlyInstallError(e) {
@@ -588,6 +627,7 @@ async function pumpInstallQueue() {
       if (!item) break;
       item.status = 'running';
       item.startedAt = new Date().toISOString();
+      await persistInstallQueue();
       item.requestId = `dpkq-${Date.now().toString(36)}-${randomBytes(4).toString('hex')}`;
       try {
         let r;
@@ -675,6 +715,7 @@ async function pumpInstallQueue() {
       }
       item.finishedAt = new Date().toISOString();
       item.requestId = null; // 已结束，清掉以免 cancel 再打宿主
+      await persistInstallQueue();
     }
   } finally {
     installWorkerActive = false;
@@ -1539,6 +1580,7 @@ export class PluginKeeperService extends TypertRemoteService {
    * 先做快查（已装/已在队列），再交给串行 worker；GitHub spec 在此归一，worker 直接喂 installBundle。
    */
   async installEnqueue(input) {
+    await loadInstallQueue();
     const raw = typeof input?.name === 'string' ? input.name.trim() : '';
     if (!raw || raw.startsWith('-')) return { ok: false, code: 'bad-name', error: '请输入 npm 包名、GitHub 地址或本地路径' };
     let name = null;
@@ -1603,23 +1645,27 @@ export class PluginKeeperService extends TypertRemoteService {
       installedVersion: null,
     };
     installQueue.push(item);
+    await persistInstallQueue();
     void pumpInstallQueue().catch(() => {});
     return { ok: true, item: { ...item } };
   }
 
   /** 队列当前状态（前端 1.5s 轮询用；条目少，直接全量回）。 */
   async installQueueState() {
+    await loadInstallQueue();
     return { ok: true, items: queueItemsView(), running: installQueue.some((it) => INSTALL_QUEUE_ACTIVE.has(it.status)) };
   }
 
   /** 取消：排队中直接标记；安装中调 pm.cancelInstall(requestId)（结果事件回来后置 cancelled）。 */
   async installQueueCancel(input) {
+    await loadInstallQueue();
     const id = typeof input?.id === 'string' ? input.id : '';
     const item = installQueue.find((it) => it.id === id);
     if (!item) return { ok: false, code: 'not-found' };
     if (item.status === 'queued') {
       item.status = 'cancelled';
       item.finishedAt = new Date().toISOString();
+      await persistInstallQueue();
       return { ok: true, item: { ...item } };
     }
     if (item.status === 'running' && item.requestId) {
@@ -1635,16 +1681,19 @@ export class PluginKeeperService extends TypertRemoteService {
 
   /** 移除：只允许清理已结束的条目（done/failed/cancelled）。 */
   async installQueueRemove(input) {
+    await loadInstallQueue();
     const id = typeof input?.id === 'string' ? input.id : '';
     const idx = installQueue.findIndex((it) => it.id === id);
     if (idx < 0) return { ok: false, code: 'not-found' };
     if (INSTALL_QUEUE_ACTIVE.has(installQueue[idx].status)) return { ok: false, code: 'not-removable' };
     installQueue.splice(idx, 1);
+    await persistInstallQueue();
     return { ok: true };
   }
 
   /** 重试：失败/取消的条目重置回队尾，重新拉起 worker。 */
   async installQueueRetry(input) {
+    await loadInstallQueue();
     const id = typeof input?.id === 'string' ? input.id : '';
     const item = installQueue.find((it) => it.id === id);
     if (!item) return { ok: false, code: 'not-found' };
@@ -1655,6 +1704,7 @@ export class PluginKeeperService extends TypertRemoteService {
     item.startedAt = null;
     item.finishedAt = null;
     item.queuedAt = new Date().toISOString();
+    await persistInstallQueue();
     void pumpInstallQueue().catch(() => {});
     return { ok: true, item: { ...item } };
   }

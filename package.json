@@ -15,6 +15,7 @@
     "proxy-policy.js",
     "github-spec.js",
     "install-fallback.js",
+    "install-queue-store.js",
     "export.js",
     "import.js",
     "cordis.patch.yml",
