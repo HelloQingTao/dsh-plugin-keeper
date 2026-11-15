@@ -1,5 +1,35 @@
 # Changelog
 
+## 0.3.11 (2026-11-15)
+
+### 中文
+
+- **新增：安装源选择** — 安装弹框可选择安装源：默认源、npm 官方源、中国大陆镜像或自定义地址，安装不畅时可切换到更快的源。
+- **新增：本地目录来源** — 安装来源下拉支持本地目录路径。
+- **修复：安装队列不显示** — 修复安装时队列一直为空、看不到进度与任何提示的问题（安装其实已在后台进行）。
+- **修复：失败原因不可见** — 修复安装失败时只显示笼统提示、看不到真实原因的问题。
+- **修复：打开即误弹失败** — 修复打开安装面板时把历史遗留的失败记录误报成「刚刚失败」的问题。
+- **修复：检查更新时安装按钮被禁用** — 「检查更新」进行中时「安装插件」按钮不再被连带禁用。
+- **修复：代理失败自动直连** — 代理不可用时安装不再直接失败，自动改用直连兜底。
+- **修复：切换源不回显** — 切换安装源后选择框立即显示所选源。
+- **修复：重启后队列丢失** — 重启 DSH 后安装队列历史保留，失败项保留到手动移除。
+- **修复：弹层遮挡与多余项** — 安装弹层右侧不再被遮挡，列表视图不再多出「一键展开」。
+- **优化：安装弹框观感** — 安装弹框整体对齐官方观感：统一字号与留白、安装源选择器、队列空态重做，主按钮移到包名输入框同行右侧并自适应宽度。
+
+### English
+
+- **New: install source selector** — The install dialog lets you pick a source: default, npm official, mainland-China mirror, or a custom URL; switch to a faster one when an install is slow or blocked.
+- **New: local folder source** — The install source menu now accepts a local directory path.
+- **Fixed: empty install queue** — Fixed the install queue staying empty with no progress or feedback while the install was actually running in the background.
+- **Fixed: invisible failure reason** — Failed installs now show the real reason instead of a generic message.
+- **Fixed: false failure popup on open** — Opening the panel no longer reports a previously failed item as a fresh failure.
+- **Fixed: install button disabled during update check** — The "Install plugin" button is no longer disabled while an update check is running.
+- **Fixed: proxy fallback** — Installs no longer fail outright when the proxy is unavailable; it falls back to a direct connection automatically.
+- **Fixed: source not reflecting** — Switching the install source now shows the chosen source immediately.
+- **Fixed: queue lost after restart** — The install queue is now kept after a restart (failed items stay until you remove them).
+- **Fixed: dialog clipping and redundant toggle** — The install dialog is no longer clipped on the right, and the redundant "expand all" no longer shows in list view.
+- **Improved: install dialog look** — Reworked to match the official style: unified type scale and spacing, a source selector, a redesigned empty state, and the primary button now sits inline to the right of the input with adaptive width.
+
 ## 0.3.10 (2026-11-14)
 
 ### 中文
