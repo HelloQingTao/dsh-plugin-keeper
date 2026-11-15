@@ -45,6 +45,7 @@ import {
   setContextVerified,
 } from './proxy-policy.js';
 import { normalizeGithubSpec as parseGithubSpec, tryNormalizeGithubSpec, githubRepoKey } from './github-spec.js';
+import { CONNECT_FAIL_RE, isConnectFailureText, isInstallConnectFailure } from './install-fallback.js';
 import {
   createExport,
   discoverHomeConfig,
@@ -614,6 +615,26 @@ async function pumpInstallQueue() {
             }
           }
         }
+        // 关键修复：宿主 installBundle 失败时**不抛异常**，而是返回 application:'failed'。
+        // 所以「代理失败 → 直连兜底」必须在结果态也判一次，否则死代理下永远不触发直连（兜底形同虚设）。
+        if (r?.application === 'failed' && isInstallConnectFailure(r)) {
+          const effective = await effectiveProxyUrl();
+          if (effective) {
+            console.log(`[dsh-plugin-keeper] install ${item.name} 代理失败（结果态 ${r?.error?.code ?? '?'}），摘代理直连兜底重试`);
+            const retryId = `dpkq-${Date.now().toString(36)}-${randomBytes(4).toString('hex')}`;
+            item.requestId = retryId;
+            try {
+              r = await withDirectProxyRelease(() => pluginManagerRef?.installBundle(item.spec, { enabled: true, requestId: retryId, ...(item.registry ? { registry: item.registry } : {}) }));
+            } catch (e2) {
+              const meta2 = await readJsonSafe(join(serviceBridge?.profile?.dir ?? '', 'node_modules', ...item.name.split('/'), 'package.json'));
+              if (typeof meta2?.version === 'string') {
+                r = { application: 'restart', target: item.name };
+              } else {
+                r = { application: 'failed', error: { code: 'operation-error', diagnostic: String(e2?.message ?? e2) } };
+              }
+            }
+          }
+        }
         item.application = typeof r?.application === 'string' ? r.application : null;
         item.target = typeof r?.target === 'string' ? r.target : item.name;
         if (item.application === 'cancelled') {
@@ -874,7 +895,7 @@ function proxyStatus() {
 
 // ---------- 安装/更新通道的「代理失败 → 直连兜底」 ----------
 
-const CONNECT_FAIL_RE = /econn|etimedout|enotfound|eai_again|network|proxy|tunnel|socket hang up|fetch failed|client error|\b50[234]\b|connect.*fail|unsuccessful/i;
+// CONNECT_FAIL_RE 等由 install-fallback.js 提供（纯函数，便于单测）。
 
 /** 一次 pnpm add 的结果是否属「连接/代理」类失败（值得摘代理直连重试）。 */
 function isConnectFailure(r) {

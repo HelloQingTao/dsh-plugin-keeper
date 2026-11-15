@@ -14,6 +14,7 @@
     "client.js",
     "proxy-policy.js",
     "github-spec.js",
+    "install-fallback.js",
     "export.js",
     "import.js",
     "cordis.patch.yml",
