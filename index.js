@@ -312,6 +312,8 @@ const STATE_DEFAULT = Object.freeze({
   onlyUpdatableByDefault: false,
   // 「进入时默认检查更新」：默认关（进入时不自动发检查请求）。
   checkOnEnter: false,
+  // 「启动时自动检查更新」：默认开（每次打开 dsh 后台检查一次，有更新弹提示）。
+  autoCheckOnBoot: true,
   // 安装走哪个 npm 源：'' = 跟随 pnpm 自身配置；其余为具体 registry URL。
   installRegistry: '',
   lastCheck: null,
@@ -336,6 +338,7 @@ export function publicProxySettings(state) {
     collapseGroupsByDefault: state?.collapseGroupsByDefault === true,
     onlyUpdatableByDefault: state?.onlyUpdatableByDefault === true,
     checkOnEnter: state?.checkOnEnter === true,
+    autoCheckOnBoot: state?.autoCheckOnBoot !== false,
     installRegistry: state?.installRegistry ?? '',
   };
 }
@@ -356,6 +359,7 @@ async function readState() {
     collapseGroupsByDefault: raw?.collapseGroupsByDefault === true,
     onlyUpdatableByDefault: raw?.onlyUpdatableByDefault === true,
     checkOnEnter: raw?.checkOnEnter === true,
+    autoCheckOnBoot: raw?.autoCheckOnBoot !== false,
     installRegistry: normalizeInstallRegistry(raw?.installRegistry),
     lastCheck: raw?.lastCheck && typeof raw.lastCheck === 'object' ? raw.lastCheck : null,
     lastBatch: raw?.lastBatch && typeof raw.lastBatch === 'object' ? raw.lastBatch : null,
@@ -1879,6 +1883,7 @@ export class PluginKeeperService extends TypertRemoteService {
     const collapseGroupsByDefault = typeof input?.collapseGroupsByDefault === 'boolean' ? input.collapseGroupsByDefault : null;
     const onlyUpdatableByDefault = typeof input?.onlyUpdatableByDefault === 'boolean' ? input.onlyUpdatableByDefault : null;
     const checkOnEnter = typeof input?.checkOnEnter === 'boolean' ? input.checkOnEnter : null;
+    const autoCheckOnBoot = typeof input?.autoCheckOnBoot === 'boolean' ? input.autoCheckOnBoot : null;
     const installRegistry = typeof input?.installRegistry === 'string' ? normalizeInstallRegistry(input.installRegistry) : null;
     await withStateLock(async () => {
       const state = await readState();
@@ -1892,6 +1897,7 @@ export class PluginKeeperService extends TypertRemoteService {
         ...(collapseGroupsByDefault === null ? {} : { collapseGroupsByDefault }),
         ...(onlyUpdatableByDefault === null ? {} : { onlyUpdatableByDefault }),
         ...(checkOnEnter === null ? {} : { checkOnEnter }),
+        ...(autoCheckOnBoot === null ? {} : { autoCheckOnBoot }),
         ...(installRegistry === null ? {} : { installRegistry }),
       });
     });

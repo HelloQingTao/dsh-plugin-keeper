@@ -336,6 +336,12 @@ window.__ModuleLoader__.load({
         checkOnEnter: '进入时默认检查更新',
         checkOnEnterHint: '打开「插件运维」时自动检查一次更新；距上次检查不足 {min} 分钟则跳过，避免反复请求。改动在重新进入页面后生效。',
         checkOnEnterSaved: '已保存',
+        autoCheckOnBoot: '启动时自动检查更新',
+        autoCheckOnBootHint: '每次打开 dsh 时后台检查一次更新；发现有可更新插件会在右下角提示，点击提示直达插件运维。',
+        autoCheckOnBootSaved: '已保存',
+        updateTipTitle: '发现 {n} 个插件可更新',
+        updateTipAction: '去更新',
+        updateTipClose: '关闭提示',
         settingsReenterNote: '改动在重新进入页面后生效；「进入时默认检查更新」距上次不足 {min} 分钟会跳过。',
         // ---- 分组折叠 ----
         groupCollapse: '折叠分组',
@@ -717,6 +723,12 @@ window.__ModuleLoader__.load({
         checkOnEnter: 'Check for updates on entry',
         checkOnEnterHint: 'When on, "Plugin Ops" checks for updates once on entry; skipped if the last check was less than {min} minutes ago. Applies after re-entering the page.',
         checkOnEnterSaved: 'Saved',
+        autoCheckOnBoot: 'Check for updates on startup',
+        autoCheckOnBootHint: 'Checks for updates once in the background each time dsh opens; if updates exist, a prompt appears in the lower-right — click it to jump straight to Plugin Ops.',
+        autoCheckOnBootSaved: 'Saved',
+        updateTipTitle: '{n} plugin(s) can be updated',
+        updateTipAction: 'Update now',
+        updateTipClose: 'Dismiss',
         settingsReenterNote: 'Changes take effect after re-entering the page; the on-entry check is skipped if the last check was under {min} minutes ago.',
         // ---- 分组折叠 ----
         groupCollapse: 'Collapse group',
@@ -973,6 +985,14 @@ window.__ModuleLoader__.load({
 .dpk-queuenotice{display:flex;align-items:center;justify-content:space-between;gap:8px;}
 
 /* 安装分体按钮（对齐官方「添加插件」）+ 弹框类型 tabs */
+.dpk-updtip{position:fixed;right:20px;bottom:20px;z-index:2147483000;display:flex;align-items:flex-start;gap:10px;max-width:340px;padding:14px 14px 14px 16px;border-radius:14px;background:var(--dsw-alias-bg-layer-3);border:1px solid var(--dsw-alias-border-l4);box-shadow:0 10px 30px rgba(0,0,0,.16);font-size:14px;line-height:1.5;color:var(--dsw-alias-text-1);}
+.dpk-updtip-ico{font-size:20px;line-height:1.2;flex:none;}
+.dpk-updtip-body{flex:1;min-width:0;}
+.dpk-updtip-title{font-weight:600;margin-bottom:8px;}
+.dpk-updtip-btn{display:inline-flex;align-items:center;height:30px;padding:0 14px;border-radius:8px;border:none;cursor:pointer;background:var(--dsw-alias-state-business-primary);color:#fff;font-size:13px;font-weight:600;}
+.dpk-updtip-btn:hover{filter:brightness(1.05);}
+.dpk-updtip-x{flex:none;width:22px;height:22px;line-height:20px;text-align:center;border:none;background:transparent;cursor:pointer;color:var(--dsw-alias-text-3);font-size:18px;border-radius:6px;}
+.dpk-updtip-x:hover{background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-text-1);}
 .dpk-splitbtn{display:inline-flex;align-items:stretch;}
 .dpk-splitbtn .dpk-splitmain{border-top-right-radius:0;border-bottom-right-radius:0;}
 .dpk-splitbtn .dpk-splitcaret{border-top-left-radius:0;border-bottom-left-radius:0;padding-left:9px;padding-right:9px;display:inline-flex;align-items:center;justify-content:center;box-shadow:inset 1px 0 0 rgba(255,255,255,.28);}
@@ -1224,6 +1244,10 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
     const AUTO_CHECK_MIN_MS = 30 * 60 * 1000;
     // 一次页面会话里「进入时自动检查」最多判定一轮；两个挂载点共享去重，刷新页面即重置。
     const autoCheckStore = { done: false };
+    // 启动时自动检查：整页会话只跑一次（悬浮提示挂载点共享去重）。
+    const bootCheckStore = { done: false };
+    // 通过更新提示跳入插件运维时置位一次，跳过「进入时检查更新」，避免重复请求。
+    let suppressEnterCheckOnce = false;
     // 底部台账/横幅的自动清除账龄：批量快照产生超过该时长，进页面时不再恢复展示。
     // 具名常量便于调整；不是用户配置项，故不占设置开关（同 AUTO_CHECK_MIN_MS 约定）。
     const NOTIFY_TTL_MS = 12 * 60 * 60 * 1000;
@@ -2599,6 +2623,9 @@ function countChecks(plugins, kinds) {
       // 进入时默认检查更新：默认关；改动在重新进入页面后生效
       const [checkOnEnter, setCheckOnEnter] = React.useState(() => cacheRef.current?.settings?.checkOnEnter === true);
       const [checkOnEnterFlash, setCheckOnEnterFlash] = React.useState(null); // 'ok' | {err}
+      // 启动时自动检查更新：默认开
+      const [autoCheckOnBoot, setAutoCheckOnBoot] = React.useState(() => cacheRef.current?.settings?.autoCheckOnBoot !== false);
+      const [autoCheckOnBootFlash, setAutoCheckOnBootFlash] = React.useState(null); // 'ok' | {err}
       // 自动检查判定锚点：load() 拿到首份快照后置入，触发下面的 useEffect 只判一轮
       const [autoCheckReady, setAutoCheckReady] = React.useState(null);
       const proxyRef = React.useRef(null);
@@ -2754,6 +2781,9 @@ function countChecks(plugins, kinds) {
             // 默认检查更新：设置态跟随真值；实际是否触发交给下面的 useEffect 判定
             if (data.settings && typeof data.settings.checkOnEnter === 'boolean') {
               setCheckOnEnter(data.settings.checkOnEnter);
+            }
+            if (data.settings && typeof data.settings.autoCheckOnBoot === 'boolean') {
+              setAutoCheckOnBoot(data.settings.autoCheckOnBoot);
             }
             // 交出判定锚点（含落盘的 lastCheckAt，用于节流）
             setAutoCheckReady(data);
@@ -3089,6 +3119,7 @@ function countChecks(plugins, kinds) {
       // - 节流：宿主落盘的 lastCheckAt 不足 AUTO_CHECK_MIN_MS 就跳过，避免每次进页面都打网络。
       React.useEffect(() => {
         if (!autoCheckReady) return;
+        if (suppressEnterCheckOnce) { suppressEnterCheckOnce = false; autoCheckStore.done = true; return; }
         if (autoCheckStore.done) return;
         autoCheckStore.done = true;
         if (autoCheckReady.settings?.checkOnEnter !== true) return;
@@ -3242,6 +3273,22 @@ function countChecks(plugins, kinds) {
           setSnap((s) => (s ? { ...s, settings: { ...(s.settings ?? {}), checkOnEnter: next } } : s));
         } else {
           setCheckOnEnterFlash({ err: r?.error ?? t('saveFailed') });
+        }
+        setSaving(false);
+      }, []);
+
+      // 保存「启动时自动检查更新」开关：只落盘 + 提示
+      const doSaveAutoCheckOnBoot = React.useCallback(async (value) => {
+        setSaving(true);
+        setAutoCheckOnBootFlash(null);
+        const r = await callSaveSettings({ autoCheckOnBoot: value });
+        if (r?.ok) {
+          const next = r.autoCheckOnBoot !== false;
+          setAutoCheckOnBoot(next);
+          setAutoCheckOnBootFlash('ok');
+          setSnap((s) => (s ? { ...s, settings: { ...(s.settings ?? {}), autoCheckOnBoot: next } } : s));
+        } else {
+          setAutoCheckOnBootFlash({ err: r?.error ?? t('saveFailed') });
         }
         setSaving(false);
       }, []);
@@ -4433,6 +4480,21 @@ function countChecks(plugins, kinds) {
           ),
           checkOnEnterFlash === 'ok' ? h('div', { className: 'dpk-savedok' }, t('checkOnEnterSaved')) : null,
           checkOnEnterFlash && checkOnEnterFlash.err ? h('div', { className: 'dpk-savederr' }, checkOnEnterFlash.err) : null,
+          // 启动时自动检查更新：默认开
+          h('div', { className: 'dpk-setrow' },
+            h('label', { className: 'dpk-switch' },
+              h('input', {
+                type: 'checkbox',
+                checked: autoCheckOnBoot,
+                disabled: saving,
+                onChange: (e) => { void doSaveAutoCheckOnBoot(e.target.checked); },
+              }),
+              t('autoCheckOnBoot'),
+            ),
+          ),
+          h('div', { className: 'dpk-setnote' }, t('autoCheckOnBootHint')),
+          autoCheckOnBootFlash === 'ok' ? h('div', { className: 'dpk-savedok' }, t('autoCheckOnBootSaved')) : null,
+          autoCheckOnBootFlash && autoCheckOnBootFlash.err ? h('div', { className: 'dpk-savederr' }, autoCheckOnBootFlash.err) : null,
           h('div', { className: 'dpk-setnote' }, t('settingsReenterNote', { min: Math.round(AUTO_CHECK_MIN_MS / 60000) })),
           ),
           ),
@@ -5604,6 +5666,116 @@ function countChecks(plugins, kinds) {
       };
     }
 
+    // ---------- 启动自动检查更新 + 右下角可点击提示 ----------
+
+    // 启动后台检查：整页会话只跑一次；返回可更新数量（关闭/无更新/失败均返回 0）。
+    async function runBootCheckOnce() {
+      if (bootCheckStore.done) return 0;
+      bootCheckStore.done = true;
+      try {
+        let enabled = true;
+        try {
+          const s = unwrapEnvelope(await rpcFace?.getSettings?.());
+          if (s && s.autoCheckOnBoot === false) enabled = false;
+        } catch { /* 取设置失败按默认开处理 */ }
+        if (!enabled) return 0;
+        const res = unwrapEnvelope(await rpcFace?.checkUpdates?.());
+        const n = Number(res?.counts?.update ?? 0);
+        return Number.isFinite(n) && n > 0 ? n : 0;
+      } catch {
+        return 0;
+      }
+    }
+
+    // 跳转到「插件运维」：打开官方插件管理页并定位到本插件 Tab。
+    function navigateToKeeperTab(rctx) {
+      const get = (k) => { try { return rctx.get?.(k) ?? rctx.reflect?.get?.(k) ?? null; } catch { return null; } };
+      try {
+        const nav = get('pluginNavigation');
+        const layout = get('layout');
+        if (nav?.openList) nav.openList();
+        else layout?.selectPanel?.('plugins');
+      } catch { /* 没有导航服务时至少不崩 */ }
+      // 经提示跳入 → 跳过「进入时检查更新」一次，避免重复请求
+      suppressEnterCheckOnce = true;
+      // 等官方页挂载后点中本插件 Tab（role=tab，文案含 插件运维 / Plugin Ops）
+      let tries = 0;
+      const hit = () => {
+        try {
+          const tabs = document.querySelectorAll('[role="tab"]');
+          for (const el of tabs) {
+            const txt = (el.textContent || '').trim();
+            if (/插件运维|Plugin\s*Ops/i.test(txt)) { el.click(); return true; }
+          }
+        } catch { /* ignore */ }
+        return false;
+      };
+      const tick = () => {
+        if (hit()) return;
+        if (++tries > 20) return; // ~2s 上限
+        setTimeout(tick, 100);
+      };
+      setTimeout(tick, 60);
+    }
+
+    function UpdateTip({ navigate }) {
+      const [count, setCount] = React.useState(0);
+      const [closed, setClosed] = React.useState(false);
+      React.useEffect(() => {
+        let alive = true;
+        void (async () => {
+          const n = await runBootCheckOnce();
+          if (alive && n > 0) setCount(n);
+        })();
+        return () => { alive = false; };
+      }, []);
+      if (closed || count <= 0) return null;
+      return h('div', { className: 'dpk-updtip', role: 'status' },
+        h('div', { className: 'dpk-updtip-ico' }, '🔔'),
+        h('div', { className: 'dpk-updtip-body' },
+          h('div', { className: 'dpk-updtip-title' }, t('updateTipTitle', { n: count })),
+          h('button', {
+            className: 'dpk-updtip-btn',
+            type: 'button',
+            onClick: () => { setClosed(true); try { navigate(); } catch { /* ignore */ } },
+          }, t('updateTipAction')),
+        ),
+        h('button', {
+          className: 'dpk-updtip-x',
+          type: 'button',
+          'aria-label': t('updateTipClose'),
+          title: t('updateTipClose'),
+          onClick: () => setClosed(true),
+        }, '×'),
+      );
+    }
+
+    function mountUpdateTip(rctx) {
+      injectCss();
+      let disposeEntry = null;
+      const register = () => {
+        try { disposeEntry?.(); } catch { /* 已被上层销毁时忽略 */ }
+        try {
+          disposeEntry = rctx.slots.register(
+            {
+              name: 'shell.overlay',
+              id: 'dsh-plugin-keeper.update-tip',
+              order: 80,
+              inject: () => ({ navigate: () => navigateToKeeperTab(rctx) }),
+            },
+            UpdateTip,
+          );
+        } catch (e) {
+          console.debug('[dsh-plugin-keeper] update-tip register deferred:', e?.message ?? e);
+        }
+      };
+      const disposeInjection = rctx.slots.inject('shell.overlay', register);
+      return () => {
+        try { disposeInjection?.(); } catch { /* 忽略 */ }
+        try { disposeEntry?.(); } catch { /* 忽略 */ }
+      };
+    }
+
     // M3：官方「插件管理」页的 plugins.tab 页签（槽类型由官方页挂载时声明，同样走包裹器）。
     // label 走 resolveSlotLabel 且官方 tabLedgerSource 订阅 locale revision，语言切换自动刷新，无需观察器。
     function mountPluginsTab(rctx) {
@@ -5654,6 +5826,8 @@ function countChecks(plugins, kinds) {
             pmFace = rctx.remote?.pluginManager ?? null;
             // 插件页 Tab：恒有（默认入口）
             rctx.effect(() => mountPluginsTab(rctx), 'dsh-plugin-keeper plugins tab');
+            // 启动自动检查更新 + 右下角可点击提示
+            rctx.effect(() => mountUpdateTip(rctx), 'dsh-plugin-keeper update tip');
             // 设置页 section：按「在设置页也显示」开关决定（默认关）。
             // 开关值要问宿主半，但 slots.inject 的包裹器必须**立刻注册**
             // （否则槽类型声明后再无人接手）—— 两段式：
