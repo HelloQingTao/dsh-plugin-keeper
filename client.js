@@ -82,6 +82,9 @@ window.__ModuleLoader__.load({
         viewList: '列表',
         viewGroupAria: '切换到分组视图',
         viewListAria: '切换到列表视图',
+        selectAll: '全选',
+        selectNone: '全不选',
+        selectInvert: '反选',
         sortName: '按名称',
         sortInstalled: '按安装时间',
         sortUpdated: '按更新时间',
@@ -469,6 +472,9 @@ window.__ModuleLoader__.load({
         viewList: 'List',
         viewGroupAria: 'Switch to group view',
         viewListAria: 'Switch to list view',
+        selectAll: 'Select all',
+        selectNone: 'Select none',
+        selectInvert: 'Invert selection',
         sortName: 'By name',
         sortInstalled: 'By install time',
         sortUpdated: 'By update time',
@@ -903,6 +909,10 @@ window.__ModuleLoader__.load({
 .dpk-garrow:focus-visible{outline:1px solid var(--dsw-alias-brand-primary);outline-offset:1px;}
 .dpk-gtitle{font-size:15px;font-weight:700;color:var(--dsw-alias-label-primary);transition:color .12s;}
 .dpk-gcount{font-size:12px;color:var(--dsw-alias-label-caption);margin-left:2px;}
+/* 列表视图表头：全选 / 全不选 / 反选 快捷多选 */
+.dpk-listwrap{display:block;}
+.dpk-listhead{display:flex;align-items:center;gap:8px;padding:0 2px 8px;flex-wrap:wrap;}
+.dpk-listhead .dpk-btn{min-width:0;}
 .dpk-rows{border:.5px solid var(--dsw-alias-border-l2);border-radius:var(--dsw-radius-md,12px);overflow:hidden;}
 .dpk-row{display:block;padding:10px 14px;min-width:0;transition:background-color .12s ease;}
 .dpk-rowmain{display:flex;align-items:center;gap:10px;min-width:0;min-height:32px;}
@@ -3404,6 +3414,11 @@ function countChecks(plugins, kinds) {
         return list;
       }, [plugins, onlyUpdatable, terms]);
 
+      // 列表视图「全选/反选」的目标集合：当前可见且非官方（与行 checkbox 规则一致）
+      const eligibleVisible = React.useMemo(
+        () => visiblePlugins.filter((p) => !p.official).map((p) => p.name),
+        [visiblePlugins]);
+
       const toggleOne = React.useCallback((name) => {
         setSelected((prev) => {
           const next = new Set(prev);
@@ -3423,6 +3438,25 @@ function countChecks(plugins, kinds) {
           return next;
         });
       }, []);
+
+      // 列表视图表头快捷多选：全选（并入可见可选项）/ 全不选（清空）/ 反选（可见项取反）
+      const selectAllVisible = React.useCallback(() => {
+        setSelected((prev) => {
+          const next = new Set(prev);
+          for (const n of eligibleVisible) next.add(n);
+          return next;
+        });
+      }, [eligibleVisible]);
+      const clearSelected = React.useCallback(() => { setSelected(new Set()); }, []);
+      const invertVisible = React.useCallback(() => {
+        setSelected((prev) => {
+          const next = new Set(prev);
+          for (const n of eligibleVisible) {
+            if (next.has(n)) next.delete(n); else next.add(n);
+          }
+          return next;
+        });
+      }, [eligibleVisible]);
 
       const selCount = selected.size;
       // 可启用 = 未启用（已停用或未运行）；可停用 = 非停用状态。计数以 host 原始
@@ -5266,7 +5300,29 @@ function countChecks(plugins, kinds) {
           : null,
         // 列表视图：平铺全部可见行（排序全局生效）；分组视图：组内按排序键排
         viewMode === 'list'
-          ? h('div', { className: 'dpk-rows' }, sortPlugins(visiblePlugins).map((entry) => rowOf(entry)))
+          ? h('div', { className: 'dpk-listwrap' },
+            h('div', { className: 'dpk-listhead' },
+              h('button', {
+                className: 'dpk-btn is-mini',
+                type: 'button',
+                disabled: batchRunning || eligibleVisible.length === 0,
+                onClick: selectAllVisible,
+              }, t('selectAll')),
+              h('button', {
+                className: 'dpk-btn is-mini',
+                type: 'button',
+                disabled: batchRunning || selCount === 0,
+                onClick: clearSelected,
+              }, t('selectNone')),
+              h('button', {
+                className: 'dpk-btn is-mini',
+                type: 'button',
+                disabled: batchRunning || eligibleVisible.length === 0,
+                onClick: invertVisible,
+              }, t('selectInvert')),
+            ),
+            h('div', { className: 'dpk-rows' }, sortPlugins(visiblePlugins).map((entry) => rowOf(entry))),
+          )
           : groups.map(([key, list]) => {
             // 勾选限定：任意非官方插件可选中（启停/卸载批量不限可更新行；
             // 行内"更新"按钮按 updateSpecOf 独立显隐，批量更新对无目标行记 skipped）
