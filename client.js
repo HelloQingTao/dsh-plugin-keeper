@@ -1135,8 +1135,8 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
 /* dsh-cockpit 主题用 [role="dialog"] !important 全局改底色，导致本弹框发虚；
    这里用更高特异性把它还原成不透明面板（只命中本插件自己的 .dpk-modal） */
 html:root .dpk-modalwrap .dpk-modal{background:var(--dsw-alias-bg-layer-3)!important;}
-/* 列表容器给出实体表面：否则透明叠在主题背景上，灰色描述文字看不清 */
-.dpk-rows{background:var(--dsw-alias-bg-layer-2);}
+/* 列表透出底部：不用大白底，改成一层很淡的磨砂玻璃（壁纸照样透出来、文字也清晰） */
+.dpk-rows{background:color-mix(in srgb, var(--dsw-alias-bg-layer-3) 32%, transparent);-webkit-backdrop-filter:blur(8px) saturate(115%);backdrop-filter:blur(8px) saturate(115%);border-color:var(--dsw-alias-border-l2);}
 /* 搜索框与下拉：跟随主题的实心底 + 细边框；聚焦用主题色 */
 .dpk-searchinput,
 .dpk-select{background:var(--dsw-alias-bg-layer-3);border-color:var(--dsw-alias-border-l2);color:var(--dsw-alias-label-primary);}
@@ -1163,6 +1163,29 @@ html:root .dpk-modalwrap .dpk-modal{background:var(--dsw-alias-bg-layer-3)!impor
 .dpk-updtip-body{display:flex;flex-direction:column;align-items:flex-start;text-align:left;}
 .dpk-updtip-x{color:var(--dsw-alias-label-tertiary);}
 .dpk-updtip-x:hover{color:var(--dsw-alias-label-primary);}
+/* ---------- 对比度修复：红框区域「淡到看不见」 ---------- */
+/* 更新类按钮（is-success）：浅绿字太淡 -> 深字 + 绿边 */
+.dpk-btn.is-success{color:var(--dsw-alias-label-primary);border-color:var(--dsw-alias-state-success-primary);}
+/* 批量操作按钮禁用态：由几乎透明的 .4 改成不透明但弱化的次级灰，仍看得清 */
+.dpk-btn:disabled,
+.dpk-btn.is-primary:disabled,
+.dpk-btn.is-danger:disabled,
+.dpk-btn.is-success:disabled{opacity:1;color:var(--dsw-alias-label-secondary);background:transparent;border-color:var(--dsw-alias-border-l2);cursor:default;}
+.dpk-btn.is-primary:disabled,
+.dpk-btn.is-danger:disabled,
+.dpk-btn.is-success:disabled{opacity:.72;}
+/* 「已选 0 · 可更新 0」计数加深 */
+.dpk-selhint{color:var(--dsw-alias-label-secondary);font-size:12px;}
+/* 主 CTA「＋ 安装插件」：实心品牌绿底 + 白字，对比拉满 */
+.dpk-splitbtn .dpk-btn.is-primary.dpk-splitmain,
+.dpk-splitbtn .dpk-btn.is-primary.dpk-splitcaret{background:var(--dsw-alias-brand-primary);border-color:var(--dsw-alias-brand-primary);color:#fff;font-weight:600;}
+.dpk-splitbtn .dpk-btn.is-primary.dpk-splitmain:hover:not(:disabled),
+.dpk-splitbtn .dpk-btn.is-primary.dpk-splitcaret:hover:not(:disabled){background:var(--dsw-alias-brand-primary);border-color:var(--dsw-alias-brand-primary);filter:brightness(1.06);}
+.dpk-splitbtn .dpk-splitcaret{box-shadow:inset 1px 0 0 rgba(255,255,255,.4);}
+/* 「分组 / 列表」切换：容器给明确表面；未选中字加深，选中 pill 加深 + 细边 */
+.dpk-viewtoggle{background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l2);}
+.dpk-viewtoggle .dpk-btn{color:var(--dsw-alias-label-secondary);}
+.dpk-viewtoggle .dpk-btn.is-active{background:var(--dsw-alias-bg-layer-3);color:var(--dsw-alias-label-primary);box-shadow:0 1px 2px rgba(0,0,0,.12);}
 `;
     let cssTag = null;
     function injectCss() {
