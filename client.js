@@ -1196,8 +1196,9 @@ html:root .dpk-modalwrap .dpk-modal{background:var(--dsw-alias-bg-layer-3)!impor
 .dpk-viewtoggle{background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l2);}
 .dpk-viewtoggle .dpk-btn{color:var(--dsw-alias-label-secondary);}
 .dpk-viewtoggle .dpk-btn.is-active{background:var(--dsw-alias-bg-layer-3);color:var(--dsw-alias-label-primary);box-shadow:0 1px 2px rgba(0,0,0,.12);}
-/* ---------- 详情弹框：统一到安装弹框的视觉语言（标题放大 / 字号 13 / 信息卡片化） ---------- */
+/* ---------- 详情弹框：背景走「玻璃效果」，与系统设置页弹框一致 ---------- */
 .dpk-modal.is-detail{width:640px;}
+html:root .dpk-modalwrap .dpk-modal.is-detail{background:color-mix(in srgb, #ffffff 26%, transparent)!important;-webkit-backdrop-filter:blur(10px) saturate(120%);backdrop-filter:blur(10px) saturate(120%);border:.5px solid rgba(255,255,255,.4);border-radius:28px;box-shadow:0 0 0 .5px rgba(0,0,0,.16),0 18px 48px rgba(0,0,0,.2);}
 .dpk-modal.is-detail .dpk-mtitle{font-size:18px;font-weight:600;line-height:26px;}
 .dpk-modal.is-detail .dpk-dhead{gap:10px;margin-top:-2px;}
 .dpk-modal.is-detail .dpk-dname{font-size:15px;font-weight:600;}
@@ -1206,7 +1207,7 @@ html:root .dpk-modalwrap .dpk-modal{background:var(--dsw-alias-bg-layer-3)!impor
 .dpk-modal.is-detail .dpk-gtitle{font-size:15px;font-weight:700;}
 .dpk-modal.is-detail .dpk-dfacts{background:transparent;border:none;padding:0;gap:8px;}
 .dpk-modal.is-detail .dpk-fact{font-size:13px;line-height:20px;gap:12px;}
-.dpk-modal.is-detail .dpk-factlabel{font-size:12px;flex:0 0 6em;color:var(--dsw-alias-label-tertiary);}
+.dpk-modal.is-detail .dpk-factlabel{font-size:12px;flex:0 0 6em;color:var(--dsw-alias-label-secondary);}
 .dpk-modal.is-detail .dpk-factvalue,.dpk-modal.is-detail .dpk-factdesc{font-size:13px;color:var(--dsw-alias-label-secondary);}
 .dpk-modal.is-detail .dpk-path{font-size:12px;}
 .dpk-modal.is-detail .dpk-detailacts{gap:10px;}
