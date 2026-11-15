@@ -2779,6 +2779,7 @@ function countChecks(plugins, kinds) {
       // 安装源：跟随宿主 installRegistry 设置；自定义时展开输入框
       const [registryCustomOpen, setRegistryCustomOpen] = React.useState(false);
       const [registryCustomValue, setRegistryCustomValue] = React.useState('');
+      const [iqRegistryChoice, setIqRegistryChoice] = React.useState(null); // 乐观：用户本次选的源，null=跟随宿主已存值
       const [iqGuideOpen, setIqGuideOpen] = React.useState(false); // 安装引导和示例：默认收起（对齐官方）
       const [installMenu, setInstallMenu] = React.useState(null); // {left, top, anchor}
       const installMenuRef = React.useRef(null);
@@ -4683,12 +4684,14 @@ function countChecks(plugins, kinds) {
         { value: 'https://registry.npmmirror.com/', label: t('iqRegistryNpmmirror') },
       ];
       const savedRegistry = typeof snap?.settings?.installRegistry === 'string' ? snap.settings.installRegistry : '';
-      const registryKnown = savedRegistry === '' || INSTALL_REGISTRY_OPTIONS.some((o) => o.value === savedRegistry);
+      // 乐观选择：用户选了立即显示，不必等宿主 saveSettings 回包（旧宿主还没重启时也能正常显示）
+      const effectiveRegistry = iqRegistryChoice !== null ? iqRegistryChoice : savedRegistry;
+      const registryKnown = effectiveRegistry === '' || INSTALL_REGISTRY_OPTIONS.some((o) => o.value === effectiveRegistry);
       const doSetInstallRegistry = React.useCallback(async (value) => {
+        setIqRegistryChoice(value);
         const r = await callSaveSettings({ installRegistry: value });
-        if (r?.ok) {
-          setSnap((s) => (s ? { ...s, settings: { ...(s.settings ?? {}), installRegistry: typeof r.installRegistry === 'string' ? r.installRegistry : '' } } : s));
-        } else {
+        if (!r?.ok) {
+          setIqRegistryChoice(null);
           setInstallInputFlash({ text: r?.error ?? t('saveFailed') });
         }
       }, []);
@@ -4734,10 +4737,10 @@ function countChecks(plugins, kinds) {
             ),
             h('div', { className: 'dpk-iqregpill' },
               h('span', { className: 'dpk-iqregpill-label' }, t('iqRegistryToggle')),
-              h('span', { className: 'dpk-iqregpill-chosen' }, ((INSTALL_REGISTRY_OPTIONS.find((o) => o.value === (registryKnown ? savedRegistry : '__custom__')) || {}).label) || t('iqRegistryCustom')),
+              h('span', { className: 'dpk-iqregpill-chosen' }, registryCustomOpen ? t('iqRegistryCustom') : (((INSTALL_REGISTRY_OPTIONS.find((o) => o.value === effectiveRegistry) || {}).label) || t('iqRegistryCustom'))),
               h('select', {
                 className: 'dpk-iqregpill-select',
-                value: registryKnown ? savedRegistry : '__custom__',
+                value: registryKnown ? effectiveRegistry : '__custom__',
                 onChange: (e) => {
                   const v = e.target.value;
                   if (v === '__custom__') { setRegistryCustomOpen(true); return; }
@@ -4781,14 +4784,13 @@ function countChecks(plugins, kinds) {
                 spellCheck: false,
                 autoComplete: 'off',
                 placeholder: t('iqRegistryCustomPlaceholder'),
-                value: registryCustomValue || (registryKnown ? '' : savedRegistry),
+                value: registryCustomValue || (registryKnown ? '' : effectiveRegistry),
                 onChange: (e) => setRegistryCustomValue(e.target.value),
                 onBlur: () => { const v = registryCustomValue.trim(); if (v) void doSetInstallRegistry(v); },
                 onKeyDown: (e) => { if (e.key === 'Enter') { e.preventDefault(); const v = registryCustomValue.trim(); if (v) void doSetInstallRegistry(v); } },
               }),
             )
             : null,
-          h('div', { className: 'dpk-iqhint' }, t('iqRegistryHint')),
           installInputFlash
             ? h('div', { className: 'dpk-iqflash' }, installInputFlash.text)
             : null,
