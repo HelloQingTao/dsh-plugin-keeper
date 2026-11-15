@@ -5021,7 +5021,7 @@ function countChecks(plugins, kinds) {
               h('button', {
                 className: 'dpk-btn is-primary is-big dpk-splitmain',
                 type: 'button',
-                disabled: loading || checking || batchRunning,
+                disabled: loading || batchRunning,
                 onClick: () => setInstallPanelOpen(true),
               }, t('installQueueBtn')),
               h('button', {
@@ -5031,7 +5031,7 @@ function countChecks(plugins, kinds) {
                 'aria-label': t('installMenuAria'),
                 'aria-haspopup': 'menu',
                 'aria-expanded': installMenu ? 'true' : 'false',
-                disabled: loading || checking || batchRunning,
+                disabled: loading || batchRunning,
                 onClick: () => {
                   if (installMenuRef.current) { setInstallMenu(null); return; }
                   const anchor = installCaretRef.current;
