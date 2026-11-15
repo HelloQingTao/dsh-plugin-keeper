@@ -5835,11 +5835,13 @@ function countChecks(plugins, kinds) {
         } catch { /* 取设置失败按默认开处理 */ }
         if (!enabled) return 0;
         // 同一宿主进程内的页面刷新不算「重新启动」，不重复检查。
+        // hostBootAt 由进程 uptime 反推、每次调用有毫秒级抖动，按秒取整后再比对。
+        const bootKey = bootAt ? String(Math.round(Number(bootAt) / 1000)) : '';
         try {
-          if (bootAt && window.localStorage?.getItem(BOOT_KEY) === bootAt) return 0;
+          if (bootKey && window.localStorage?.getItem(BOOT_KEY) === bootKey) return 0;
         } catch { /* 隐私模式等忽略 */ }
         const res = unwrapEnvelope(await rpcFace?.checkUpdates?.());
-        try { if (bootAt) window.localStorage?.setItem(BOOT_KEY, bootAt); } catch { /* ignore */ }
+        try { if (bootKey) window.localStorage?.setItem(BOOT_KEY, bootKey); } catch { /* ignore */ }
         const n = Number(res?.counts?.update ?? 0);
         if (Number.isFinite(n) && n > 0) { notifyUpdateTip(n); return n; }
         return 0;
