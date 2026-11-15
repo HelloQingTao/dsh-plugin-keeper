@@ -342,6 +342,11 @@ window.__ModuleLoader__.load({
         autoCheckOnBoot: '启动时自动检查更新',
         autoCheckOnBootHint: '每次打开 dsh 时后台检查一次更新；发现有可更新插件会在右下角提示，点击提示直达插件运维。',
         autoCheckOnBootSaved: '已保存',
+        checkIntervalLabel: '检查更新频率',
+        checkIntervalHint: '启动时检查一次；之后每 {h} 小时再检查一次。刷新页面不算重新启动，不会触发检查。',
+        checkIntervalCustom: '自定义…',
+        checkIntervalUnit: '小时',
+        checkIntervalMinHint: '最低 1 小时',
         updateTipTitle: '发现 {n} 个插件可更新',
         updateTipAction: '去更新',
         updateTipClose: '关闭提示',
@@ -732,6 +737,11 @@ window.__ModuleLoader__.load({
         autoCheckOnBoot: 'Check for updates on startup',
         autoCheckOnBootHint: 'Checks for updates once in the background each time dsh opens; if updates exist, a prompt appears in the lower-right — click it to jump straight to Plugin Ops.',
         autoCheckOnBootSaved: 'Saved',
+        checkIntervalLabel: 'Update check interval',
+        checkIntervalHint: 'Checks once at startup, then every {h} hour(s). Refreshing the page does not restart the app or trigger a check.',
+        checkIntervalCustom: 'Custom…',
+        checkIntervalUnit: 'hour(s)',
+        checkIntervalMinHint: 'Minimum 1 hour',
         updateTipTitle: '{n} plugin(s) can be updated',
         updateTipAction: 'Update now',
         updateTipClose: 'Dismiss',
@@ -1315,6 +1325,22 @@ html:root .dpk-modalwrap .dpk-modal{background:var(--dsw-alias-bg-layer-3)!impor
     const bootCheckStore = { done: false };
     // 通过更新提示跳入插件运维时置位一次，跳过「进入时检查更新」，避免重复请求。
     let suppressEnterCheckOnce = false;
+    // 启动检查去重：以宿主进程启动时刻为锚，刷新页面不重复检查。
+    const BOOT_KEY = 'dsh-plugin-keeper:boot-check';
+    // 周期检查：每分钟看一次是否到点；到点后至少隔 10 分钟才重试，避免失败时刷屏。
+    const PERIODIC_TICK_MS = 60 * 1000;
+    const PERIODIC_ATTEMPT_GAP_MS = 10 * 60 * 1000;
+    // 设置页「检查更新频率」的预设档位（小时）。
+    const CHECK_INTERVAL_PRESETS = [1, 3, 6, 12, 24];
+    let lastPeriodicAttempt = 0;
+    // 更新提示的共享状态：启动检查与周期检查都往这里写，UpdateTip 订阅后刷新。
+    const updateTipStore = { count: 0, dismissed: false, listeners: new Set() };
+    function notifyUpdateTip(n) {
+      const c = Number(n) || 0;
+      if (c <= 0) return;
+      updateTipStore.count = Math.max(updateTipStore.count, c);
+      for (const fn of updateTipStore.listeners) { try { fn(); } catch { /* ignore */ } }
+    }
     // 底部台账/横幅的自动清除账龄：批量快照产生超过该时长，进页面时不再恢复展示。
     // 具名常量便于调整；不是用户配置项，故不占设置开关（同 AUTO_CHECK_MIN_MS 约定）。
     const NOTIFY_TTL_MS = 12 * 60 * 60 * 1000;
@@ -2687,9 +2713,11 @@ function countChecks(plugins, kinds) {
       // 进入时默认勾选「只看可更新」：默认关；改动在重新进入页面后生效
       const [onlyUpdatableByDefault, setOnlyUpdatableByDefault] = React.useState(() => cacheRef.current?.settings?.onlyUpdatableByDefault === true);
       const [onlyUpdatableFlash, setOnlyUpdatableFlash] = React.useState(null); // 'ok' | {err}
-      // 进入时默认检查更新：默认关；改动在重新进入页面后生效
-      const [checkOnEnter, setCheckOnEnter] = React.useState(() => cacheRef.current?.settings?.checkOnEnter === true);
-      const [checkOnEnterFlash, setCheckOnEnterFlash] = React.useState(null); // 'ok' | {err}
+      // 检查更新频率（小时）：默认 6，最小 1
+      const [checkIntervalHours, setCheckIntervalHours] = React.useState(() => Number(cacheRef.current?.settings?.checkIntervalHours) || 6);
+      const [checkIntervalCustomOpen, setCheckIntervalCustomOpen] = React.useState(false);
+      const [checkIntervalValue, setCheckIntervalValue] = React.useState(() => String(Number(cacheRef.current?.settings?.checkIntervalHours) || 6));
+      const [checkIntervalFlash, setCheckIntervalFlash] = React.useState(null); // 'ok' | {err}
       // 启动时自动检查更新：默认开
       const [autoCheckOnBoot, setAutoCheckOnBoot] = React.useState(() => cacheRef.current?.settings?.autoCheckOnBoot !== false);
       const [autoCheckOnBootFlash, setAutoCheckOnBootFlash] = React.useState(null); // 'ok' | {err}
@@ -2845,9 +2873,11 @@ function countChecks(plugins, kinds) {
                 if (data.settings.onlyUpdatableByDefault) setOnlyUpdatable(true);
               }
             }
-            // 默认检查更新：设置态跟随真值；实际是否触发交给下面的 useEffect 判定
-            if (data.settings && typeof data.settings.checkOnEnter === 'boolean') {
-              setCheckOnEnter(data.settings.checkOnEnter);
+            // 检查更新频率：设置态跟随真值
+            if (data.settings && data.settings.checkIntervalHours !== undefined) {
+              const h = Number(data.settings.checkIntervalHours) || 6;
+              setCheckIntervalHours(h);
+              setCheckIntervalValue(String(h));
             }
             if (data.settings && typeof data.settings.autoCheckOnBoot === 'boolean') {
               setAutoCheckOnBoot(data.settings.autoCheckOnBoot);
@@ -3180,21 +3210,11 @@ function countChecks(plugins, kinds) {
         await Promise.all(CHECKABLE_GROUPS.map((kind) => doCheckGroup(kind)));
       }, [doCheckGroup]);
 
-      // 进入时默认检查更新：只在「本会话拿到首份快照」时判定一次。
-      // - 模块级 autoCheckStore 跨两个挂载点（插件页 Tab / 设置页分区）去重，避免重复发网络请求；
-      // - 占位放在开关判断之前：当次改动设置不追发，符合「重新进入页面后生效」；
-      // - 节流：宿主落盘的 lastCheckAt 不足 AUTO_CHECK_MIN_MS 就跳过，避免每次进页面都打网络。
+      // 进入时不再自动检查更新：自动检查只保留「启动一次 + 周期触发」两种。
       React.useEffect(() => {
         if (!autoCheckReady) return;
-        if (suppressEnterCheckOnce) { suppressEnterCheckOnce = false; autoCheckStore.done = true; return; }
-        if (autoCheckStore.done) return;
         autoCheckStore.done = true;
-        if (autoCheckReady.settings?.checkOnEnter !== true) return;
-        const raw = autoCheckReady.lastCheckAt;
-        const last = typeof raw === 'number' ? raw : Date.parse(raw ?? '');
-        if (Number.isFinite(last) && last > 0 && Date.now() - last < AUTO_CHECK_MIN_MS) return;
-        void doCheck();
-      }, [autoCheckReady, doCheck]);
+      }, [autoCheckReady]);
 
       // 检查汇总：checking / 组级失败 / 连接判定来自 checkState；
       // 可更新·最新·失败改为按当前清单实时聚合（排除已忽略插件），不直接用 host counts 快照。
@@ -3328,18 +3348,20 @@ function countChecks(plugins, kinds) {
         setSaving(false);
       }, []);
 
-      // 保存「进入时默认检查更新」开关：只落盘 + 提示，改动重新进入页面后生效
-      const doSaveCheckOnEnter = React.useCallback(async (value) => {
+      // 保存「检查更新频率」：小时数，最小 1
+      const doSaveCheckInterval = React.useCallback(async (hours) => {
+        const n = Math.max(1, Math.round(Number(hours) || 6));
         setSaving(true);
-        setCheckOnEnterFlash(null);
-        const r = await callSaveSettings({ checkOnEnter: value });
+        setCheckIntervalFlash(null);
+        const r = await callSaveSettings({ checkIntervalHours: n });
         if (r?.ok) {
-          const next = r.checkOnEnter === true;
-          setCheckOnEnter(next);
-          setCheckOnEnterFlash('ok');
-          setSnap((s) => (s ? { ...s, settings: { ...(s.settings ?? {}), checkOnEnter: next } } : s));
+          const next = Number(r.checkIntervalHours) || 6;
+          setCheckIntervalHours(next);
+          setCheckIntervalValue(String(next));
+          setCheckIntervalFlash('ok');
+          setSnap((s) => (s ? { ...s, settings: { ...(s.settings ?? {}), checkIntervalHours: next } } : s));
         } else {
-          setCheckOnEnterFlash({ err: r?.error ?? t('saveFailed') });
+          setCheckIntervalFlash({ err: r?.error ?? t('saveFailed') });
         }
         setSaving(false);
       }, []);
@@ -4557,20 +4579,39 @@ function countChecks(plugins, kinds) {
           ),
           onlyUpdatableFlash === 'ok' ? h('div', { className: 'dpk-savedok' }, t('onlyUpdatableByDefaultSaved')) : null,
           onlyUpdatableFlash && onlyUpdatableFlash.err ? h('div', { className: 'dpk-savederr' }, onlyUpdatableFlash.err) : null,
-          // 进入时默认检查更新：默认关
+          // 检查更新频率：启动时一次 + 之后按间隔
           h('div', { className: 'dpk-setrow' },
-            h('label', { className: 'dpk-switch' },
-              h('input', {
-                type: 'checkbox',
-                checked: checkOnEnter,
-                disabled: saving,
-                onChange: (e) => { void doSaveCheckOnEnter(e.target.checked); },
-              }),
-              t('checkOnEnter'),
+            h('span', null, t('checkIntervalLabel')),
+            h('select', {
+              className: 'dpk-select',
+              value: CHECK_INTERVAL_PRESETS.includes(Number(checkIntervalHours)) && !checkIntervalCustomOpen ? String(checkIntervalHours) : '__custom__',
+              disabled: saving,
+              onChange: (e) => {
+                const v = e.target.value;
+                if (v === '__custom__') { setCheckIntervalCustomOpen(true); return; }
+                setCheckIntervalCustomOpen(false);
+                void doSaveCheckInterval(Number(v));
+              },
+            },
+              CHECK_INTERVAL_PRESETS.map((hv) => h('option', { key: hv, value: String(hv) }, `${hv} ${t('checkIntervalUnit')}`)),
+              h('option', { value: '__custom__' }, t('checkIntervalCustom')),
             ),
           ),
-          checkOnEnterFlash === 'ok' ? h('div', { className: 'dpk-savedok' }, t('checkOnEnterSaved')) : null,
-          checkOnEnterFlash && checkOnEnterFlash.err ? h('div', { className: 'dpk-savederr' }, checkOnEnterFlash.err) : null,
+          checkIntervalCustomOpen ? h('div', { className: 'dpk-setrow' },
+            h('input', {
+              className: 'dpk-input',
+              type: 'number', min: 1, step: 1,
+              value: checkIntervalValue,
+              disabled: saving,
+              onChange: (e) => setCheckIntervalValue(e.target.value),
+              onBlur: () => { const n = Math.max(1, Math.round(Number(checkIntervalValue) || 1)); setCheckIntervalValue(String(n)); void doSaveCheckInterval(n); },
+              onKeyDown: (e) => { if (e.key === 'Enter') e.currentTarget.blur(); },
+            }),
+            h('span', { className: 'dpk-setnote' }, t('checkIntervalMinHint')),
+          ) : null,
+          h('div', { className: 'dpk-setnote' }, t('checkIntervalHint', { h: Number(checkIntervalHours) || 6 })),
+          checkIntervalFlash === 'ok' ? h('div', { className: 'dpk-savedok' }, t('autoCheckOnBootSaved')) : null,
+          checkIntervalFlash && checkIntervalFlash.err ? h('div', { className: 'dpk-savederr' }, checkIntervalFlash.err) : null,
           // 启动时自动检查更新：默认开
           h('div', { className: 'dpk-setrow' },
             h('label', { className: 'dpk-switch' },
@@ -4586,7 +4627,6 @@ function countChecks(plugins, kinds) {
           h('div', { className: 'dpk-setnote' }, t('autoCheckOnBootHint')),
           autoCheckOnBootFlash === 'ok' ? h('div', { className: 'dpk-savedok' }, t('autoCheckOnBootSaved')) : null,
           autoCheckOnBootFlash && autoCheckOnBootFlash.err ? h('div', { className: 'dpk-savederr' }, autoCheckOnBootFlash.err) : null,
-          h('div', { className: 'dpk-setnote' }, t('settingsReenterNote', { min: Math.round(AUTO_CHECK_MIN_MS / 60000) })),
           ),
           ),
           h('div', { className: 'dpk-mfoot' },
@@ -5787,14 +5827,22 @@ function countChecks(plugins, kinds) {
       bootCheckStore.done = true;
       try {
         let enabled = true;
+        let bootAt = '';
         try {
           const s = unwrapEnvelope(await rpcFace?.getSettings?.());
           if (s && s.autoCheckOnBoot === false) enabled = false;
+          if (s && s.hostBootAt) bootAt = String(s.hostBootAt);
         } catch { /* 取设置失败按默认开处理 */ }
         if (!enabled) return 0;
+        // 同一宿主进程内的页面刷新不算「重新启动」，不重复检查。
+        try {
+          if (bootAt && window.localStorage?.getItem(BOOT_KEY) === bootAt) return 0;
+        } catch { /* 隐私模式等忽略 */ }
         const res = unwrapEnvelope(await rpcFace?.checkUpdates?.());
+        try { if (bootAt) window.localStorage?.setItem(BOOT_KEY, bootAt); } catch { /* ignore */ }
         const n = Number(res?.counts?.update ?? 0);
-        return Number.isFinite(n) && n > 0 ? n : 0;
+        if (Number.isFinite(n) && n > 0) { notifyUpdateTip(n); return n; }
+        return 0;
       } catch {
         return 0;
       }
@@ -5809,8 +5857,7 @@ function countChecks(plugins, kinds) {
         if (nav?.openList) nav.openList();
         else layout?.selectPanel?.('plugins');
       } catch { /* 没有导航服务时至少不崩 */ }
-      // 经提示跳入 → 跳过「进入时检查更新」一次，避免重复请求
-      suppressEnterCheckOnce = true;
+      // 经提示跳入无需再跳过进入检查（进入时已经不自动检查了）
       // 等官方页挂载后点中本插件 Tab（role=tab，文案含 插件运维 / Plugin Ops）
       let tries = 0;
       const hit = () => {
@@ -5831,17 +5878,48 @@ function countChecks(plugins, kinds) {
       setTimeout(tick, 60);
     }
 
+      // 周期检查：app 打开期间每分钟看一次是否到点（距上次成功检查 >= 间隔）。
+      function mountPeriodicCheck() {
+        let stopped = false;
+        const tick = async () => {
+          if (stopped) return;
+          try {
+            const s = unwrapEnvelope(await rpcFace?.getSettings?.());
+            if (!s) return;
+            const hours = Number(s.checkIntervalHours) || 6;
+            const last = typeof s.lastCheckAt === 'number' ? s.lastCheckAt : Date.parse(s.lastCheckAt ?? '');
+            const due = !Number.isFinite(last) || last <= 0 ? true : Date.now() - last >= hours * 3600 * 1000;
+            if (!due) return;
+            const now = Date.now();
+            if (now - lastPeriodicAttempt < PERIODIC_ATTEMPT_GAP_MS) return;
+            lastPeriodicAttempt = now;
+            const res = unwrapEnvelope(await rpcFace?.checkUpdates?.());
+            const n = Number(res?.counts?.update ?? 0);
+            if (Number.isFinite(n) && n > 0) notifyUpdateTip(n);
+          } catch { /* 网络/宿主异常静默，下一分钟再判 */ }
+        };
+        const id = setInterval(tick, PERIODIC_TICK_MS);
+        const first = setTimeout(tick, 8000);
+        return () => { stopped = true; clearInterval(id); clearTimeout(first); };
+      }
+
     function UpdateTip({ navigate }) {
       const [count, setCount] = React.useState(0);
       const [closed, setClosed] = React.useState(false);
       React.useEffect(() => {
         let alive = true;
+        const sync = () => {
+          if (!alive) return;
+          setCount(updateTipStore.dismissed ? 0 : updateTipStore.count);
+        };
+        updateTipStore.listeners.add(sync);
         void (async () => {
           const n = await runBootCheckOnce();
-          if (alive && n > 0) setCount(n);
+          if (alive && n > 0 && !updateTipStore.dismissed) setCount((c) => Math.max(c, n));
         })();
-        return () => { alive = false; };
+        return () => { alive = false; updateTipStore.listeners.delete(sync); };
       }, []);
+      const dismiss = () => { setClosed(true); updateTipStore.dismissed = true; };
       if (closed || count <= 0) return null;
       return h('div', { className: 'dpk-updtip', role: 'status' },
         h('div', { className: 'dpk-updtip-ico' }, '🔔'),
@@ -5941,6 +6019,7 @@ function countChecks(plugins, kinds) {
             rctx.effect(() => mountPluginsTab(rctx), 'dsh-plugin-keeper plugins tab');
             // 启动自动检查更新 + 右下角可点击提示
             rctx.effect(() => mountUpdateTip(rctx), 'dsh-plugin-keeper update tip');
+            rctx.effect(() => mountPeriodicCheck(rctx), 'dsh-plugin-keeper periodic update check');
             // 设置页 section：按「在设置页也显示」开关决定（默认关）。
             // 开关值要问宿主半，但 slots.inject 的包裹器必须**立刻注册**
             // （否则槽类型声明后再无人接手）—— 两段式：

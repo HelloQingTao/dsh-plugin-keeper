@@ -314,6 +314,8 @@ const STATE_DEFAULT = Object.freeze({
   checkOnEnter: false,
   // 「启动时自动检查更新」：默认开（每次打开 dsh 后台检查一次，有更新弹提示）。
   autoCheckOnBoot: true,
+  // 「检查更新周期」：单位小时，默认 6，最小 1（启动时另有一次独立检查）。
+  checkIntervalHours: 6,
   // 安装走哪个 npm 源：'' = 跟随 pnpm 自身配置；其余为具体 registry URL。
   installRegistry: '',
   lastCheck: null,
@@ -328,6 +330,13 @@ export function normalizeInstallRegistry(value) {
   return /^https?:\/\/\S+$/i.test(v) ? v : '';
 }
 
+/** 检查更新周期（小时）：默认 6，最小 1，上限 720；非法值回落默认。 */
+export function normalizeCheckInterval(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) return 6;
+  return Math.min(720, Math.max(1, Math.round(n)));
+}
+
 /** 对外可见的设置：密码永不返回浏览器，只给一个 hasProxyPass 标记。 */
 export function publicProxySettings(state) {
   return {
@@ -339,6 +348,7 @@ export function publicProxySettings(state) {
     onlyUpdatableByDefault: state?.onlyUpdatableByDefault === true,
     checkOnEnter: state?.checkOnEnter === true,
     autoCheckOnBoot: state?.autoCheckOnBoot !== false,
+    checkIntervalHours: normalizeCheckInterval(state?.checkIntervalHours),
     installRegistry: state?.installRegistry ?? '',
   };
 }
@@ -360,6 +370,7 @@ async function readState() {
     onlyUpdatableByDefault: raw?.onlyUpdatableByDefault === true,
     checkOnEnter: raw?.checkOnEnter === true,
     autoCheckOnBoot: raw?.autoCheckOnBoot !== false,
+    checkIntervalHours: normalizeCheckInterval(raw?.checkIntervalHours),
     installRegistry: normalizeInstallRegistry(raw?.installRegistry),
     lastCheck: raw?.lastCheck && typeof raw.lastCheck === 'object' ? raw.lastCheck : null,
     lastBatch: raw?.lastBatch && typeof raw.lastBatch === 'object' ? raw.lastBatch : null,
@@ -1515,7 +1526,12 @@ export class PluginKeeperService extends TypertRemoteService {
 
   async getSettings() {
     const state = await readState();
-    return { ok: true, ...publicProxySettings(state) };
+    return {
+      ok: true,
+      hostBootAt: hostBootTimeOf(),
+      lastCheckAt: state.lastCheck?.at ?? null,
+      ...publicProxySettings(state),
+    };
   }
 
   /**
@@ -1884,6 +1900,7 @@ export class PluginKeeperService extends TypertRemoteService {
     const onlyUpdatableByDefault = typeof input?.onlyUpdatableByDefault === 'boolean' ? input.onlyUpdatableByDefault : null;
     const checkOnEnter = typeof input?.checkOnEnter === 'boolean' ? input.checkOnEnter : null;
     const autoCheckOnBoot = typeof input?.autoCheckOnBoot === 'boolean' ? input.autoCheckOnBoot : null;
+    const checkIntervalHours = input?.checkIntervalHours === undefined || input?.checkIntervalHours === null ? null : normalizeCheckInterval(input.checkIntervalHours);
     const installRegistry = typeof input?.installRegistry === 'string' ? normalizeInstallRegistry(input.installRegistry) : null;
     await withStateLock(async () => {
       const state = await readState();
@@ -1898,6 +1915,7 @@ export class PluginKeeperService extends TypertRemoteService {
         ...(onlyUpdatableByDefault === null ? {} : { onlyUpdatableByDefault }),
         ...(checkOnEnter === null ? {} : { checkOnEnter }),
         ...(autoCheckOnBoot === null ? {} : { autoCheckOnBoot }),
+        ...(checkIntervalHours === null ? {} : { checkIntervalHours }),
         ...(installRegistry === null ? {} : { installRegistry }),
       });
     });
