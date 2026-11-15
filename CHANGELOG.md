@@ -4,31 +4,39 @@
 
 ### 中文
 
-- **新增：安装源选择** — 安装弹框可选择安装源：默认源、npm 官方源、中国大陆镜像或自定义地址，安装不畅时可切换到更快的源。
-- **新增：本地目录来源** — 安装来源下拉支持本地目录路径。
-- **修复：安装队列不显示** — 修复安装时队列一直为空、看不到进度与任何提示的问题（安装其实已在后台进行）。
-- **修复：失败原因不可见** — 修复安装失败时只显示笼统提示、看不到真实原因的问题。
-- **修复：打开即误弹失败** — 修复打开安装面板时把历史遗留的失败记录误报成「刚刚失败」的问题。
+- **新增：安装源选择** — 安装弹框可选择默认源、npm 官方源、中国大陆镜像或自定义地址；来源菜单也支持本地目录路径。安装慢或被卡时可切换到更快的源。
+- **新增：安装弹框重做** — 整体对齐官方观感，安装按钮移到包名输入框同行右侧、宽度自适应。
+- **新增：安装队列重启保留** — 队列历史重启后仍在，失败项保留到手动移除。
+- **新增：启动自动检查更新** — 每次启动后台检查一次，有更新时右下角弹出可点击提示，点一下直接跳到插件运维；刷新页面不会重复检查。
+- **新增：检查更新频率** — 高级设置里可配置自动检查间隔（默认 6 小时，最低 1 小时，或自定义）。
+- **新增：列表多选** — 列表视图表格顶部新增「全选 / 全不选 / 反选」。
+- **修复：安装失败原因不可见** — 安装失败时显示真实原因，不再只给笼统提示。
+- **修复：安装队列不显示** — 安装时队列不再一直为空、看不到进度（安装其实已在后台进行）。
+- **修复：打开面板误弹失败** — 打开安装面板不再把历史遗留的失败记录误报成「刚刚失败」。
 - **修复：检查更新时安装按钮被禁用** — 「检查更新」进行中时「安装插件」按钮不再被连带禁用。
-- **修复：代理失败自动直连** — 代理不可用时安装不再直接失败，自动改用直连兜底。
 - **修复：切换源不回显** — 切换安装源后选择框立即显示所选源。
-- **修复：重启后队列丢失** — 重启 DSH 后安装队列历史保留，失败项保留到手动移除。
+- **修复：代理失败自动直连** — 代理不可用时安装自动改用直连兜底，不再直接失败。
 - **修复：弹层遮挡与多余项** — 安装弹层右侧不再被遮挡，列表视图不再多出「一键展开」。
-- **优化：安装弹框观感** — 安装弹框整体对齐官方观感：统一字号与留白、安装源选择器、队列空态重做，主按钮移到包名输入框同行右侧并自适应宽度。
+- **优化：弹框统一玻璃效果** — 详情 / 安装 / 高级设置弹框统一为半透明玻璃并跟随主题（深浅色、壁纸自动适配），点开即呈现、无淡入虚影。
+- **优化：列表与整体观感** — 列表改淡磨砂玻璃透底；灰字、按钮、开关与提示卡对比度提升；详情弹框重排，主按钮改实心强调色。
 
 ### English
 
-- **New: install source selector** — The install dialog lets you pick a source: default, npm official, mainland-China mirror, or a custom URL; switch to a faster one when an install is slow or blocked.
-- **New: local folder source** — The install source menu now accepts a local directory path.
-- **Fixed: empty install queue** — Fixed the install queue staying empty with no progress or feedback while the install was actually running in the background.
+- **New: install source selector** — The install dialog lets you pick a source: default, npm official, mainland-China mirror, or a custom URL; the menu also accepts a local directory path. Switch to a faster source when an install is slow or blocked.
+- **New: redesigned install dialog** — Matches the official style, with the install button inline to the right of the input and adaptive width.
+- **New: install queue kept across restarts** — Queue history survives a restart; failed items stay until you remove them.
+- **New: automatic update check on startup** — Checks once in the background each launch; when updates exist a clickable tip appears in the lower-right, and clicking it jumps straight to Plugin Ops. Refreshing the page never triggers a duplicate check.
+- **New: configurable check frequency** — Set the auto-check interval in Advanced settings (default 6 hours, minimum 1 hour, or a custom value).
+- **New: multi-select in list view** — Select all / Select none / Invert selection at the top of the table.
 - **Fixed: invisible failure reason** — Failed installs now show the real reason instead of a generic message.
+- **Fixed: empty install queue** — The install queue no longer stays empty with no progress while an install runs in the background.
 - **Fixed: false failure popup on open** — Opening the panel no longer reports a previously failed item as a fresh failure.
 - **Fixed: install button disabled during update check** — The "Install plugin" button is no longer disabled while an update check is running.
-- **Fixed: proxy fallback** — Installs no longer fail outright when the proxy is unavailable; it falls back to a direct connection automatically.
 - **Fixed: source not reflecting** — Switching the install source now shows the chosen source immediately.
-- **Fixed: queue lost after restart** — The install queue is now kept after a restart (failed items stay until you remove them).
+- **Fixed: proxy fallback** — Installs fall back to a direct connection automatically when the proxy is unavailable.
 - **Fixed: dialog clipping and redundant toggle** — The install dialog is no longer clipped on the right, and the redundant "expand all" no longer shows in list view.
-- **Improved: install dialog look** — Reworked to match the official style: unified type scale and spacing, a source selector, a redesigned empty state, and the primary button now sits inline to the right of the input with adaptive width.
+- **Improved: unified glass dialogs** — The details, install, and advanced-settings dialogs share a translucent glass look that follows your theme (light/dark and wallpaper adapt automatically) and appears instantly, with no fade-in.
+- **Improved: list contrast and look** — The list uses a light frosted-glass background; text, buttons, toggles and hints have higher contrast; the details dialog is reworked and the primary button is now a solid accent color.
 
 ## 0.3.10 (2026-11-14)
 
