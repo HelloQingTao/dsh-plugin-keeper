@@ -985,6 +985,8 @@ window.__ModuleLoader__.load({
 .dpk-iqfield{display:flex;flex-direction:column;gap:6px;margin-bottom:14px;}
 .dpk-iqinput{width:100%;height:44px;padding:0 14px;box-sizing:border-box;border:.5px solid var(--dsw-alias-border-l4);border-radius:var(--dsw-radius-md,8px);outline:none;background:var(--dsw-alias-bg-layer-3);font:inherit;font-size:14px;color:var(--dsw-alias-label-primary);}
 .dpk-iqinput:focus{border-color:var(--dsw-alias-state-business-primary);box-shadow:inset 0 0 0 .5px var(--dsw-alias-state-business-primary);}
+.dpk-iqfield-row{flex-direction:row;align-items:center;gap:10px;}
+.dpk-iqfield-row .dpk-iqinput{flex:1 1 auto;width:auto;min-width:0;}
 /* 选项行：左「安装引导和示例」切换，右「安装源」药丸 */
 .dpk-iqopts{display:flex;align-items:center;justify-content:space-between;gap:8px 12px;flex-wrap:wrap;margin:0 0 14px;}
 .dpk-iqguidebtn{display:inline-flex;align-items:center;gap:6px;padding:0;border:0;background:none;font:inherit;font-size:13px;color:var(--dsw-alias-label-secondary);cursor:pointer;}
@@ -1018,7 +1020,7 @@ window.__ModuleLoader__.load({
 .dpk-iqsafety-icon{flex:none;margin-top:1px;font-size:15px;line-height:20px;color:var(--dsw-alias-state-warn-primary,#e0a800);}
 .dpk-iqsafety-text{display:flex;flex-direction:column;gap:8px;min-width:0;}
 .dpk-iqsafety-main,.dpk-iqsafety-up{display:block;}
-.dpk-btn.is-primary.dpk-iqsubmit{width:100%;justify-content:center;height:46px;border-radius:12px;background:var(--dsw-alias-state-business-primary,var(--dsw-alias-brand-primary));border:1px solid var(--dsw-alias-state-business-primary,var(--dsw-alias-brand-primary));color:#fff;font-size:15px;font-weight:600;}
+.dpk-btn.is-primary.dpk-iqsubmit{width:auto;flex:none;justify-content:center;height:44px;padding:0 22px;border-radius:8px;white-space:nowrap;background:var(--dsw-alias-state-business-primary,var(--dsw-alias-brand-primary));border:1px solid var(--dsw-alias-state-business-primary,var(--dsw-alias-brand-primary));color:#fff;font-size:15px;font-weight:600;}
 .dpk-btn.is-primary.dpk-iqsubmit:hover:not(:disabled){background:var(--dsw-alias-state-business-primary,var(--dsw-alias-brand-primary));border-color:var(--dsw-alias-state-business-primary,var(--dsw-alias-brand-primary));filter:brightness(1.06);}
 .dpk-btn.is-primary.dpk-iqsubmit:disabled{opacity:.5;color:#fff;background:var(--dsw-alias-state-business-primary,var(--dsw-alias-brand-primary));border-color:var(--dsw-alias-state-business-primary,var(--dsw-alias-brand-primary));}
 
@@ -4744,8 +4746,8 @@ function countChecks(plugins, kinds) {
               h('span', { className: 'dpk-iqchev' }, '▾'),
             ),
           ),
-          // ---- 单输入自动识别 npm/GitHub/本地路径（宿主归一），回车也可入队 ----
-          h('div', { className: 'dpk-iqfield' },
+          // ---- 单输入自动识别 npm/GitHub/本地路径（宿主归一），回车也可入队；安装按钮同行右侧 ----
+          h('div', { className: 'dpk-iqfield dpk-iqfield-row' },
             h('input', {
               ref: installInputRef,
               className: 'dpk-iqinput',
@@ -4757,6 +4759,12 @@ function countChecks(plugins, kinds) {
               onChange: (e) => setInstallDraft(e.target.value),
               onKeyDown: (e) => { if (e.key === 'Enter') { e.preventDefault(); void doInstallEnqueue(); } },
             }),
+            h('button', {
+              className: 'dpk-btn is-primary dpk-iqsubmit',
+              type: 'button',
+              disabled: !installDraft.trim(),
+              onClick: () => { void doInstallEnqueue(); },
+            }, t('iqSubmit')),
           ),
           // ---- 自定义安装源输入 ----
           (registryCustomOpen || !registryKnown)
@@ -4812,7 +4820,7 @@ function countChecks(plugins, kinds) {
                 ),
               )),
           ),
-          // ---- 底部：可信提示 + 整行主按钮（对齐官方安装弹框） ----
+          // ---- 底部：可信提示（主按钮已移到输入框同行右侧） ----
           h('div', { className: 'dpk-iqfooter' },
             h('div', { className: 'dpk-iqsafety' },
               h('span', { className: 'dpk-iqsafety-icon', 'aria-hidden': 'true' }, '⚠'),
@@ -4821,12 +4829,6 @@ function countChecks(plugins, kinds) {
                 h('span', { className: 'dpk-iqsafety-up' }, t('iqSafetyUpgrade')),
               ),
             ),
-            h('button', {
-              className: 'dpk-btn is-primary dpk-iqsubmit',
-              type: 'button',
-              disabled: !installDraft.trim(),
-              onClick: () => { void doInstallEnqueue(); },
-            }, t('iqSubmit')),
           ),
         )
         : null;
