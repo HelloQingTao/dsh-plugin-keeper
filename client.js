@@ -171,6 +171,11 @@ window.__ModuleLoader__.load({
         iqGuidePathTitle: '本地目录',
         iqGuidePathExample: '/绝对路径',
         iqGuideFill: '填入',
+        iqGuideIdTitle: '填入插件 npm 包名',
+        iqGuideIdHint: '插件包名即 npm 包名（如 dsh-xxx 或 @作者/插件名），社区插件的 README 安装命令中 dsh plugin add 或 pnpm add 之后的部分。',
+        iqGuideIdExample: 'dsh-plugin-whale-pet',
+        iqSafetyMain: '请确认插件来源可信。插件在本机以你的权限运行，来源不明的插件可能损坏 DeepSeek Harness，或读取和泄露你的数据。',
+        iqSafetyUpgrade: '按需安装的官方插件会在版本与 DSH 不同时提供「更新」。其他插件请先卸载再安装新版。',
         installMenuNpm: 'npm 包',
         installMenuGithub: 'GitHub 仓库',
         installMenuLocal: '本地目录',
@@ -547,6 +552,11 @@ window.__ModuleLoader__.load({
         iqGuidePathTitle: 'Local directory',
         iqGuidePathExample: '/absolute/path',
         iqGuideFill: 'Use example',
+        iqGuideIdTitle: "Enter the plugin's npm package name",
+        iqGuideIdHint: "The plugin package name is the npm package name (like dsh-xxx or @author/plugin): the part after dsh plugin add or pnpm add in a community plugin's README install command.",
+        iqGuideIdExample: 'dsh-plugin-whale-pet',
+        iqSafetyMain: 'Install only plugins you trust: they run with your permissions and can damage DeepSeek Harness or leak your data.',
+        iqSafetyUpgrade: 'On-demand official plugins offer Update when their version differs from DSH. To update other plugins, uninstall and reinstall them.',
         installMenuNpm: 'npm package',
         installMenuGithub: 'GitHub repository',
         installMenuLocal: 'Local directory',
@@ -968,42 +978,46 @@ window.__ModuleLoader__.load({
 .dpk-splitbtn .dpk-splitcaret{border-top-left-radius:0;border-bottom-left-radius:0;padding-left:9px;padding-right:9px;display:inline-flex;align-items:center;justify-content:center;box-shadow:inset 1px 0 0 rgba(255,255,255,.28);}
 /* ---------- 安装弹框（方向B：对齐官方 plugin-manager 安装弹框） ---------- */
 .dpk-iqdialog{width:min(560px,100%);}
-.dpk-iqdesc{margin:2px 0 12px;font-size:12px;line-height:18px;color:var(--dsw-alias-label-secondary);}
-.dpk-iqfield{display:flex;flex-direction:column;gap:6px;margin-bottom:12px;}
-.dpk-iqinput{width:100%;height:40px;padding:0 14px;box-sizing:border-box;border:.5px solid var(--dsw-alias-border-l4);border-radius:var(--dsw-radius-md,8px);outline:none;background:var(--dsw-alias-bg-layer-3);font:inherit;font-size:13px;color:var(--dsw-alias-label-primary);}
+.dpk-iqdialog .dpk-mtitle{font-size:18px;font-weight:600;line-height:26px;margin:2px 0 8px;}
+.dpk-iqdesc{margin:2px 0 16px;font-size:14px;line-height:22px;color:var(--dsw-alias-label-secondary);}
+.dpk-iqfield{display:flex;flex-direction:column;gap:6px;margin-bottom:14px;}
+.dpk-iqinput{width:100%;height:44px;padding:0 14px;box-sizing:border-box;border:.5px solid var(--dsw-alias-border-l4);border-radius:var(--dsw-radius-md,8px);outline:none;background:var(--dsw-alias-bg-layer-3);font:inherit;font-size:14px;color:var(--dsw-alias-label-primary);}
 .dpk-iqinput:focus{border-color:var(--dsw-alias-state-business-primary);box-shadow:inset 0 0 0 .5px var(--dsw-alias-state-business-primary);}
 /* 选项行：左「安装引导和示例」切换，右「安装源」药丸 */
-.dpk-iqopts{display:flex;align-items:center;justify-content:space-between;gap:8px 12px;flex-wrap:wrap;margin-bottom:12px;}
-.dpk-iqguidebtn{display:inline-flex;align-items:center;gap:4px;padding:0;border:0;background:none;font:inherit;font-size:12.5px;color:var(--dsw-alias-label-secondary);cursor:pointer;}
+.dpk-iqopts{display:flex;align-items:center;justify-content:space-between;gap:8px 12px;flex-wrap:wrap;margin:0 0 14px;}
+.dpk-iqguidebtn{display:inline-flex;align-items:center;gap:6px;padding:0;border:0;background:none;font:inherit;font-size:13px;color:var(--dsw-alias-label-secondary);cursor:pointer;}
 .dpk-iqguidebtn:hover{color:var(--dsw-alias-label-primary);}
-.dpk-iqchev{display:inline-block;transition:transform 160ms ease;font-size:10px;line-height:1;}
+.dpk-iqchev{display:inline-block;transition:transform 160ms ease;font-size:11px;line-height:1;}
 .dpk-iqchev.is-open{transform:rotate(180deg);}
-.dpk-iqregpill{position:relative;display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 10px;border:.5px solid var(--dsw-alias-border-l4);border-radius:var(--dsw-radius-md,8px);background:var(--dsw-alias-bg-layer-2);font-size:12.5px;color:var(--dsw-alias-label-secondary);}
+.dpk-iqregpill{position:relative;display:inline-flex;align-items:center;gap:6px;height:30px;padding:0 12px;border:.5px solid var(--dsw-alias-border-l4);border-radius:var(--dsw-radius-md,8px);background:var(--dsw-alias-bg-layer-2);font-size:13px;color:var(--dsw-alias-label-secondary);}
 .dpk-iqregpill-label{color:var(--dsw-alias-label-secondary);}
 .dpk-iqregpill-chosen{font-weight:500;color:var(--dsw-alias-label-primary);}
 .dpk-iqregpill .dpk-iqchev{color:var(--dsw-alias-label-tertiary);}
 .dpk-iqregpill-select{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;font:inherit;}
-/* 引导：可填入的示例 */
-.dpk-iqguide{display:flex;flex-direction:column;gap:2px;padding:8px 14px;margin-bottom:12px;border:.5px solid var(--dsw-alias-border-l4);border-radius:var(--dsw-radius-lg,10px);background:var(--dsw-alias-bg-layer-1);}
-.dpk-iqguidelist{display:flex;flex-direction:column;gap:2px;margin:0;padding:0;list-style:none;}
-.dpk-iqguideitem{display:flex;align-items:center;gap:10px;padding:7px 0;}
-.dpk-iqguidemain{display:flex;flex:1;flex-direction:column;gap:1px;min-width:0;}
-.dpk-iqguidetitle{font-size:13px;font-weight:500;line-height:20px;color:var(--dsw-alias-label-primary);}
-.dpk-iqguideex{font-size:12px;line-height:20px;color:var(--dsw-alias-label-tertiary);overflow-wrap:anywhere;}
+/* 引导：官方单条示例卡（标题 + 长提示 + 示例 + 填入按钮） */
+.dpk-iqguide{display:flex;flex-direction:column;gap:2px;padding:14px 16px;margin-bottom:14px;border:.5px solid var(--dsw-alias-border-l4);border-radius:var(--dsw-radius-lg,12px);background:var(--dsw-alias-bg-layer-1);}
+.dpk-iqguideitem{display:flex;align-items:center;gap:14px;}
+.dpk-iqguidemain{display:flex;flex:1;flex-direction:column;gap:6px;min-width:0;}
+.dpk-iqguidetitle{font-size:14px;font-weight:600;line-height:21px;color:var(--dsw-alias-label-primary);}
+.dpk-iqguidehint{font-size:12.5px;line-height:19px;color:var(--dsw-alias-label-tertiary);}
+.dpk-iqguideex{font-size:12.5px;line-height:19px;color:var(--dsw-alias-label-tertiary);overflow-wrap:anywhere;}
 .dpk-iqguideexlabel{color:var(--dsw-alias-label-tertiary);}
 .dpk-iqguideex code{font-family:var(--ds-font-family-code,monospace);}
-.dpk-iqhint{margin:-4px 0 10px;font-size:12px;line-height:18px;color:var(--dsw-alias-label-tertiary);}
-.dpk-iqflash{margin:0 0 10px;padding:8px 12px;border-radius:var(--dsw-radius-md,8px);background:var(--dsw-alias-state-error-tertiary,var(--dsw-alias-interactive-bg-hover));color:var(--dsw-alias-state-error-primary);font-size:12px;line-height:18px;}
-.dpk-iqempty{padding:10px 2px;font-size:12px;line-height:18px;color:var(--dsw-alias-label-tertiary);}
+.dpk-iqguidefill{flex:none;align-self:center;padding:5px 14px;font-size:12.5px;border-radius:8px;}
+.dpk-iqflash{margin:0 0 10px;padding:8px 12px;border-radius:var(--dsw-radius-md,8px);background:var(--dsw-alias-state-error-tertiary,var(--dsw-alias-interactive-bg-hover));color:var(--dsw-alias-state-error-primary);font-size:12.5px;line-height:19px;}
+.dpk-iqempty{padding:10px 2px;font-size:12.5px;line-height:19px;color:var(--dsw-alias-label-tertiary);}
 .dpk-queuehead{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;}
 .dpk-queueerr{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
 .dpk-queuebuilds{margin-top:4px;font-size:11px;line-height:16px;color:var(--dsw-alias-label-secondary);}
-/* 底部：可信提示 + 整行主按钮 */
-.dpk-iqfooter{display:flex;flex-direction:column;gap:14px;margin-top:14px;padding-top:14px;border-top:.5px solid var(--dsw-alias-border-l2);}
-.dpk-iqsafety{display:flex;align-items:flex-start;gap:8px;padding:10px 12px;border-radius:var(--dsw-radius-md,8px);background:var(--dsw-alias-state-warn-tertiary,var(--dsw-alias-interactive-bg-hover));font-size:12px;line-height:18px;color:var(--dsw-alias-label-secondary);}
-.dpk-iqsafety-icon{flex:none;margin-top:1px;color:var(--dsw-alias-state-warn-primary,#e0a800);}
-.dpk-iqsafety-text{min-width:0;}
-.dpk-iqsubmit{width:100%;justify-content:center;}
+/* 底部：可信提示（琥珀两段）+ 整行实心主按钮 */
+.dpk-iqfooter{display:flex;flex-direction:column;gap:14px;margin-top:16px;padding-top:16px;border-top:.5px solid var(--dsw-alias-border-l2);}
+.dpk-iqsafety{display:flex;align-items:flex-start;gap:10px;padding:14px 16px;border-radius:var(--dsw-radius-lg,12px);background:var(--dsw-alias-state-warn-tertiary,var(--dsw-alias-interactive-bg-hover));font-size:13px;line-height:20px;color:var(--dsw-alias-label-secondary);}
+.dpk-iqsafety-icon{flex:none;margin-top:1px;font-size:15px;line-height:20px;color:var(--dsw-alias-state-warn-primary,#e0a800);}
+.dpk-iqsafety-text{display:flex;flex-direction:column;gap:8px;min-width:0;}
+.dpk-iqsafety-main,.dpk-iqsafety-up{display:block;}
+.dpk-btn.is-primary.dpk-iqsubmit{width:100%;justify-content:center;height:46px;border-radius:12px;background:var(--dsw-alias-state-business-primary,var(--dsw-alias-brand-primary));border:1px solid var(--dsw-alias-state-business-primary,var(--dsw-alias-brand-primary));color:#fff;font-size:15px;font-weight:600;}
+.dpk-btn.is-primary.dpk-iqsubmit:hover:not(:disabled){background:var(--dsw-alias-state-business-primary,var(--dsw-alias-brand-primary));border-color:var(--dsw-alias-state-business-primary,var(--dsw-alias-brand-primary));filter:brightness(1.06);}
+.dpk-btn.is-primary.dpk-iqsubmit:disabled{opacity:.5;color:#fff;background:var(--dsw-alias-state-business-primary,var(--dsw-alias-brand-primary));border-color:var(--dsw-alias-state-business-primary,var(--dsw-alias-brand-primary));}
 
 /* ---------- 详情视图（P3）：基本信息表 + 设置项控件 + 操作区 ---------- */
 /* 设置项两列网格：JSON/密钥等长控件占整行 */
@@ -4697,11 +4711,6 @@ function countChecks(plugins, kinds) {
       }, []);
 
       // 安装队列面板：输入即入队（可连续输），条目状态轮询宿主半；面板可随时关掉，安装继续跑
-      const IQ_GUIDE_ROWS = [
-        { title: t('iqGuideNpmTitle'), example: t('iqGuideNpmExample') },
-        { title: t('iqGuideGithubTitle'), example: t('iqGuideGithubExample') },
-        { title: t('iqGuidePathTitle'), example: t('iqGuidePathExample') },
-      ];
       const installQueueModal = installPanelOpen
         ? h(Modal, {
           className: 'is-wide dpk-iqdialog',
@@ -4754,24 +4763,23 @@ function countChecks(plugins, kinds) {
               h('span', { className: 'dpk-iqchev' }, '▾'),
             ),
           ),
-          // ---- 引导：可填入的示例（npm 包名 / GitHub 仓库 / 本地目录） ----
+          // ---- 引导：官方单条示例（填入插件 npm 包名） ----
           iqGuideOpen
             ? h('div', { className: 'dpk-iqguide' },
-              h('ol', { className: 'dpk-iqguidelist' },
-                IQ_GUIDE_ROWS.map((row, i) => h('li', { className: 'dpk-iqguideitem', key: i },
-                  h('div', { className: 'dpk-iqguidemain' },
-                    h('span', { className: 'dpk-iqguidetitle' }, row.title),
-                    h('span', { className: 'dpk-iqguideex' },
-                      h('span', { className: 'dpk-iqguideexlabel' }, t('iqGuideExampleLabel')),
-                      h('code', {}, row.example),
-                    ),
+              h('div', { className: 'dpk-iqguideitem' },
+                h('div', { className: 'dpk-iqguidemain' },
+                  h('span', { className: 'dpk-iqguidetitle' }, t('iqGuideIdTitle')),
+                  h('span', { className: 'dpk-iqguidehint' }, t('iqGuideIdHint')),
+                  h('span', { className: 'dpk-iqguideex' },
+                    h('span', { className: 'dpk-iqguideexlabel' }, t('iqGuideExampleLabel')),
+                    h('code', {}, t('iqGuideIdExample')),
                   ),
-                  h('button', {
-                    className: 'dpk-btn is-mini',
-                    type: 'button',
-                    onClick: () => { setInstallDraft(row.example); if (installInputRef.current) installInputRef.current.focus(); },
-                  }, t('iqGuideFill')),
-                )),
+                ),
+                h('button', {
+                  className: 'dpk-btn dpk-iqguidefill',
+                  type: 'button',
+                  onClick: () => { setInstallDraft(t('iqGuideIdExample')); if (installInputRef.current) installInputRef.current.focus(); },
+                }, t('iqGuideFill')),
               ),
             )
             : null,
@@ -4833,7 +4841,10 @@ function countChecks(plugins, kinds) {
           h('div', { className: 'dpk-iqfooter' },
             h('div', { className: 'dpk-iqsafety' },
               h('span', { className: 'dpk-iqsafety-icon', 'aria-hidden': 'true' }, '⚠'),
-              h('span', { className: 'dpk-iqsafety-text' }, t('iqTrustWarn')),
+              h('div', { className: 'dpk-iqsafety-text' },
+                h('span', { className: 'dpk-iqsafety-main' }, t('iqSafetyMain')),
+                h('span', { className: 'dpk-iqsafety-up' }, t('iqSafetyUpgrade')),
+              ),
             ),
             h('button', {
               className: 'dpk-btn is-primary dpk-iqsubmit',
