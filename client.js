@@ -2731,6 +2731,7 @@ function countChecks(plugins, kinds) {
       const installInputRef = React.useRef(null);
       // 状态变化检测：上一次见到的 {id: status}，用来在条目结束时弹 notice + 刷列表
       const queueSeenRef = React.useRef(new Map());
+      const sessionInsertedRef = React.useRef(new Set()); // 本次会话内用户主动入队的条目 id：转终态时一定补 notice（含极快失败）
       const queueActive = (installQueueItems ?? []).some((it) => it.status === 'queued' || it.status === 'running');
 
       const pushInstallNotice = React.useCallback((ok, text) => {
@@ -2758,6 +2759,11 @@ function countChecks(plugins, kinds) {
               nextSeen.set(it.id, it.status);
               const before = prevSeen.get(it.id);
               if (before === it.status) continue;
+              // 只在「本次会话确实见过它处于进行中(queued/running)」后才在转为终态时补 notice。
+              // 首次见到的历史遗留终态条目（例如上次安装失败仍留在内存队列里的记录）不补弹，
+              // 否则用户只是打开面板、根本没安装却弹出「安装失败」。
+              const wasActive = before === 'queued' || before === 'running';
+              if (!wasActive && !sessionInsertedRef.current.has(it.id)) continue;
               if (it.status === 'done') {
                 const version = typeof it.installedVersion === 'string' ? it.installedVersion : '?';
                 const text = it.application === 'restart-required'
@@ -2791,6 +2797,7 @@ function countChecks(plugins, kinds) {
         if (!name) return;
         const v = await callInstallEnqueue(name);
         if (v?.ok) {
+          if (v.item?.id) sessionInsertedRef.current.add(v.item.id);
           setInstallDraft('');
           setInstallInputFlash(null);
           // 立即拉一次状态，让新条目立刻出现在列表里
