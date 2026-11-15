@@ -1196,9 +1196,9 @@ html:root .dpk-modalwrap .dpk-modal{background:var(--dsw-alias-bg-layer-3)!impor
 .dpk-viewtoggle{background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l2);}
 .dpk-viewtoggle .dpk-btn{color:var(--dsw-alias-label-secondary);}
 .dpk-viewtoggle .dpk-btn.is-active{background:var(--dsw-alias-bg-layer-3);color:var(--dsw-alias-label-primary);box-shadow:0 1px 2px rgba(0,0,0,.12);}
-/* ---------- 详情弹框：背景走「玻璃效果」，与系统设置页弹框一致 ---------- */
+/* ---------- 详情/安装/高级设置弹框：背景走「玻璃效果」，与系统设置页弹框一致（全部跟随主题 token） ---------- */
 .dpk-modal.is-detail{width:640px;}
-html:root .dpk-modalwrap .dpk-modal.is-detail{background:color-mix(in srgb,var(--dsw-alias-bg-base,#fff) 30%,transparent)!important;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border:.5px solid var(--dsw-alias-border-l2,rgba(20,28,40,.08));border-radius:var(--dsw-radius-panel,16px);box-shadow:var(--dsw-elevation-panel,0 8px 24px rgba(0,0,0,.14));}
+html:root .dpk-modalwrap .dpk-modal.is-detail,html:root .dpk-modalwrap .dpk-modal.is-settings,html:root .dpk-modalwrap .dpk-modal.dpk-iqdialog{background:color-mix(in srgb,var(--dsw-alias-bg-base,#fff) 30%,transparent)!important;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border:.5px solid var(--dsw-alias-border-l2,rgba(20,28,40,.08));border-radius:var(--dsw-radius-panel,16px);box-shadow:var(--dsw-elevation-panel,0 8px 24px rgba(0,0,0,.14));}
 .dpk-modal.is-detail .dpk-mtitle{font-size:18px;font-weight:600;line-height:26px;}
 .dpk-modal.is-detail .dpk-dhead{gap:10px;margin-top:-2px;}
 .dpk-modal.is-detail .dpk-dname{font-size:15px;font-weight:600;}
