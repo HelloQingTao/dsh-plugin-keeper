@@ -1129,6 +1129,40 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
 .dpk-select:disabled{opacity:.4;}
 /* 导入弹框里的兼容性徽标要能跟文字并排 */
 .dpk-cfgtag .dpk-op{display:inline-block;margin:0 4px 0 0;vertical-align:middle;}
+/* ---------- 主题适配补丁：表面/输入/灰字对比/开关观感 ---------- */
+/* 弹框改用不透明层级面，避免半透明叠在主题背景上发灰发花 */
+.dpk-modal{background:var(--dsw-alias-bg-layer-3);}
+/* dsh-cockpit 主题用 [role="dialog"] !important 全局改底色，导致本弹框发虚；
+   这里用更高特异性把它还原成不透明面板（只命中本插件自己的 .dpk-modal） */
+html:root .dpk-modalwrap .dpk-modal{background:var(--dsw-alias-bg-layer-3)!important;}
+/* 列表容器给出实体表面：否则透明叠在主题背景上，灰色描述文字看不清 */
+.dpk-rows{background:var(--dsw-alias-bg-layer-2);}
+/* 搜索框与下拉：跟随主题的实心底 + 细边框；聚焦用主题色 */
+.dpk-searchinput,
+.dpk-select{background:var(--dsw-alias-bg-layer-3);border-color:var(--dsw-alias-border-l2);color:var(--dsw-alias-label-primary);}
+.dpk-searchinput::placeholder{color:var(--dsw-alias-label-tertiary);}
+.dpk-searchinput:focus,
+.dpk-select:focus{border-color:var(--dsw-alias-brand-primary);outline:1px solid var(--dsw-alias-brand-primary);outline-offset:0;}
+/* 次要灰字加深一档：主题背景上更清晰 */
+.dpk-rowdesc,
+.dpk-ver,
+.dpk-cfgtag,
+.dpk-state,
+.dpk-summary{color:var(--dsw-alias-label-secondary);}
+.dpk-searchcount{color:var(--dsw-alias-label-tertiary);}
+/* 「只看可更新」：原生复选框 -> 拨动开关 */
+.dpk-onlyup{gap:8px;}
+.dpk-onlyup input{appearance:none;-webkit-appearance:none;position:relative;width:30px;height:17px;border-radius:999px;background:var(--dsw-alias-border-l4,#bbb);transition:background .16s ease;cursor:pointer;margin:0;flex:none;}
+.dpk-onlyup input::after{content:'';position:absolute;top:2px;left:2px;width:13px;height:13px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.25);transition:transform .16s ease;}
+.dpk-onlyup input:checked{background:var(--dsw-alias-brand-primary);}
+.dpk-onlyup input:checked::after{transform:translateX(13px);}
+.dpk-onlyup input:focus-visible{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:2px;}
+/* 右下角更新提示：文字改用主题标签色；按钮左对齐 */
+.dpk-updtip{background:var(--dsw-alias-bg-layer-3);border-color:var(--dsw-alias-border-l2);color:var(--dsw-alias-label-primary);}
+.dpk-updtip-title{color:var(--dsw-alias-label-primary);}
+.dpk-updtip-body{display:flex;flex-direction:column;align-items:flex-start;text-align:left;}
+.dpk-updtip-x{color:var(--dsw-alias-label-tertiary);}
+.dpk-updtip-x:hover{color:var(--dsw-alias-label-primary);}
 `;
     let cssTag = null;
     function injectCss() {
