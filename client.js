@@ -1199,6 +1199,8 @@ html:root .dpk-modalwrap .dpk-modal{background:var(--dsw-alias-bg-layer-3)!impor
 /* ---------- 详情/安装/高级设置弹框：背景走「玻璃效果」，与系统设置页弹框一致（全部跟随主题 token） ---------- */
 .dpk-modal.is-detail{width:640px;}
 html:root .dpk-modalwrap .dpk-modal.is-detail,html:root .dpk-modalwrap .dpk-modal.is-settings,html:root .dpk-modalwrap .dpk-modal.dpk-iqdialog{background:color-mix(in srgb,var(--dsw-alias-bg-base,#fff) 30%,transparent)!important;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border:.5px solid var(--dsw-alias-border-l2,rgba(20,28,40,.08));border-radius:var(--dsw-radius-panel,16px);box-shadow:var(--dsw-elevation-panel,0 8px 24px rgba(0,0,0,.14));}
+/* 玻璃弹框不要 0.12s 淡入（淡入时 backdrop-filter 会先虚透再显玻璃）；直接跳到最终效果，与系统设置页一致 */
+html:root .dpk-modalwrap{animation:none!important;}
 .dpk-modal.is-detail .dpk-mtitle{font-size:18px;font-weight:600;line-height:26px;}
 .dpk-modal.is-detail .dpk-dhead{gap:10px;margin-top:-2px;}
 .dpk-modal.is-detail .dpk-dname{font-size:15px;font-weight:600;}
