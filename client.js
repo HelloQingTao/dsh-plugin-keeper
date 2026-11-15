@@ -1196,6 +1196,21 @@ html:root .dpk-modalwrap .dpk-modal{background:var(--dsw-alias-bg-layer-3)!impor
 .dpk-viewtoggle{background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l2);}
 .dpk-viewtoggle .dpk-btn{color:var(--dsw-alias-label-secondary);}
 .dpk-viewtoggle .dpk-btn.is-active{background:var(--dsw-alias-bg-layer-3);color:var(--dsw-alias-label-primary);box-shadow:0 1px 2px rgba(0,0,0,.12);}
+/* ---------- 详情弹框：统一到安装弹框的视觉语言（标题放大 / 字号 13 / 信息卡片化） ---------- */
+.dpk-modal.is-detail{width:640px;}
+.dpk-modal.is-detail .dpk-mtitle{font-size:18px;font-weight:600;line-height:26px;}
+.dpk-modal.is-detail .dpk-dhead{gap:10px;margin-top:-2px;}
+.dpk-modal.is-detail .dpk-dname{font-size:15px;font-weight:600;}
+.dpk-modal.is-detail .dpk-dhead .dpk-ver{background:var(--dsw-alias-bg-layer-2);border:.5px solid var(--dsw-alias-border-l2);border-radius:999px;padding:1px 9px;font-size:12px;color:var(--dsw-alias-label-secondary);}
+.dpk-modal.is-detail .dpk-setsec{gap:10px;padding-top:14px;}
+.dpk-modal.is-detail .dpk-gtitle{font-size:14px;font-weight:600;}
+.dpk-modal.is-detail .dpk-dfacts{background:var(--dsw-alias-bg-layer-1);border:.5px solid var(--dsw-alias-border-l2);border-radius:var(--dsw-radius-md,12px);padding:14px 16px;gap:10px;}
+.dpk-modal.is-detail .dpk-fact{font-size:13px;line-height:20px;gap:12px;}
+.dpk-modal.is-detail .dpk-factlabel{font-size:12px;flex:0 0 6em;color:var(--dsw-alias-label-tertiary);}
+.dpk-modal.is-detail .dpk-factvalue,.dpk-modal.is-detail .dpk-factdesc{font-size:13px;color:var(--dsw-alias-label-secondary);}
+.dpk-modal.is-detail .dpk-path{font-size:12px;}
+.dpk-modal.is-detail .dpk-detailacts{gap:10px;}
+.dpk-modal.is-detail .dpk-hint{font-size:12px;color:var(--dsw-alias-label-secondary);}
 `;
     let cssTag = null;
     function injectCss() {
