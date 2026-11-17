@@ -917,7 +917,7 @@ window.__ModuleLoader__.load({
 .dpk-garrow:hover{background:var(--dsw-alias-interactive-bg-hover);}
 .dpk-garrow svg{display:block;width:12px;height:12px;fill:currentColor;}
 .dpk-garrow:focus-visible{outline:1px solid var(--dsw-alias-brand-primary);outline-offset:1px;}
-.dpk-gtitle{font-size:15px;font-weight:700;color:var(--dsw-alias-label-primary);transition:color .12s;}
+.dpk-gtitle{font-size:13px;font-weight:600;letter-spacing:.2px;color:var(--dsw-alias-label-primary);transition:color .12s;}
 .dpk-gcount{font-size:12px;color:var(--dsw-alias-label-caption);margin-left:2px;}
 /* 列表视图表头：全选 / 全不选 / 反选 快捷多选 */
 .dpk-listwrap{display:block;}
@@ -926,15 +926,15 @@ window.__ModuleLoader__.load({
 .dpk-rows{border:.5px solid var(--dsw-alias-border-l2);border-radius:var(--dsw-radius-md,12px);overflow:hidden;}
 .dpk-row{display:block;padding:10px 14px;min-width:0;transition:background-color .12s ease;}
 .dpk-rowmain{display:flex;align-items:center;gap:10px;min-width:0;min-height:32px;}
-.dpk-rowdesc{color:var(--dsw-alias-label-tertiary);font-size:12px;line-height:17px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-left:24px;margin-top:3px;} /* 24=cb14+gap10，描述与头像左缘对齐（不缩到包名下） */
+.dpk-rowdesc{color:var(--dsw-alias-label-tertiary);font-size:12px;line-height:17px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding-left:26px;margin-top:3px;} /* 26=cb16+gap10，描述与头像左缘对齐（不缩到包名下） */
 .dpk-onlyup{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--dsw-alias-label-secondary);cursor:pointer;white-space:nowrap;}
 .dpk-onlyup input{accent-color:var(--dsw-alias-brand-primary);margin:0;width:13px;height:13px;}
 /* 搜索框 + 只看可更新：同一组筛选控件 */
 .dpk-filters{display:flex;align-items:center;gap:10px;flex-wrap:nowrap;min-width:110px;flex:0 1 auto;}
-.dpk-search{position:relative;display:inline-flex;align-items:center;min-width:0;flex:0 1 240px;}
+.dpk-search{position:relative;display:inline-flex;align-items:center;min-width:0;flex:0 0 300px;}
 .dpk-searchicon{position:absolute;left:7px;display:inline-flex;align-items:center;justify-content:center;color:var(--dsw-alias-label-caption);pointer-events:none;}
 .dpk-searchicon svg{display:block;width:12px;height:12px;}
-.dpk-searchinput{background:var(--dsw-alias-bg-layer-1);border:.5px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-primary);border-radius:var(--dsw-radius-sm,8px);padding:3px 24px 3px 23px;font:inherit;font-size:12px;line-height:20px;width:100%;min-width:0;max-width:340px;transition:border-color .16s ease,box-shadow .16s ease;}
+.dpk-searchinput{background:var(--dsw-alias-bg-layer-1);border:.5px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-primary);border-radius:var(--dsw-radius-sm,8px);padding:3px 24px 3px 23px;font:inherit;font-size:12px;line-height:20px;width:100%;min-width:0;max-width:460px;transition:border-color .16s ease,box-shadow .16s ease;}
 .dpk-searchinput:focus{outline:1px solid var(--dsw-alias-brand-primary);outline-offset:0;}
 .dpk-searchinput::placeholder{color:var(--dsw-alias-label-caption);}
 .dpk-searchclear{position:absolute;right:3px;width:17px;height:17px;border:none;border-radius:var(--dsw-radius-sm,4px);padding:0;background:0 0;color:var(--dsw-alias-label-tertiary);cursor:pointer;font:inherit;font-size:13px;line-height:17px;display:inline-flex;align-items:center;justify-content:center;}
@@ -949,7 +949,12 @@ window.__ModuleLoader__.load({
 .dpk-row.is-clickable{cursor:pointer;}
 .dpk-row.is-official{opacity:.72;}
 .dpk-row.is-selected{background:var(--dsw-alias-bg-layer-2);}
-.dpk-cb{accent-color:var(--dsw-alias-brand-primary);margin:0;flex:none;width:14px;height:14px;cursor:pointer;}
+/* 自绘复选框（替代原生 checkbox）：圆角方块 + token 描边/填充 + 勾；深浅主题自动跟随 */
+.dpk-cb{appearance:none;-webkit-appearance:none;box-sizing:border-box;margin:0;flex:none;width:16px;height:16px;border:1.5px solid var(--dsw-alias-border-l3);border-radius:5px;background:var(--dsw-alias-bg-layer-1);cursor:pointer;position:relative;vertical-align:middle;transition:background-color .14s ease,border-color .14s ease;}
+.dpk-cb:hover:not(:disabled){border-color:var(--dsw-alias-brand-primary);}
+.dpk-cb:checked{background:var(--dsw-alias-brand-primary);border-color:var(--dsw-alias-brand-primary);}
+.dpk-cb:checked::after{content:'';position:absolute;left:4.5px;top:1.5px;width:4px;height:8px;border:solid var(--dsw-alias-label-primary-foreground,#fff);border-width:0 2px 2px 0;transform:rotate(45deg);}
+.dpk-cb:focus-visible{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:2px;}
 .dpk-cb:disabled{cursor:default;opacity:.35;}
 .dpk-dot{width:5px;height:5px;border-radius:50%;background:var(--dsw-alias-label-caption);flex:none;}
 .dpk-dot.on{background:var(--dsw-alias-state-success-primary);}
@@ -980,8 +985,17 @@ window.__ModuleLoader__.load({
 .dpk-viewtoggle .dpk-btn{border:0;border-radius:999px;background:transparent;min-width:0;padding:1px 10px;}
 .dpk-viewtoggle .dpk-btn + .dpk-btn{border-left:0;}
 .dpk-viewtoggle .dpk-btn.is-active{background:var(--dsw-alias-bg-layer-1);color:var(--dsw-alias-label-primary);font-weight:600;box-shadow:var(--dsw-elevation-soft,0 1px 3px rgba(0,0,0,.14));}
-.dpk-sortsel{border:1px solid var(--dsw-alias-border-l2);background:0 0;color:var(--dsw-alias-label-primary);border-radius:var(--dsw-radius-sm,8px);padding:1px 6px;font:inherit;font-size:11px;line-height:18px;cursor:pointer;}
-.dpk-sortsel:hover{background:var(--dsw-alias-interactive-bg-hover);}
+.dpk-sortbtn{gap:4px;min-width:0;}
+.dpk-sortbtn .dpk-iqchev{font-size:10px;color:var(--dsw-alias-label-tertiary);}
+/* 排序按钮：三种文案叠在同一网格单元里，宽度锁定为最长文案，切换不跳动 */
+.dpk-sortbtn .dpk-sortbtn-stack{display:inline-grid;justify-items:center;}
+.dpk-sortbtn .dpk-sortbtn-stack>span{grid-area:1/1;white-space:nowrap;}
+.dpk-sortbtn .dpk-sortbtn-stack>span[aria-hidden="true"]{visibility:hidden;}
+/* 通用自绘下拉触发按钮（替代原生 select，弹层由 InstallSourcePop 渲染） */
+.dpk-select.dpk-selectbtn{display:inline-flex;align-items:center;gap:4px;max-width:190px;text-align:left;cursor:pointer;}
+.dpk-selectbtn-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.dpk-selectbtn .dpk-iqchev{font-size:10px;color:var(--dsw-alias-label-tertiary);flex:none;}
+.dpk-selectbtn:disabled{cursor:default;}
 /* 行首图标 tile：对齐官方插件列表（首字母圆角方块），色相由名字哈希稳定映射；
    半透明底 + 亮字，明暗主题都成立 */
 .dpk-tile{width:32px;height:32px;border-radius:var(--dsw-radius-md,10px);flex:none;display:inline-flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;font-family:${MONO};user-select:none;}
@@ -1005,14 +1019,14 @@ window.__ModuleLoader__.load({
 .dpk-queuenotice{display:flex;align-items:center;justify-content:space-between;gap:8px;}
 
 /* 安装分体按钮（对齐官方「添加插件」）+ 弹框类型 tabs */
-.dpk-updtip{position:fixed;right:20px;bottom:20px;z-index:2147483000;display:flex;align-items:flex-start;gap:10px;max-width:340px;padding:14px 14px 14px 16px;border-radius:14px;background:var(--dsw-alias-bg-layer-3);border:1px solid var(--dsw-alias-border-l4);box-shadow:0 10px 30px rgba(0,0,0,.16);font-size:14px;line-height:1.5;color:var(--dsw-alias-text-1);}
+.dpk-updtip{position:fixed;right:20px;bottom:20px;z-index:2147483000;display:flex;align-items:flex-start;gap:10px;max-width:340px;padding:14px 14px 14px 16px;border-radius:14px;background:var(--dsw-alias-bg-layer-3);border:1px solid var(--dsw-alias-border-l4);box-shadow:0 10px 30px rgba(0,0,0,.16);font-size:14px;line-height:1.5;color:var(--dsw-alias-label-primary);}
 .dpk-updtip-ico{font-size:20px;line-height:1.2;flex:none;}
 .dpk-updtip-body{flex:1;min-width:0;}
 .dpk-updtip-title{font-weight:600;margin-bottom:8px;}
-.dpk-updtip-btn{display:inline-flex;align-items:center;height:30px;padding:0 14px;border-radius:8px;border:none;cursor:pointer;background:var(--dsw-alias-state-business-primary);color:#fff;font-size:13px;font-weight:600;}
+.dpk-updtip-btn{display:inline-flex;align-items:center;height:30px;padding:0 14px;border-radius:8px;border:none;cursor:pointer;background:var(--dsw-alias-button-primary-fill,var(--dsw-alias-state-business-primary,var(--dsw-alias-brand-primary)));color:var(--dsw-alias-label-primary-foreground);font-size:13px;font-weight:600;}
 .dpk-updtip-btn:hover{filter:brightness(1.05);}
-.dpk-updtip-x{flex:none;width:22px;height:22px;line-height:20px;text-align:center;border:none;background:transparent;cursor:pointer;color:var(--dsw-alias-text-3);font-size:18px;border-radius:6px;}
-.dpk-updtip-x:hover{background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-text-1);}
+.dpk-updtip-x{flex:none;width:22px;height:22px;line-height:20px;text-align:center;border:none;background:transparent;cursor:pointer;color:var(--dsw-alias-label-tertiary);font-size:18px;border-radius:6px;}
+.dpk-updtip-x:hover{background:var(--dsw-alias-bg-layer-2);color:var(--dsw-alias-label-primary);}
 .dpk-splitbtn{display:inline-flex;align-items:stretch;}
 .dpk-splitbtn .dpk-splitmain{border-top-right-radius:0;border-bottom-right-radius:0;}
 .dpk-splitbtn .dpk-splitcaret{border-top-left-radius:0;border-bottom-left-radius:0;padding-left:9px;padding-right:9px;display:inline-flex;align-items:center;justify-content:center;box-shadow:inset 1px 0 0 rgba(255,255,255,.28);}
@@ -1038,6 +1052,9 @@ window.__ModuleLoader__.load({
 .dpk-iqregpill-chosen{font-weight:500;color:var(--dsw-alias-label-primary);}
 .dpk-iqregpill .dpk-iqchev{color:var(--dsw-alias-label-tertiary);}
 .dpk-iqregpill-select{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;font:inherit;}
+.dpk-iqregpill-btn{font:inherit;cursor:pointer;color:inherit;}
+.dpk-iqregpill-btn:disabled{opacity:.6;cursor:default;}
+.dpk-detail-loading{position:absolute;top:12px;right:18px;font-size:12px;line-height:18px;color:var(--dsw-alias-label-tertiary);pointer-events:none;}
 /* 引导：官方单条示例卡（标题 + 长提示 + 示例 + 填入按钮） */
 .dpk-iqguide{display:flex;flex-direction:column;gap:2px;padding:14px 16px;margin-bottom:14px;border:.5px solid var(--dsw-alias-border-l4);border-radius:var(--dsw-radius-lg,12px);background:var(--dsw-alias-bg-layer-1);}
 .dpk-iqguideitem{display:flex;align-items:center;gap:14px;}
@@ -1060,9 +1077,9 @@ window.__ModuleLoader__.load({
 .dpk-iqsafety-icon{flex:none;margin-top:1px;font-size:15px;line-height:20px;color:var(--dsw-alias-state-warn-primary,#e0a800);}
 .dpk-iqsafety-text{display:flex;flex-direction:column;gap:8px;min-width:0;}
 .dpk-iqsafety-main,.dpk-iqsafety-up{display:block;}
-.dpk-btn.is-primary.dpk-iqsubmit{width:auto;flex:none;justify-content:center;height:44px;padding:0 22px;border-radius:8px;white-space:nowrap;background:var(--dsw-alias-state-business-primary,var(--dsw-alias-brand-primary));border:1px solid var(--dsw-alias-state-business-primary,var(--dsw-alias-brand-primary));color:#fff;font-size:15px;font-weight:600;}
-.dpk-btn.is-primary.dpk-iqsubmit:hover:not(:disabled){background:var(--dsw-alias-state-business-primary,var(--dsw-alias-brand-primary));border-color:var(--dsw-alias-state-business-primary,var(--dsw-alias-brand-primary));filter:brightness(1.06);}
-.dpk-btn.is-primary.dpk-iqsubmit:disabled{opacity:.5;color:#fff;background:var(--dsw-alias-state-business-primary,var(--dsw-alias-brand-primary));border-color:var(--dsw-alias-state-business-primary,var(--dsw-alias-brand-primary));}
+.dpk-btn.is-primary.dpk-iqsubmit{width:auto;flex:none;justify-content:center;height:44px;padding:0 22px;border-radius:8px;white-space:nowrap;background:var(--dsw-alias-button-primary-fill,var(--dsw-alias-state-business-primary,var(--dsw-alias-brand-primary)));border:1px solid var(--dsw-alias-button-primary-fill,var(--dsw-alias-state-business-primary,var(--dsw-alias-brand-primary)));color:var(--dsw-alias-label-primary-foreground);font-size:15px;font-weight:600;}
+.dpk-btn.is-primary.dpk-iqsubmit:hover:not(:disabled){background:var(--dsw-alias-button-primary-fill,var(--dsw-alias-state-business-primary,var(--dsw-alias-brand-primary)));border-color:var(--dsw-alias-button-primary-fill,var(--dsw-alias-state-business-primary,var(--dsw-alias-brand-primary)));filter:brightness(1.06);}
+.dpk-btn.is-primary.dpk-iqsubmit:disabled{opacity:.5;color:var(--dsw-alias-label-primary-foreground);background:var(--dsw-alias-button-primary-fill,var(--dsw-alias-state-business-primary,var(--dsw-alias-brand-primary)));border-color:var(--dsw-alias-button-primary-fill,var(--dsw-alias-state-business-primary,var(--dsw-alias-brand-primary)));}
 
 /* ---------- 详情视图（P3）：基本信息表 + 设置项控件 + 操作区 ---------- */
 /* 设置项两列网格：JSON/密钥等长控件占整行 */
@@ -1102,6 +1119,8 @@ window.__ModuleLoader__.load({
 .dpk-tip{position:fixed;z-index:10000;max-width:400px;background:var(--dsw-alias-bg-layer-1);border:.5px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-primary);font-size:11px;line-height:18px;padding:4px 10px;border-radius:var(--dsw-radius-sm,8px);box-shadow:var(--dsw-elevation-soft,var(--dsw-elevation-prominent));pointer-events:none;display:none;white-space:pre-wrap;overflow-wrap:anywhere;}
 /* 忽略粒度气泡：可点选项，对齐宿主菜单三层表面（backing→material→menu），根不写背景 */
 .dpk-ignorepop{position:fixed;z-index:90;min-width:220px;max-width:min(360px,calc(100vw - 16px));border-radius:var(--dsw-radius-lg,16px);box-shadow:var(--dsw-elevation-prominent);isolation:isolate;overflow:hidden;}
+/* 安装来来源菜单的全屏透明背板：点任意空白处都能确定性关闭（不依赖 document mousedown 是否被别层拦截） */
+.dpk-installsrc-backdrop{position:fixed;inset:0;z-index:89;background:transparent;}
 .dpk-ignorepop-layer{position:absolute;inset:0;z-index:-1;border-radius:inherit;pointer-events:none;}
 .dpk-ignorepop-backing{background:transparent;}
 html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-bg-base);}
@@ -1117,7 +1136,12 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
 .dpk-check.is-ignored{color:var(--dsw-alias-label-tertiary);border-color:var(--dsw-alias-border-l1);}
 /* 显示位置开关（与「只看可更新」同一形态） */
 .dpk-switch{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--dsw-alias-label-secondary);cursor:pointer;white-space:nowrap;}
-.dpk-switch input{accent-color:var(--dsw-alias-brand-primary);margin:0;width:13px;height:13px;}
+.dpk-switch input{appearance:none;-webkit-appearance:none;box-sizing:border-box;margin:0;flex:none;width:16px;height:16px;border:1.5px solid var(--dsw-alias-border-l3);border-radius:5px;background:var(--dsw-alias-bg-layer-1);cursor:pointer;position:relative;transition:background-color .14s ease,border-color .14s ease;}
+.dpk-switch input:hover:not(:disabled){border-color:var(--dsw-alias-brand-primary);}
+.dpk-switch input:checked{background:var(--dsw-alias-brand-primary);border-color:var(--dsw-alias-brand-primary);}
+.dpk-switch input:checked::after{content:'';position:absolute;left:4.5px;top:1.5px;width:4px;height:8px;border:solid var(--dsw-alias-label-primary-foreground,#fff);border-width:0 2px 2px 0;transform:rotate(45deg);}
+.dpk-switch input:focus-visible{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:2px;}
+.dpk-switch input:disabled{cursor:default;opacity:.35;}
 /* 导出弹框：比确认框宽（要列清单） */
 .dpk-modal.is-wide{width:520px;}
 .dpk-modal.is-detail{width:720px;box-sizing:border-box;max-height:min(78vh,760px);overflow:auto;}
@@ -1131,7 +1155,8 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
 .dpk-cfgtag{font-size:10px;line-height:16px;color:var(--dsw-alias-label-tertiary);}
 .dpk-cfgtag.is-warn{color:var(--dsw-alias-state-warn-primary);}
 .dpk-cfgtag.is-maybe{color:var(--dsw-alias-state-warn-primary);}
-.dpk-cb.is-warn{accent-color:var(--dsw-alias-state-warn-primary);}
+.dpk-cb.is-warn{border-color:var(--dsw-alias-state-warn-primary);}
+.dpk-cb.is-warn:checked{background:var(--dsw-alias-state-warn-primary);border-color:var(--dsw-alias-state-warn-primary);}
 .dpk-cmdrow{display:flex;align-items:center;gap:8px;font-family:${MONO};font-size:11px;line-height:16px;color:var(--dsw-alias-label-secondary);background:var(--dsw-alias-bg-layer-2);border-radius:var(--dsw-radius-md,8px);padding:4px 8px;overflow-wrap:anywhere;}
 /* 冲突策略下拉（导入弹框） */
 .dpk-select{background:var(--dsw-alias-bg-layer-1);border:.5px solid var(--dsw-alias-border-l2);color:var(--dsw-alias-label-primary);border-radius:var(--dsw-radius-sm,8px);padding:3px 6px;font:inherit;font-size:11px;line-height:18px;flex:none;max-width:150px;transition:border-color .16s ease;}
@@ -1140,15 +1165,14 @@ html[data-platform='darwin'] .dpk-ignorepop-backing{background:var(--dsw-alias-b
 /* 导入弹框里的兼容性徽标要能跟文字并排 */
 .dpk-cfgtag .dpk-op{display:inline-block;margin:0 4px 0 0;vertical-align:middle;}
 /* ---------- 主题适配补丁：表面/输入/灰字对比/开关观感 ---------- */
-/* 弹框改用不透明层级面，避免半透明叠在主题背景上发灰发花 */
+/* 弹框底色兜底：最终统一由文末「所有弹框」玻璃规则覆盖 */
 .dpk-modal{background:var(--dsw-alias-bg-layer-3);}
-/* dsh-cockpit 主题用 [role="dialog"] !important 全局改底色，导致本弹框发虚；
-   这里用更高特异性把它还原成不透明面板（只命中本插件自己的 .dpk-modal） */
-html:root .dpk-modalwrap .dpk-modal{background:var(--dsw-alias-bg-layer-3)!important;}
 /* 列表透出底部：不用大白底，改成一层很淡的磨砂玻璃（壁纸照样透出来、文字也清晰） */
 .dpk-rows{background:color-mix(in srgb, var(--dsw-alias-bg-layer-3) 32%, transparent);-webkit-backdrop-filter:blur(8px) saturate(115%);backdrop-filter:blur(8px) saturate(115%);border-color:var(--dsw-alias-border-l2);}
 /* 搜索框与下拉：跟随主题的实心底 + 细边框；聚焦用主题色 */
-.dpk-searchinput,
+/* 搜索框：实底 token 兜底（无主题时）。玻璃/质感由 dsh-cockpit 主题引擎统一驱动
+   （.dpk-searchinput 已登记进其「自绘表面」名单，与设置弹框同款），此处不再自写玻璃 */
+.dpk-searchinput{background:var(--dsw-alias-bg-layer-1);border-color:var(--dsw-alias-border-l2);color:var(--dsw-alias-label-primary);}
 .dpk-select{background:var(--dsw-alias-bg-layer-3);border-color:var(--dsw-alias-border-l2);color:var(--dsw-alias-label-primary);}
 .dpk-searchinput::placeholder{color:var(--dsw-alias-label-tertiary);}
 .dpk-searchinput:focus,
@@ -1168,7 +1192,9 @@ html:root .dpk-modalwrap .dpk-modal{background:var(--dsw-alias-bg-layer-3)!impor
 .dpk-onlyup input:checked::after{transform:translateX(13px);}
 .dpk-onlyup input:focus-visible{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:2px;}
 /* 右下角更新提示：文字改用主题标签色；按钮左对齐 */
-.dpk-updtip{background:var(--dsw-alias-bg-layer-3);border-color:var(--dsw-alias-border-l2);color:var(--dsw-alias-label-primary);}
+/* 更新提示：实底 token 兜底（无主题时）。玻璃/质感由 dsh-cockpit 主题引擎统一驱动
+   （.dpk-updtip 已登记进其「自绘表面」名单，与设置弹框、任务胶囊完全一致），此处不再自写玻璃 */
+.dpk-updtip{background:var(--dsw-alias-bg-layer-3);border:1px solid var(--dsw-alias-border-l2);box-shadow:var(--dsw-elevation-prominent,0 12px 34px rgba(0,0,0,.22));color:var(--dsw-alias-label-primary);}
 .dpk-updtip-title{color:var(--dsw-alias-label-primary);}
 .dpk-updtip-body{display:flex;flex-direction:column;align-items:flex-start;text-align:left;}
 .dpk-updtip-x{color:var(--dsw-alias-label-tertiary);}
@@ -1188,17 +1214,19 @@ html:root .dpk-modalwrap .dpk-modal{background:var(--dsw-alias-bg-layer-3)!impor
 .dpk-selhint{color:var(--dsw-alias-label-secondary);font-size:12px;}
 /* 主 CTA「＋ 安装插件」：实心品牌绿底 + 白字，对比拉满 */
 .dpk-splitbtn .dpk-btn.is-primary.dpk-splitmain,
-.dpk-splitbtn .dpk-btn.is-primary.dpk-splitcaret{background:var(--dsw-alias-brand-primary);border-color:var(--dsw-alias-brand-primary);color:#fff;font-weight:600;}
+.dpk-splitbtn .dpk-btn.is-primary.dpk-splitcaret{background:var(--dsw-alias-button-primary-fill,var(--dsw-alias-brand-primary));border-color:var(--dsw-alias-button-primary-fill,var(--dsw-alias-brand-primary));color:var(--dsw-alias-label-primary-foreground);font-weight:600;}
 .dpk-splitbtn .dpk-btn.is-primary.dpk-splitmain:hover:not(:disabled),
-.dpk-splitbtn .dpk-btn.is-primary.dpk-splitcaret:hover:not(:disabled){background:var(--dsw-alias-brand-primary);border-color:var(--dsw-alias-brand-primary);filter:brightness(1.06);}
-.dpk-splitbtn .dpk-splitcaret{box-shadow:inset 1px 0 0 rgba(255,255,255,.4);}
+.dpk-splitbtn .dpk-btn.is-primary.dpk-splitcaret:hover:not(:disabled){background:var(--dsw-alias-button-primary-fill,var(--dsw-alias-brand-primary));border-color:var(--dsw-alias-button-primary-fill,var(--dsw-alias-brand-primary));filter:brightness(1.06);}
+.dpk-splitbtn .dpk-splitcaret{box-shadow:inset 1px 0 0 color-mix(in srgb,var(--dsw-alias-label-primary-foreground) 40%,transparent);}
 /* 「分组 / 列表」切换：容器给明确表面；未选中字加深，选中 pill 加深 + 细边 */
 .dpk-viewtoggle{background:var(--dsw-alias-bg-layer-2);border:1px solid var(--dsw-alias-border-l2);}
 .dpk-viewtoggle .dpk-btn{color:var(--dsw-alias-label-secondary);}
 .dpk-viewtoggle .dpk-btn.is-active{background:var(--dsw-alias-bg-layer-3);color:var(--dsw-alias-label-primary);box-shadow:0 1px 2px rgba(0,0,0,.12);}
-/* ---------- 详情/安装/高级设置弹框：背景走「玻璃效果」，与系统设置页弹框一致（全部跟随主题 token） ---------- */
+/* ---------- 弹框外观交给 dsh-cockpit 的主题适配（不写死玻璃）----------
+ * 所有 .dpk-modal 都带 role="dialog"；dsh-cockpit 的「主题效果/质感」层已把 [role="dialog"]
+ * 纳入自绘表面名单，会按当前主题（毛玻璃/液态玻璃 + grain/paper/sand 等质感）统一适配，
+ * 与任务胶囊完全一致。故本插件不再覆盖 background / backdrop-filter，只保留兜底底色（无主题时的不透明面板）。 */
 .dpk-modal.is-detail{width:640px;}
-html:root .dpk-modalwrap .dpk-modal.is-detail,html:root .dpk-modalwrap .dpk-modal.is-settings,html:root .dpk-modalwrap .dpk-modal.dpk-iqdialog{background:color-mix(in srgb,var(--dsw-alias-bg-base,#fff) 30%,transparent)!important;-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border:.5px solid var(--dsw-alias-border-l2,rgba(20,28,40,.08));border-radius:var(--dsw-radius-panel,16px);box-shadow:var(--dsw-elevation-panel,0 8px 24px rgba(0,0,0,.14));}
 /* 玻璃弹框不要 0.12s 淡入（淡入时 backdrop-filter 会先虚透再显玻璃）；直接跳到最终效果，与系统设置页一致 */
 html:root .dpk-modalwrap{animation:none!important;}
 .dpk-modal.is-detail .dpk-mtitle{font-size:18px;font-weight:600;line-height:26px;}
@@ -1343,6 +1371,8 @@ html:root .dpk-modalwrap{animation:none!important;}
     const bootCheckStore = { done: false };
     // 通过更新提示跳入插件运维时置位一次，跳过「进入时检查更新」，避免重复请求。
     let suppressEnterCheckOnce = false;
+    // 通过右下角更新提示跳入插件运维时置位一次：进入后自动勾选「只看可更新」，便于直达可更新项。
+    let forceOnlyUpdatableOnce = false;
     // 启动检查去重：以宿主进程启动时刻为锚，刷新页面不重复检查。
     const BOOT_KEY = 'dsh-plugin-keeper:boot-check';
     // 周期检查：每分钟看一次是否到点；到点后至少隔 10 分钟才重试，避免失败时刷屏。
@@ -1354,10 +1384,22 @@ html:root .dpk-modalwrap{animation:none!important;}
     // 更新提示的共享状态：启动检查与周期检查都往这里写，UpdateTip 订阅后刷新。
     const updateTipStore = { count: 0, dismissed: false, listeners: new Set() };
     function notifyUpdateTip(n) {
-      const c = Number(n) || 0;
-      if (c <= 0) return;
-      updateTipStore.count = Math.max(updateTipStore.count, c);
+      const c = Math.max(0, Number(n) || 0);
+      // 以最新一次检查结果为准（可增可减）：避免旧实现 Math.max 只增不减、提示数永远偏高。
+      updateTipStore.count = c;
       for (const fn of updateTipStore.listeners) { try { fn(); } catch { /* ignore */ } }
+    }
+    // 可更新计数与列表「只看可更新」同口径：排除官方/已忽略，且确有更新目标（updateSpecOf 非 null）。
+    function countUpdatable(plugins) {
+      try { return (plugins || []).filter((p) => !p.official && updateSpecOf(p)).length; } catch { return 0; }
+    }
+    // 拉一次快照按同口径算「真正可更新」数；失败返回 null，调用方回退到 counts.update。
+    async function computeUpdatableCountFromSnapshot() {
+      try {
+        const data = unwrapEnvelope(await rpcFace?.snapshot?.());
+        if (data && data.ok && Array.isArray(data.plugins)) return countUpdatable(data.plugins);
+      } catch { /* ignore */ }
+      return null;
     }
     // 底部台账/横幅的自动清除账龄：批量快照产生超过该时长，进页面时不再恢复展示。
     // 具名常量便于调整；不是用户配置项，故不占设置开关（同 AUTO_CHECK_MIN_MS 约定）。
@@ -2402,11 +2444,10 @@ function countChecks(plugins, kinds) {
       const installSpec = installSpecOf(entry);
       return h('div', rowProps,
         h('div', { className: 'dpk-rowmain' },
-          h('input', {
-            type: 'checkbox',
-            className: 'dpk-cb',
+          h(Checkbox, {
             checked,
             disabled,
+            ariaLabel: entry.name,
             onChange: () => onToggle(entry.name),
             onClick: (e) => e.stopPropagation(),
           }),
@@ -2646,7 +2687,10 @@ function countChecks(plugins, kinds) {
         document.addEventListener('mousedown', onDown, true);
         window.addEventListener('scroll', onClose, true);
         window.addEventListener('blur', onClose);
-        try { ref.current?.querySelector('.dpk-ignorepop-item:not(:disabled)')?.focus?.(); } catch { /* 忽略 */ }
+        try {
+          const cur = ref.current?.querySelector('.dpk-ignorepop-item[aria-checked="true"]');
+          (cur || ref.current?.querySelector('.dpk-ignorepop-item:not(:disabled)'))?.focus?.();
+        } catch { /* 忽略 */ }
         return () => {
           window.removeEventListener('keydown', onKey, true);
           document.removeEventListener('mousedown', onDown, true);
@@ -2656,36 +2700,81 @@ function countChecks(plugins, kinds) {
         };
       }, [pop, onClose]);
       if (!pop) return null;
-      return h('div', {
-        ref,
-        className: 'dpk-ignorepop dpk-installsrclist',
-        role: 'menu',
-        'aria-label': t('installMenuAria'),
-        style: { left: pop.left, top: pop.top, width: pop.width },
-      },
-        h('div', { className: 'dpk-ignorepop-layer dpk-ignorepop-backing' }),
-        h('div', { className: 'dpk-ignorepop-layer dpk-ignorepop-material' }),
-        h('div', { className: 'dpk-ignorepop-list' },
-          h('button', {
-            className: 'dpk-ignorepop-item',
-            type: 'button',
-            role: 'menuitem',
-            onClick: (e) => { e.stopPropagation(); pickRef.current?.('npm'); },
-          }, t('installMenuNpm'), h('small', null, 'pkg@1.2.3')),
-          h('button', {
-            className: 'dpk-ignorepop-item',
-            type: 'button',
-            role: 'menuitem',
-            onClick: (e) => { e.stopPropagation(); pickRef.current?.('github'); },
-          }, t('installMenuGithub'), h('small', null, 'owner/repo')),
-          h('button', {
-            className: 'dpk-ignorepop-item',
-            type: 'button',
-            role: 'menuitem',
-            onClick: (e) => { e.stopPropagation(); pickRef.current?.('local'); },
-          }, t('installMenuLocal'), h('small', null, '/path/to/dir')),
+      // pop.items 可选：默认是安装来源三项（npm/GitHub/本地），传入 items 时渲染任意主题化菜单（如镜像源）
+      const items = pop.items || [
+        { value: 'npm', label: t('installMenuNpm'), hint: 'pkg@1.2.3' },
+        { value: 'github', label: t('installMenuGithub'), hint: 'owner/repo' },
+        { value: 'local', label: t('installMenuLocal'), hint: '/path/to/dir' },
+      ];
+      return [
+        h('div', {
+          key: 'src-backdrop',
+          className: 'dpk-installsrc-backdrop',
+          style: pop.z != null ? { zIndex: pop.z - 1 } : undefined,
+          onMouseDown: (e) => { e.preventDefault(); e.stopPropagation(); onClose?.(); },
+        }),
+        h('div', {
+          key: 'src-menu',
+          ref,
+          className: 'dpk-ignorepop dpk-installsrclist',
+          role: 'menu',
+          'aria-label': pop.ariaLabel || t('installMenuAria'),
+          style: { left: pop.left, top: pop.top, width: pop.width, minWidth: pop.minWidth, maxWidth: pop.maxWidth, ...(pop.z != null ? { zIndex: pop.z } : null) },
+        },
+          h('div', { className: 'dpk-ignorepop-layer dpk-ignorepop-backing' }),
+          h('div', { className: 'dpk-ignorepop-layer dpk-ignorepop-material' }),
+          h('div', { className: 'dpk-ignorepop-list' },
+            items.map((it) => {
+              const on = pop.selected != null && pop.selected === it.value;
+              return h('button', {
+                key: it.value || 'default',
+                className: 'dpk-ignorepop-item',
+                type: 'button',
+                role: 'menuitemradio',
+                'aria-checked': on ? 'true' : 'false',
+                onClick: (e) => { e.stopPropagation(); pickRef.current?.(it.value); },
+              },
+                h('span', { style: on ? { color: 'var(--dsw-alias-brand-primary)', fontWeight: 600 } : undefined },
+                  (on ? '✓ ' : '') + it.label),
+                it.hint ? h('small', null, it.hint) : null);
+            }),
+          ),
         ),
+      ];
+    }
+
+    // 通用主题化下拉触发按钮：替代原生 <select>（系统弹层无法主题化）。
+    // 弹层统一由 InstallSourcePop 渲染，本组件只负责触发按钮外观与开合标记。
+    function SelectTrigger({ className, ariaLabel, disabled, open, onClick, children }) {
+      return h('button', {
+        type: 'button',
+        className: `dpk-select dpk-selectbtn${open ? ' is-open' : ''}${className ? ` ${className}` : ''}`,
+        'aria-haspopup': 'menu',
+        'aria-expanded': open ? 'true' : 'false',
+        'aria-label': ariaLabel,
+        disabled: disabled || undefined,
+        onClick,
+      },
+        h('span', { className: 'dpk-selectbtn-label' }, children),
+        h('span', { className: `dpk-iqchev${open ? ' is-open' : ''}`, 'aria-hidden': 'true' }, '▾'),
       );
+    }
+
+    // 通用自绘复选框：替代原生 checkbox（系统绘制无法主题化）。
+    // 保留原生 input 以获得键盘 tab / :checked / 表单 / aria 语义，仅靠 .dpk-cb 用 appearance:none 自绘外观。
+    // 用法：h(Checkbox, { checked, onChange: (e)=>..., disabled, warn, ariaLabel, onClick, className })
+    function Checkbox({ checked, onChange, disabled, warn, ariaLabel, onClick, className, title, ...rest }) {
+      return h('input', {
+        type: 'checkbox',
+        className: `dpk-cb${warn ? ' is-warn' : ''}${className ? ` ${className}` : ''}`,
+        checked,
+        disabled: disabled || undefined,
+        'aria-label': ariaLabel,
+        title,
+        onChange,
+        onClick,
+        ...rest,
+      });
     }
 
     function PluginKeeperSection() {
@@ -2801,10 +2890,10 @@ function countChecks(plugins, kinds) {
         return () => obs.disconnect();
       }, []);
       // 只看可更新：用首份快照的「默认勾选」设置做初值，避免首帧全量再过滤的闪动
-      const [onlyUpdatable, setOnlyUpdatable] = React.useState(() => cacheRef.current?.settings?.onlyUpdatableByDefault === true);
+      const [onlyUpdatable, setOnlyUpdatable] = React.useState(() => forceOnlyUpdatableOnce || cacheRef.current?.settings?.onlyUpdatableByDefault === true);
       // 「默认勾选」只在首次拿到快照时套用一次，之后用户手动切换不被 load() 覆盖；
       // 已用 cacheRef 初始化过即视为已套用，置 true 防止 load() 再改
-      const onlyUpdatableInitRef = React.useRef(cacheRef.current != null);
+      const onlyUpdatableInitRef = React.useRef(cacheRef.current != null || forceOnlyUpdatableOnce);
       // 搜索：query = 输入框实时值；search = 防抖后真正生效的查询串
       const [query, setQuery] = React.useState('');
       const [search, setSearch] = React.useState('');
@@ -2824,6 +2913,35 @@ function countChecks(plugins, kinds) {
         return v === 'installedAt' || v === 'updatedAt' ? v : 'name';
       });
       const [sortDir, setSortDir] = React.useState(() => (localStorage.getItem('dpk.sortDir') === 'asc' ? 'asc' : 'desc'));
+      // 排序下拉改为自绘主题化菜单：原生 <select> 的弹层由系统渲染，无法跟随宿主主题
+      const [sortMenu, setSortMenu] = React.useState(null); // {left, top, width, anchor, selected, ariaLabel, items}
+      const sortMenuRef = React.useRef(null);
+      sortMenuRef.current = sortMenu;
+      const sortPillRef = React.useRef(null);
+      // 通用主题化下拉菜单（替代原生 <select>）：同一时刻只开一个，onPick 回调随 pop 携带
+      const [miniMenu, setMiniMenu] = React.useState(null);
+      const miniMenuRef = React.useRef(null);
+      miniMenuRef.current = miniMenu;
+      const openMiniMenu = React.useCallback((anchor, opts) => {
+        if (!anchor) return;
+        // 再点同一个触发器 = 收起
+        if (opts.key && miniMenuRef.current?.key === opts.key) { setMiniMenu(null); return; }
+        const rect = anchor.getBoundingClientRect();
+        const items = opts.items || [];
+        const w = Math.max(rect.width, opts.minWidth || 150);
+        const hh = Math.max(1, items.length) * 34 + 8;
+        const bounds = clipBoundsOf(anchor);
+        const left = Math.max(bounds.left + 8, Math.min(rect.left, bounds.right - w - 8));
+        const below = rect.bottom + 6;
+        const top = below + hh > bounds.bottom - 8 ? Math.max(bounds.top + 8, rect.top - hh - 6) : below;
+        setMiniMenu({ left, top, width: w, anchor, z: 10000, key: opts.key, selected: opts.selected, ariaLabel: opts.ariaLabel, items, onPick: opts.onPick });
+      }, []);
+      const closeMiniMenu = React.useCallback(() => setMiniMenu(null), []);
+      const pickMiniMenu = React.useCallback((v) => {
+        const cb = miniMenuRef.current?.onPick;
+        setMiniMenu(null);
+        cb?.(v);
+      }, []);
       const switchViewMode = React.useCallback((mode) => {
         setViewMode(mode);
         try { localStorage.setItem('dpk.viewMode', mode); } catch { /* 隐私模式等写失败可忽略 */ }
@@ -2886,10 +3004,15 @@ function countChecks(plugins, kinds) {
             // 之后用户手动取消/勾选不被批量后的 load() 覆盖。
             if (data.settings && typeof data.settings.onlyUpdatableByDefault === 'boolean') {
               setOnlyUpdatableByDefault(data.settings.onlyUpdatableByDefault);
-              if (!onlyUpdatableInitRef.current) {
-                onlyUpdatableInitRef.current = true;
-                if (data.settings.onlyUpdatableByDefault) setOnlyUpdatable(true);
-              }
+            }
+            if (forceOnlyUpdatableOnce) {
+              // 从更新提示跳入：强制勾选「只看可更新」一次（不改用户设置，仅本次）
+              forceOnlyUpdatableOnce = false;
+              onlyUpdatableInitRef.current = true;
+              setOnlyUpdatable(true);
+            } else if (data.settings && typeof data.settings.onlyUpdatableByDefault === 'boolean' && !onlyUpdatableInitRef.current) {
+              onlyUpdatableInitRef.current = true;
+              if (data.settings.onlyUpdatableByDefault) setOnlyUpdatable(true);
             }
             // 检查更新频率：设置态跟随真值
             if (data.settings && data.settings.checkIntervalHours !== undefined) {
@@ -2947,6 +3070,10 @@ function countChecks(plugins, kinds) {
       const [installMenu, setInstallMenu] = React.useState(null); // {left, top, anchor}
       const installMenuRef = React.useRef(null);
       installMenuRef.current = installMenu;
+      const [registryMenu, setRegistryMenu] = React.useState(null); // {left, top, width, anchor, selected, items}
+      const registryMenuRef = React.useRef(null);
+      registryMenuRef.current = registryMenu;
+      const registryPillRef = React.useRef(null);
       const installCaretRef = React.useRef(null);
       const installInputRef = React.useRef(null);
       // 状态变化检测：上一次见到的 {id: status}，用来在条目结束时弹 notice + 刷列表
@@ -3624,6 +3751,9 @@ function countChecks(plugins, kinds) {
         setInstallMenu(null);
         setInstallPanelOpen(true);
       }, []);
+      const closeRegistryMenu = React.useCallback(() => setRegistryMenu(null), []);
+      const closeSortMenu = React.useCallback(() => setSortMenu(null), []);
+      const pickSort = React.useCallback((v) => { setSortMenu(null); switchSortKey(v); }, [switchSortKey]);
 
       // 气泡贴着触发按钮定位；批量时若部分行没有检查结果，版本粒度给出跳过提示
       const openIgnorePop = React.useCallback((names, anchor) => {
@@ -4173,15 +4303,41 @@ function countChecks(plugins, kinds) {
             onClick: () => switchViewMode('list'),
           }, t('viewList')),
         ),
-        h('select', {
-          className: 'dpk-sortsel',
+        h('button', {
+          ref: sortPillRef,
+          className: 'dpk-btn is-mini dpk-sortbtn',
+          type: 'button',
+          'aria-haspopup': 'menu',
+          'aria-expanded': sortMenu ? 'true' : 'false',
           'aria-label': t('sortAria'),
-          value: sortKey,
-          onChange: (e) => switchSortKey(e.target.value),
+          onClick: () => {
+            if (sortMenuRef.current) { setSortMenu(null); return; }
+            const anchor = sortPillRef.current;
+            if (!anchor) return;
+            const rect = anchor.getBoundingClientRect();
+            const items = [
+              { value: 'name', label: t('sortName') },
+              { value: 'installedAt', label: t('sortInstalled') },
+              { value: 'updatedAt', label: t('sortUpdated') },
+            ];
+            // 菜单比触发按钮略宽 16px，抵消条目左右内边距，避免长文案换行
+            const w = rect.width + 16;
+            const hh = items.length * 34 + 8;
+            const bounds = clipBoundsOf(anchor);
+            const left = Math.max(bounds.left + 8, Math.min(rect.left, bounds.right - w - 8));
+            const below = rect.bottom + 6;
+            const top = below + hh > bounds.bottom - 8 ? Math.max(bounds.top + 8, rect.top - hh - 6) : below;
+            setSortMenu({ left, top, width: w, minWidth: w, anchor, z: 10000, selected: sortKey, ariaLabel: t('sortAria'), items });
+          },
         },
-          h('option', { value: 'name' }, t('sortName')),
-          h('option', { value: 'installedAt' }, t('sortInstalled')),
-          h('option', { value: 'updatedAt' }, t('sortUpdated')),
+          h('span', { className: 'dpk-sortbtn-stack' },
+            ['name', 'installedAt', 'updatedAt'].map((k) => h('span', {
+              key: k,
+              className: k === sortKey ? 'is-cur' : undefined,
+              'aria-hidden': k === sortKey ? undefined : 'true',
+            }, k === 'installedAt' ? t('sortInstalled') : k === 'updatedAt' ? t('sortUpdated') : t('sortName'))),
+          ),
+          h('span', { className: `dpk-iqchev${sortMenu ? ' is-open' : ''}`, 'aria-hidden': 'true' }, '▾'),
         ),
         h('button', {
           className: 'dpk-btn is-mini',
@@ -4558,8 +4714,7 @@ function countChecks(plugins, kinds) {
           // 显示位置：默认只在「插件」面板的页签显示；勾选后设置页也出现
           h('div', { className: 'dpk-setrow' },
             h('label', { className: 'dpk-switch' },
-              h('input', {
-                type: 'checkbox',
+              h(Checkbox, {
                 checked: showInSettings,
                 disabled: saving,
                 onChange: (e) => { void doSaveShowInSettings(e.target.checked); },
@@ -4572,8 +4727,7 @@ function countChecks(plugins, kinds) {
           // 进入时默认折叠分组：默认不勾选
           h('div', { className: 'dpk-setrow' },
             h('label', { className: 'dpk-switch' },
-              h('input', {
-                type: 'checkbox',
+              h(Checkbox, {
                 checked: collapseByDefault,
                 disabled: saving,
                 onChange: (e) => { void doSaveCollapseByDefault(e.target.checked); },
@@ -4586,8 +4740,7 @@ function countChecks(plugins, kinds) {
           // 进入时默认勾选「只看可更新」：默认关
           h('div', { className: 'dpk-setrow' },
             h('label', { className: 'dpk-switch' },
-              h('input', {
-                type: 'checkbox',
+              h(Checkbox, {
                 checked: onlyUpdatableByDefault,
                 disabled: saving,
                 onChange: (e) => { void doSaveOnlyUpdatableByDefault(e.target.checked); },
@@ -4600,20 +4753,28 @@ function countChecks(plugins, kinds) {
           // 检查更新频率：启动时一次 + 之后按间隔
           h('div', { className: 'dpk-setrow' },
             h('span', null, t('checkIntervalLabel')),
-            h('select', {
-              className: 'dpk-select',
-              value: CHECK_INTERVAL_PRESETS.includes(Number(checkIntervalHours)) && !checkIntervalCustomOpen ? String(checkIntervalHours) : '__custom__',
-              disabled: saving,
-              onChange: (e) => {
-                const v = e.target.value;
-                if (v === '__custom__') { setCheckIntervalCustomOpen(true); return; }
-                setCheckIntervalCustomOpen(false);
-                void doSaveCheckInterval(Number(v));
-              },
-            },
-              CHECK_INTERVAL_PRESETS.map((hv) => h('option', { key: hv, value: String(hv) }, `${hv} ${t('checkIntervalUnit')}`)),
-              h('option', { value: '__custom__' }, t('checkIntervalCustom')),
-            ),
+            (() => {
+              const curSel = CHECK_INTERVAL_PRESETS.includes(Number(checkIntervalHours)) && !checkIntervalCustomOpen ? String(checkIntervalHours) : '__custom__';
+              const items = CHECK_INTERVAL_PRESETS.map((hv) => ({ value: String(hv), label: `${hv} ${t('checkIntervalUnit')}` }));
+              items.push({ value: '__custom__', label: t('checkIntervalCustom') });
+              const curItem = items.find((it) => it.value === curSel) || items[items.length - 1];
+              return h(SelectTrigger, {
+                ariaLabel: t('checkIntervalLabel'),
+                disabled: saving,
+                open: miniMenu?.key === 'checkInterval',
+                onClick: (e) => openMiniMenu(e.currentTarget, {
+                  key: 'checkInterval',
+                  selected: curSel,
+                  items,
+                  ariaLabel: t('checkIntervalLabel'),
+                  onPick: (v) => {
+                    if (v === '__custom__') { setCheckIntervalCustomOpen(true); return; }
+                    setCheckIntervalCustomOpen(false);
+                    void doSaveCheckInterval(Number(v));
+                  },
+                }),
+              }, curItem.label);
+            })(),
           ),
           checkIntervalCustomOpen ? h('div', { className: 'dpk-setrow' },
             h('input', {
@@ -4633,8 +4794,7 @@ function countChecks(plugins, kinds) {
           // 启动时自动检查更新：默认开
           h('div', { className: 'dpk-setrow' },
             h('label', { className: 'dpk-switch' },
-              h('input', {
-                type: 'checkbox',
+              h(Checkbox, {
                 checked: autoCheckOnBoot,
                 disabled: saving,
                 onChange: (e) => { void doSaveAutoCheckOnBoot(e.target.checked); },
@@ -4743,11 +4903,11 @@ function countChecks(plugins, kinds) {
                 const maybe = item.suspicious === undefined && item.score !== undefined && item.score < 80;
                 const checked = exportConfigRels.has(item.rel) && !suspicious;
                 return h('div', { className: `dpk-cfgrow${suspicious ? ' is-suspicious' : ''}`, key: item.rel },
-                  h('input', {
-                    type: 'checkbox',
-                    className: `dpk-cb${suspicious ? ' is-warn' : ''}`,
+                  h(Checkbox, {
                     checked,
+                    warn: suspicious,
                     disabled: suspicious || exportState === 'running',
+                    ariaLabel: item.rel,
                     onChange: () => toggleRel(item.rel),
                   }),
                   h('div', { className: 'dpk-cfgnames' },
@@ -4836,16 +4996,26 @@ function countChecks(plugins, kinds) {
                     p.versionMismatch ? ` · ${t('importVersionDiff', { pkg: p.version, tar: p.version })}` : '',
                   ),
                 ),
-                h('select', {
-                  className: 'dpk-select',
-                  value: strategy,
-                  disabled: importState === 'running',
-                  onChange: (e) => setPluginStrategy(p.name, e.target.value),
-                },
-                  h('option', { value: 'replace' }, t('importStrategyReplace')),
-                  h('option', { value: 'keep' }, t('importStrategyKeep')),
-                  h('option', { value: 'skip' }, t('importStrategySkip')),
-                ),
+                (() => {
+                  const items = [
+                    { value: 'replace', label: t('importStrategyReplace') },
+                    { value: 'keep', label: t('importStrategyKeep') },
+                    { value: 'skip', label: t('importStrategySkip') },
+                  ];
+                  const curItem = items.find((it) => it.value === strategy) || items[1];
+                  return h(SelectTrigger, {
+                    ariaLabel: t('importPluginStrategy'),
+                    disabled: importState === 'running',
+                    open: miniMenu?.key === `plugin:${p.name}`,
+                    onClick: (e) => openMiniMenu(e.currentTarget, {
+                      key: `plugin:${p.name}`,
+                      selected: strategy,
+                      items,
+                      ariaLabel: t('importPluginStrategy'),
+                      onPick: (v) => setPluginStrategy(p.name, v),
+                    }),
+                  }, curItem.label);
+                })(),
               );
             }),
           ),
@@ -4866,22 +5036,31 @@ function countChecks(plugins, kinds) {
                         : '',
                     ),
                   ),
-                  h('select', {
-                    className: 'dpk-select',
-                    value: strategy,
-                    disabled: importState === 'running',
-                    onChange: (e) => setConfigStrategy(c.rel, e.target.value),
-                  },
-                    h('option', { value: 'import' }, t('importStrategyReplace')),
-                    h('option', { value: 'keep' }, t('importStrategyKeep')),
-                  ),
+                  (() => {
+                    const items = [
+                      { value: 'import', label: t('importStrategyReplace') },
+                      { value: 'keep', label: t('importStrategyKeep') },
+                    ];
+                    const curItem = items.find((it) => it.value === strategy) || items[1];
+                    return h(SelectTrigger, {
+                      ariaLabel: t('importConfigStrategy'),
+                      disabled: importState === 'running',
+                      open: miniMenu?.key === `config:${c.rel}`,
+                      onClick: (e) => openMiniMenu(e.currentTarget, {
+                        key: `config:${c.rel}`,
+                        selected: strategy,
+                        items,
+                        ariaLabel: t('importConfigStrategy'),
+                        onPick: (v) => setConfigStrategy(c.rel, v),
+                      }),
+                    }, curItem.label);
+                  })(),
                 );
               }),
             ),
           // ---- 仅导配置 ----
           h('label', { className: 'dpk-switch' },
-            h('input', {
-              type: 'checkbox',
+            h(Checkbox, {
               checked: importOnlyConfig,
               disabled: importState === 'running',
               onChange: (e) => setImportOnlyConfig(e.target.checked),
@@ -4924,6 +5103,12 @@ function countChecks(plugins, kinds) {
           setInstallInputFlash({ text: r?.error ?? t('saveFailed') });
         }
       }, []);
+      const pickRegistry = (v) => {
+        setRegistryMenu(null);
+        if (v === '__custom__') { setRegistryCustomOpen(true); return; }
+        setRegistryCustomOpen(false);
+        void doSetInstallRegistry(v);
+      };
 
       // 安装队列面板：输入即入队（可连续输），条目状态轮询宿主半；面板可随时关掉，安装继续跑
       const installQueueModal = installPanelOpen
@@ -4938,22 +5123,38 @@ function countChecks(plugins, kinds) {
               h('div', { className: 'dpk-mtitle' }, t('iqPanelTitle')),
               h('div', { className: 'dpk-iqdesc' }, t('iqInputHint')),
             ),
-            h('div', { className: 'dpk-iqregpill' },
+            h('button', {
+              ref: registryPillRef,
+              className: 'dpk-iqregpill dpk-iqregpill-btn',
+              type: 'button',
+              'aria-haspopup': 'menu',
+              'aria-expanded': registryMenu ? 'true' : 'false',
+              onClick: () => {
+                if (registryMenuRef.current) { setRegistryMenu(null); return; }
+                const anchor = registryPillRef.current;
+                if (!anchor) return;
+                const rect = anchor.getBoundingClientRect();
+                const w = 200;
+                const hh = 4 * 34 + 8;
+                const bounds = clipBoundsOf(anchor);
+                const left = Math.max(bounds.left + 8, Math.min(rect.right - w, bounds.right - w - 8));
+                const below = rect.bottom + 6;
+                const top = below + hh > bounds.bottom - 8 ? Math.max(bounds.top + 8, rect.top - hh - 6) : below;
+                setRegistryMenu({
+                  left, top, width: w, anchor,
+                  z: 10000,
+                  selected: registryKnown ? effectiveRegistry : '__custom__',
+                  items: [
+                    { value: '', label: t('iqRegistryDefault') },
+                    { value: 'https://registry.npmjs.org/', label: t('iqRegistryOfficial') },
+                    { value: 'https://registry.npmmirror.com/', label: t('iqRegistryNpmmirror') },
+                    { value: '__custom__', label: t('iqRegistryCustom') },
+                  ],
+                });
+              },
+            },
               h('span', { className: 'dpk-iqregpill-label' }, t('iqRegistryToggle')),
               h('span', { className: 'dpk-iqregpill-chosen' }, registryCustomOpen ? t('iqRegistryCustom') : (((INSTALL_REGISTRY_OPTIONS.find((o) => o.value === effectiveRegistry) || {}).label) || t('iqRegistryCustom'))),
-              h('select', {
-                className: 'dpk-iqregpill-select',
-                value: registryKnown ? effectiveRegistry : '__custom__',
-                onChange: (e) => {
-                  const v = e.target.value;
-                  if (v === '__custom__') { setRegistryCustomOpen(true); return; }
-                  setRegistryCustomOpen(false);
-                  void doSetInstallRegistry(v);
-                },
-              },
-                INSTALL_REGISTRY_OPTIONS.map((o) => h('option', { key: o.value || 'default', value: o.value }, o.label)),
-                h('option', { key: 'custom', value: '__custom__' }, t('iqRegistryCustom')),
-              ),
               h('span', { className: 'dpk-iqchev' }, '▾'),
             ),
           ),
@@ -5127,7 +5328,8 @@ function countChecks(plugins, kinds) {
                 h('span', { className: 'dpk-dname' }, detailName),
                 entry && entry.version ? h('span', { className: 'dpk-ver' }, `v${entry.version}`) : null,
               ),
-              detail && detail.loading ? h('div', { className: 'dpk-hint' }, t('detailLoading')) : null,
+              // loading 提示用绝对定位（不占 flex 布局高度），避免异步加载完成时弹框高度变化导致垂直居中下的顶部跳动
+              h('div', { className: 'dpk-detail-loading', 'aria-live': 'polite' }, detail && detail.loading ? t('detailLoading') : ''),
               detail && detail.error
                 ? h('div', { className: 'dpk-savederr' }, t('detailLoadFailed', { error: detail.error }))
                 : null,
@@ -5239,6 +5441,9 @@ function countChecks(plugins, kinds) {
         settingsModal,
         h(IgnorePop, { pop: ignorePop, onPick: doPickIgnore, onClose: closeIgnorePop }),
         h(InstallSourcePop, { pop: installMenu, onPick: pickInstallSource, onClose: closeInstallMenu }),
+        h(InstallSourcePop, { pop: registryMenu, onPick: pickRegistry, onClose: closeRegistryMenu }),
+        h(InstallSourcePop, { pop: sortMenu, onPick: pickSort, onClose: closeSortMenu }),
+        h(InstallSourcePop, { pop: miniMenu, onPick: pickMiniMenu, onClose: closeMiniMenu }),
         // 隐藏的文件选择器（导入入口）
         h('input', {
           ref: importFileRef,
@@ -5457,11 +5662,10 @@ function countChecks(plugins, kinds) {
                   'aria-label': collapsed ? t('groupExpand') : t('groupCollapse'),
                 }, h(CollapseArrow, { collapsed })),
                 eligible.length > 0
-                  ? h('input', {
-                    type: 'checkbox',
-                    className: 'dpk-cb',
+                  ? h(Checkbox, {
                     checked: allIn,
                     disabled: batchRunning,
+                    ariaLabel: t(GROUP_TITLE_KEY[key]),
                     onChange: () => toggleGroup(eligible),
                     onClick: (e) => e.stopPropagation(),
                   })
@@ -5860,9 +6064,11 @@ function countChecks(plugins, kinds) {
         } catch { /* 隐私模式等忽略 */ }
         const res = unwrapEnvelope(await rpcFace?.checkUpdates?.());
         try { if (bootKey) window.localStorage?.setItem(BOOT_KEY, bootKey); } catch { /* ignore */ }
-        const n = Number(res?.counts?.update ?? 0);
-        if (Number.isFinite(n) && n > 0) { notifyUpdateTip(n); return n; }
-        return 0;
+        // 用快照按「只看可更新」同口径重算，避免 counts.update 把官方/已忽略也计入导致提示数偏大。
+        const exact = await computeUpdatableCountFromSnapshot();
+        const n = exact != null ? exact : Number(res?.counts?.update ?? 0);
+        notifyUpdateTip(n);
+        return n > 0 ? n : 0;
       } catch {
         return 0;
       }
@@ -5870,6 +6076,7 @@ function countChecks(plugins, kinds) {
 
     // 跳转到「插件运维」：打开官方插件管理页并定位到本插件 Tab。
     function navigateToKeeperTab(rctx) {
+      forceOnlyUpdatableOnce = true; // 提示入口直达：进来先只看可更新
       const get = (k) => { try { return rctx.get?.(k) ?? rctx.reflect?.get?.(k) ?? null; } catch { return null; } };
       try {
         const nav = get('pluginNavigation');
@@ -5914,8 +6121,9 @@ function countChecks(plugins, kinds) {
             if (now - lastPeriodicAttempt < PERIODIC_ATTEMPT_GAP_MS) return;
             lastPeriodicAttempt = now;
             const res = unwrapEnvelope(await rpcFace?.checkUpdates?.());
-            const n = Number(res?.counts?.update ?? 0);
-            if (Number.isFinite(n) && n > 0) notifyUpdateTip(n);
+            const exactP = await computeUpdatableCountFromSnapshot();
+            const n = exactP != null ? exactP : Number(res?.counts?.update ?? 0);
+            notifyUpdateTip(n);
           } catch { /* 网络/宿主异常静默，下一分钟再判 */ }
         };
         const id = setInterval(tick, PERIODIC_TICK_MS);
@@ -5934,8 +6142,8 @@ function countChecks(plugins, kinds) {
         };
         updateTipStore.listeners.add(sync);
         void (async () => {
-          const n = await runBootCheckOnce();
-          if (alive && n > 0 && !updateTipStore.dismissed) setCount((c) => Math.max(c, n));
+          await runBootCheckOnce();
+          if (alive) setCount(updateTipStore.dismissed ? 0 : updateTipStore.count);
         })();
         return () => { alive = false; updateTipStore.listeners.delete(sync); };
       }, []);

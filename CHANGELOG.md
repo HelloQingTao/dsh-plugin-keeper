@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.3.12 (2026-11-17)
+
+### 中文
+
+- **修复：深色下的下拉菜单** — 排序、检查更新频率和导入策略的下拉菜单跟随主题，不再是刺眼的白底弹层。
+- **修复：排序区域抖动** — 切换排序方式时工具栏不再左右跳动，下拉菜单也不会过宽。
+- **修复：勾选框** — 勾选框在深色下跟随当前主题显示。
+- **修复：更新提示数量** — 右下角数字只统计真正有更新的插件，不再偏多。
+- **修复：详情弹框跳动** — 详情弹框加载时不再上下跳动。
+- **优化：表面跟随主题** — 更新提示、搜索框和弹框都会跟随当前主题显示。
+- **优化：直达可更新插件** — 点右下角更新提示进入插件运维，会直接只显示需要更新的插件。
+
+### English
+
+- **Fixed: dropdowns in dark mode** — The sort, check-frequency and import-strategy menus now follow the theme instead of showing a bright white popup.
+- **Fixed: sort toolbar jitter** — Switching the sort order no longer makes the toolbar shift around, and the dropdown is no longer too wide.
+- **Fixed: checkboxes** — Checkboxes now match the current theme in dark mode.
+- **Fixed: update count** — The number in the lower-right now counts only plugins that actually have an update.
+- **Fixed: details dialog jump** — The details dialog no longer bounces while loading.
+- **Improved: theme-following surfaces** — The update tip, search box and dialogs now match your current theme.
+- **Improved: straight to updates** — Opening Plugin Ops from the update tip now shows only the plugins that need updating.
+
 ## 0.3.11 (2026-11-15)
 
 ### 中文
